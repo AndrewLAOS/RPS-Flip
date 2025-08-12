@@ -1,0 +1,136 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f9;
+  color: #333;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+header {
+  background: #6a5acd;
+  color: white;
+  padding: 10px 0;
+}
+
+h1 {
+  margin: 0;
+}
+
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 10px;
+  padding: 10px;
+}
+
+.item {
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  padding: 5px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: white;
+}
+
+.item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.item img {
+  max-width: 60px;
+}
+
+.choice-slot {
+  width: 100px;
+  height: 100px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 10px;
+  border: 2px solid #ccc;
+}
+
+.vs {
+  font-size: 24px;
+  margin: 0 15px;
+}
+
+.shop-section {
+  background: #fff8e1;
+  padding: 10px;
+  margin-top: 20px;
+}
+@keyframes rockShake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes paperFlutter {
+  0% { transform: rotate(0); }
+  50% { transform: rotate(5deg); }
+  100% { transform: rotate(0); }
+}
+
+@keyframes scissorsCut {
+  0% { transform: rotate(0); }
+  25% { transform: rotate(-15deg); }
+  50% { transform: rotate(15deg); }
+  75% { transform: rotate(-15deg); }
+  100% { transform: rotate(0); }
+}
+
+@keyframes fireFlicker {
+  0%, 100% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(30deg); }
+}
+
+@keyframes waterSplash {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2) rotate(5deg); }
+  100% { transform: scale(1); }
+}
+
+@keyframes robotBlink {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(0.5); }
+}
+
+@keyframes lightningStrike {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(2); }
+}
+
+@keyframes windBlow {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(10px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes earthPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes wizardGlow {
+  0% { box-shadow: 0 0 5px gold; }
+  50% { box-shadow: 0 0 20px gold; }
+  100% { box-shadow: 0 0 5px gold; }
+}
+
+@keyframes dragonFire {
+  0% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(60deg); }
+  100% { filter: hue-rotate(0deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
