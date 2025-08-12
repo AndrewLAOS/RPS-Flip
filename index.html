@@ -1,166 +1,647 @@
-<script type="module">
-import { items } from './items.js';
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Ultimate Rock, Paper, Scissors Flip — Deluxe</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app" role="application" aria-label="Ultimate Rock Paper Scissors Flip Game">
+    <!-- LEFT: sidebar -->
+    <aside class="sidebar" aria-label="Game controls and shop">
+      <div class="brand">
+        <div class="logo">RΨS</div>
+        <div>
+          <h1>Ultimate RPS Flip</h1>
+          <p class="small">Deluxe edition — curated items, bot AI, and big animations.</p>
+        </div>
+      </div>
 
-// --- State ---
-let playerCoins = 100;
-let botInventory = [];
-let botDifficulty = 50;
-const choices = ["Rock", "Paper", "Scissors", "Flip"];
+      <div class="panel coins-panel" role="status" aria-live="polite">
+        <div class="coins-row">
+          <div class="coin-display">
+            <div class="coin-icon">🪙</div>
+            <div>
+              <div class="small muted">Your Balance</div>
+              <div class="coin-text" id="coins-display">0</div>
+            </div>
+          </div>
+          <div class="kv">
+            <div class="small muted">Bot Coins</div>
+            <div class="value-pill mono" id="bot-coins-display">0</div>
+          </div>
+        </div>
 
-// --- DOM Elements ---
-const battleChoicesEl = document.getElementById('battle-choices');
-const battleStatusEl = document.getElementById('battle-status');
-const shopItemsEl = document.getElementById('shop-items');
-const shopStatusEl = document.getElementById('shop-status');
-const botInventoryEl = document.getElementById('bot-inventory-items');
-const difficultySlider = document.getElementById('bot-difficulty-slider');
-const difficultyLabel = document.getElementById('bot-difficulty-label');
+        <div class="control">
+          <div class="muted">Bot Difficulty</div>
+          <div class="range-wrap">
+            <input id="bot-difficulty-slider" type="range" min="0" max="100" value="50" aria-label="Bot difficulty slider" />
+            <div class="value-pill" id="bot-difficulty-label">50%</div>
+          </div>
+          <div class="small-muted">Higher difficulty increases bot counter tendency.</div>
+        </div>
+      </div>
 
-// --- Navigation ---
-const screens = document.querySelectorAll('.screen');
-document.querySelectorAll('nav button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    // switch aria-selected
-    document.querySelectorAll('nav button').forEach(b => {
-      b.setAttribute('aria-selected', 'false');
-      b.tabIndex = -1;
-    });
-    btn.setAttribute('aria-selected', 'true');
-    btn.tabIndex = 0;
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="small muted">Shop</div>
+          <div class="small muted">Items available</div>
+        </div>
 
-    // switch screens
-    screens.forEach(screen => {
-      if (screen.id === btn.getAttribute('aria-controls')) {
-        screen.classList.add('active');
-        screen.removeAttribute('hidden');
-      } else {
-        screen.classList.remove('active');
-        screen.setAttribute('hidden', '');
+        <div class="shop-list" id="shop-items" aria-live="polite" aria-atomic="true">
+          <!-- populated by JS -->
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center;justify-content:space-between">
+          <div class="small-muted">Tip: buy uncommon items to diversify strategy</div>
+          <button
+            id="reset-btn"
+            title="Reset progress"
+            style="background:transparent;border:1px solid rgba(255,255,255,0.04);padding:6px 10px;border-radius:8px;color:var(--muted);cursor:pointer"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <div class="panel small" id="log-panel" style="flex:1;overflow:auto">
+        <div class="small muted">Activity</div>
+        <div
+          id="log-items"
+          style="margin-top:8px;font-size:0.92rem;color:var(--muted);line-height:1.4"
+        ></div>
+      </div>
+
+      <div class="footer" style="padding-top:8px">
+        <div>© 2025</div>
+        <div class="links"><a href="#" id="help-link">Help</a></div>
+      </div>
+    </aside>
+
+    <!-- RIGHT: game area -->
+    <main class="game-area" aria-live="polite">
+      <div class="top-row">
+        <div class="status-panel">
+          <div class="label small-muted">Round</div>
+          <div class="value big mono" id="round-counter">0</div>
+        </div>
+        <div class="status-panel">
+          <div class="label small-muted">Streak</div>
+          <div class="value big mono" id="streak-counter">0</div>
+        </div>
+      </div>
+
+      <div class="battle-stage" id="battle-stage" role="region" aria-label="Battle stage">
+        <div class="bg-layer">
+          <div class="bg-orb a"></div>
+          <div class="bg-orb b"></div>
+          <div class="bg-lines"></div>
+        </div>
+
+        <div class="arena" role="group" aria-label="Arena">
+          <div class="card" id="player-card" aria-live="polite">
+            <div class="label mono">You</div>
+            <div class="icon" id="player-icon">🤔</div>
+            <div class="small muted" id="player-item-name">No item</div>
+          </div>
+
+          <div class="vs-area">
+            <div class="vs-bubble" id="vs-bubble" aria-hidden="true">
+              <div class="mini">VS</div>
+              <div class="vs-flare"></div>
+            </div>
+            <div class="small muted">First to win gets bonus</div>
+          </div>
+
+          <div class="card" id="bot-card" aria-live="polite">
+            <div class="label mono">Bot</div>
+            <div class="icon" id="bot-icon">🤖</div>
+            <div class="small muted" id="bot-item-name">No item</div>
+          </div>
+        </div>
+
+        <div class="choices" id="battle-choices" role="group" aria-label="Choose your item">
+          <!-- choice buttons -->
+        </div>
+
+        <div class="result-banner" id="battle-status" role="status" aria-live="polite"></div>
+
+        <div class="confetti-wrap" id="confetti-wrap"></div>
+        <div class="coin-burst" id="coin-wrap"></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start">
+        <div>
+          <div class="panel" style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div class="small-muted">Matchup Graph</div>
+              <div class="small-muted">Visual relationships</div>
+            </div>
+            <div class="matchup" id="matchup-graph" role="img" aria-label="Matchup graph">
+              <!-- svg rendered here -->
+            </div>
+          </div>
+
+          <div class="panel" style="margin-top:10px">
+            <div class="small-muted">Bot Inventory</div>
+            <div
+              class="bot-inventory"
+              id="bot-inventory-items"
+              aria-live="polite"
+              style="margin-top:10px"
+            ></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="small-muted">Debug & Controls</div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+              margin-top: 8px;
+            "
+          >
+            <button
+              id="auto-bot-buy"
+              style="
+                padding: 8px;
+                background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+                border: 0;
+                border-radius: 10px;
+                color: white;
+                font-weight: 900;
+                cursor: pointer;
+              "
+            >
+              Toggle Bot Auto-Buy (On)
+            </button>
+            <button
+              id="shuffle-shop"
+              style="
+                padding: 8px;
+                background: transparent;
+                border: 1px solid rgba(255, 255, 255, 0.04);
+                border-radius: 10px;
+                color: var(--muted);
+                cursor: pointer;
+              "
+            >
+              Shuffle Shop
+            </button>
+            <div class="small muted">
+              LocalStorage: <span id="storage-indicator">enabled</span>
+            </div>
+            <div class="small muted">
+              FPS / Perf: <span id="perf-ind">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    // ===========================
+    // Ultimate Rock Paper Scissors Flip Deluxe — Full embedded script
+    // Assumes items.js and style.css are loaded externally
+    // ===========================
+
+    import { items, itemKeys } from "./items.js";
+
+    // --- Utils ---
+    const $ = (sel, root = document) => root.querySelector(sel);
+    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+    const rand = (n) => Math.floor(Math.random() * n);
+    const pick = (arr) => arr[rand(arr.length)];
+
+    // --- DOM refs ---
+    const coinsDisplay = $("#coins-display");
+    const botCoinsDisplay = $("#bot-coins-display");
+    const botDifficultySlider = $("#bot-difficulty-slider");
+    const botDifficultyLabel = $("#bot-difficulty-label");
+    const shopItemsDiv = $("#shop-items");
+    const battleChoicesDiv = $("#battle-choices");
+    const battleStatus = $("#battle-status");
+    const playerIcon = $("#player-icon");
+    const botIcon = $("#bot-icon");
+    const playerItemName = $("#player-item-name");
+    const botItemName = $("#bot-item-name");
+    const matchupGraph = $("#matchup-graph");
+    const botInventoryItems = $("#bot-inventory-items");
+    const confettiWrap = $("#confetti-wrap");
+    const coinWrap = $("#coin-wrap");
+    const logItems = $("#log-items");
+    const roundCounter = $("#round-counter");
+    const streakCounter = $("#streak-counter");
+    const resetBtn = $("#reset-btn");
+    const autoBotBuyBtn = $("#auto-bot-buy");
+    const shuffleShopBtn = $("#shuffle-shop");
+
+    // --- Game state ---
+    let state = {
+      coins: 60,
+      botCoins: 40,
+      playerInventory: new Set(["rock", "paper", "scissors"]),
+      botInventory: new Set(["rock", "paper", "scissors"]),
+      round: 0,
+      streak: 0,
+      botDifficulty: Number(botDifficultySlider.value) || 50,
+      autoBotBuy: true,
+      shopOrder: [...itemKeys],
+      storageKey: "rpsflip:v3",
+    };
+
+    // --- Persistence ---
+    function saveState() {
+      try {
+        const slim = {
+          coins: state.coins,
+          botCoins: state.botCoins,
+          playerInventory: Array.from(state.playerInventory),
+          botInventory: Array.from(state.botInventory),
+          round: state.round,
+          streak: state.streak,
+          botDifficulty: state.botDifficulty,
+        };
+        localStorage.setItem(state.storageKey, JSON.stringify(slim));
+        $("#storage-indicator").textContent = "enabled";
+      } catch (e) {
+        $("#storage-indicator").textContent = "unavailable";
+        console.warn("Save failed", e);
       }
-    });
-  });
-});
+    }
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(state.storageKey);
+        if (!raw) return;
+        const p = JSON.parse(raw);
+        state.coins = p.coins ?? state.coins;
+        state.botCoins = p.botCoins ?? state.botCoins;
+        state.playerInventory = new Set(
+          p.playerInventory ?? Array.from(state.playerInventory)
+        );
+        state.botInventory = new Set(
+          p.botInventory ?? Array.from(state.botInventory)
+        );
+        state.round = p.round ?? state.round;
+        state.streak = p.streak ?? state.streak;
+        state.botDifficulty = p.botDifficulty ?? state.botDifficulty;
+      } catch (e) {
+        console.warn("Load failed", e);
+      }
+    }
 
-// --- Battle UI ---
-function renderChoices() {
-  battleChoicesEl.innerHTML = '';
-  choices.forEach(choice => {
-    const btn = document.createElement('button');
-    btn.className = 'choice-btn';
-    btn.textContent = choice;
-    btn.addEventListener('click', () => handleBattle(choice));
-    battleChoicesEl.appendChild(btn);
-  });
-}
+    // --- Delay helper ---
+    function delay(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
 
-function handleBattle(playerChoice) {
-  const botChoice = botPick();
-  const result = getResult(playerChoice, botChoice);
-  battleStatusEl.textContent = `You chose ${playerChoice}, Bot chose ${botChoice}. ${result}`;
-}
+    // --- Animate flip ---
+    async function animateFlip(cardSelector, newIcon, newName, iconEl, nameEl) {
+      const card = document.querySelector(cardSelector);
+      if (!card) return;
+      await new Promise((r) => {
+        const anim = card.animate(
+          [{ transform: "rotateY(0deg)" }, { transform: "rotateY(90deg)" }],
+          { duration: 300, easing: "ease-in" }
+        );
+        anim.onfinish = r;
+      });
+      iconEl.textContent = newIcon;
+      nameEl.textContent = newName;
+      await new Promise((r) => {
+        const anim = card.animate(
+          [{ transform: "rotateY(90deg)" }, { transform: "rotateY(0deg)" }],
+          { duration: 300, easing: "ease-out" }
+        );
+        anim.onfinish = r;
+      });
+    }
 
-function botPick() {
-  // Bot difficulty affects predictability
-  if (Math.random() * 100 < botDifficulty) {
-    // Bot tries to counter player’s last choice
-    return choices[Math.floor(Math.random() * choices.length)];
-  }
-  return choices[Math.floor(Math.random() * choices.length)];
-}
+    // --- Show result banner ---
+    function showResultBanner(text) {
+      battleStatus.textContent = text;
+      battleStatus.style.opacity = "0";
+      battleStatus.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 280,
+        fill: "forwards",
+      });
+      setTimeout(() => {
+        battleStatus.animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: 280,
+          fill: "forwards",
+        });
+      }, 2400);
+    }
 
-function getResult(player, bot) {
-  if (player === bot) return "It's a tie!";
-  if (
-    (player === "Rock" && bot === "Scissors") ||
-    (player === "Paper" && bot === "Rock") ||
-    (player === "Scissors" && bot === "Paper") ||
-    (player === "Flip" && Math.random() > 0.5)
-  ) {
-    playerCoins += 10;
-    return "You win!";
-  } else {
-    playerCoins -= 5;
-    return "You lose!";
-  }
-}
+    // --- Spawn confetti ---
+    function spawnConfetti(amount = 30) {
+      const colors = ["#FF595E", "#FFCA3A", "#8AC926", "#1982C4", "#6A4C93"];
+      for (let i = 0; i < amount; i++) {
+        const confetti = document.createElement("div");
+        confetti.className = "confetti";
+        confetti.style.backgroundColor = colors[i % colors.length];
+        confetti.style.left = `${Math.random() * 100}%`;
+        confetti.style.animationDuration = `${1 + Math.random() * 1.5}s`;
+        confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+        confettiWrap.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 3000);
+      }
+    }
 
-// --- Shop ---
-function renderShop() {
-  shopItemsEl.innerHTML = '';
-  items.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'shop-item';
+    // --- Spawn coins ---
+    function spawnCoins(amount = 15) {
+      for (let i = 0; i < amount; i++) {
+        const coin = document.createElement("div");
+        coin.className = "coin-burst-item";
+        coin.textContent = "🪙";
+        coin.style.left = `${50 + (Math.random() - 0.5) * 40}%`;
+        coin.style.top = `${50 + (Math.random() - 0.5) * 40}%`;
+        coin.style.animationDuration = `${0.8 + Math.random() * 0.6}s`;
+        coinWrap.appendChild(coin);
+        setTimeout(() => coin.remove(), 1500);
+      }
+    }
 
-    const icon = document.createElement('div');
-    icon.className = 'shop-icon';
-    icon.textContent = item.icon;
+    // --- Logging ---
+    function log(text) {
+      const el = document.createElement("div");
+      el.textContent = text;
+      logItems.appendChild(el);
+      logItems.scrollTop = logItems.scrollHeight;
+    }
 
-    const name = document.createElement('div');
-    name.className = 'shop-name';
-    name.textContent = item.name;
+    // --- Get battle result ---
+    // Returns "win", "lose", or "tie"
+    function getResult(playerKey, botKey) {
+      if (playerKey === botKey) return "tie";
+      const player = items[playerKey];
+      if (player.beats.includes(botKey)) return "win";
+      return "lose";
+    }
 
-    const rarity = document.createElement('div');
-    rarity.className = 'shop-rarity';
-    rarity.textContent = item.rarity;
+    // --- Bot choose logic ---
+    function botChoose(playerKey) {
+      // Difficulty 0-100 controls how often bot counters player.
+      const difficulty = state.botDifficulty;
+      const allKeys = Array.from(state.botInventory);
+      if (allKeys.length === 0) {
+        // fallback
+        return pick(itemKeys);
+      }
 
-    const cost = document.createElement('div');
-    cost.className = 'shop-cost';
-    cost.textContent = `${item.cost} coins`;
+      // Weighted choice: bot tries to pick item that beats player's choice
+      const counters = allKeys.filter((k) => items[k].beats.includes(playerKey));
+      let choicePool = [];
 
-    const btn = document.createElement('button');
-    btn.textContent = "Buy";
-    btn.disabled = playerCoins < item.cost;
-    btn.addEventListener('click', () => buyItem(item));
+      if (Math.random() * 100 < difficulty && counters.length > 0) {
+        choicePool = counters;
+      } else {
+        choicePool = allKeys;
+      }
 
-    div.append(icon, name, rarity, cost, btn);
-    shopItemsEl.appendChild(div);
-  });
-}
+      return pick(choicePool);
+    }
 
-function buyItem(item) {
-  if (playerCoins >= item.cost) {
-    playerCoins -= item.cost;
-    botInventory.push(item);
-    shopStatusEl.textContent = `Bought ${item.name}!`;
-    renderShop();
-    renderBotInventory();
-  } else {
-    shopStatusEl.textContent = `Not enough coins!`;
-  }
-}
+    // --- Render coins display ---
+    function renderCoins() {
+      coinsDisplay.textContent = state.coins;
+      botCoinsDisplay.textContent = state.botCoins;
+    }
 
-// --- Bot Inventory ---
-function renderBotInventory() {
-  botInventoryEl.innerHTML = '';
-  botInventory.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'inventory-item';
+    // --- Render battle choices buttons ---
+    function renderBattleChoices() {
+      battleChoicesDiv.innerHTML = "";
+      const keys = Array.from(state.playerInventory);
+      keys.forEach((key) => {
+        const item = items[key];
+        if (!item) return;
+        const btn = document.createElement("button");
+        btn.className = "choice-btn";
+        btn.setAttribute("aria-label", `Choose ${item.name}`);
+        btn.textContent = `${item.icon} ${item.name}`;
+        btn.onclick = () => {
+          disableChoices(true);
+          handlePlayerChoice(key, btn).finally(() => {
+            disableChoices(false);
+          });
+        };
+        battleChoicesDiv.appendChild(btn);
+      });
+    }
 
-    const icon = document.createElement('div');
-    icon.className = 'inventory-icon';
-    icon.textContent = item.icon;
+    // --- Render shop ---
+    function renderShop() {
+      shopItemsDiv.innerHTML = "";
+      state.shopOrder.forEach((key) => {
+        const item = items[key];
+        if (!item) return;
+        const owned = state.playerInventory.has(key);
+        const affordable = state.coins >= item.cost;
+        const el = document.createElement("div");
+        el.className = `shop-item ${owned ? "owned" : ""}`;
+        el.innerHTML = `
+          <div class="icon">${item.icon}</div>
+          <div class="info">
+            <div class="name">${item.name}</div>
+            <div class="rarity">${item.rarity}</div>
+            <div class="cost">${item.cost} 🪙</div>
+          </div>
+          <button
+            ${owned ? "disabled" : ""}
+            aria-label="${owned ? item.name + " owned" : "Buy " + item.name}"
+          >
+            ${owned ? "Owned" : "Buy"}
+          </button>
+        `;
+        const btn = el.querySelector("button");
+        btn.onclick = () => {
+          if (state.coins < item.cost) return;
+          state.coins -= item.cost;
+          state.playerInventory.add(key);
+          log(`Bought ${item.name} for ${item.cost} coins.`);
+          renderCoins();
+          renderShop();
+          saveState();
+        };
+        shopItemsDiv.appendChild(el);
+      });
+    }
 
-    const name = document.createElement('div');
-    name.className = 'inventory-name';
-    name.textContent = item.name;
+    // --- Render bot inventory ---
+    function renderBotInventory() {
+      botInventoryItems.innerHTML = "";
+      Array.from(state.botInventory).forEach((key) => {
+        const item = items[key];
+        if (!item) return;
+        const el = document.createElement("div");
+        el.className = "bot-item";
+        el.textContent = `${item.icon} ${item.name}`;
+        botInventoryItems.appendChild(el);
+      });
+    }
 
-    const rarity = document.createElement('div');
-    rarity.className = 'inventory-rarity';
-    rarity.textContent = item.rarity;
+    // --- Disable/Enable choice buttons ---
+    function disableChoices(disabled) {
+      $$("button.choice-btn", battleChoicesDiv).forEach((b) => (b.disabled = disabled));
+    }
 
-    div.append(icon, name, rarity);
-    botInventoryEl.appendChild(div);
-  });
-}
+    // --- Handle player choice ---
+    async function handlePlayerChoice(playerKey, buttonEl) {
+      const playerItem = items[playerKey];
+      const botKey = botChoose(playerKey);
+      const botItem = items[botKey];
 
-// --- Difficulty Control ---
-difficultySlider.addEventListener('input', () => {
-  botDifficulty = Number(difficultySlider.value);
-  difficultyLabel.textContent = `${botDifficulty}%`;
-});
+      state.round++;
+      roundCounter.textContent = state.round;
 
-// --- Init ---
-renderChoices();
-renderShop();
-renderBotInventory();
-</script>
+      playerIcon.textContent = "⏳";
+      botIcon.textContent = "⏳";
+      playerItemName.textContent = "...";
+      botItemName.textContent = "...";
+      battleStatus.textContent = "Battle starting...";
+
+      await delay(220);
+      await animateFlip("#player-card", playerItem.icon, playerItem.name, playerIcon, playerItemName);
+      await delay(140);
+      await animateFlip("#bot-card", botItem.icon, botItem.name, botIcon, botItemName);
+
+      const outcome = getResult(playerKey, botKey);
+
+      const vs = $("#vs-bubble");
+      vs.animate(
+        [
+          { transform: "scale(0.94) rotate(-6deg)" },
+          { transform: "scale(1.08) rotate(6deg)" },
+          { transform: "scale(1) rotate(0deg)" },
+        ],
+        { duration: 520, easing: "cubic-bezier(.2,.9,.2,1)" }
+      );
+
+      if (outcome === "win") {
+        const reward = Math.max(1, Math.floor(8 + Math.random() * 6));
+        state.coins += reward;
+        state.botCoins = Math.max(0, state.botCoins - Math.floor(1 + Math.random() * 3));
+        state.streak++;
+        showResultBanner(`You Win! ${playerItem.icon} > ${botItem.icon} (+${reward} 🪙)`);
+        log(`Round ${state.round}: WIN (${playerItem.name} beat ${botItem.name})`);
+        spawnConfetti(32);
+        spawnCoins(12);
+        if (state.autoBotBuy) botAutoBuy();
+      } else if (outcome === "lose") {
+        const loss = Math.min(state.coins, Math.floor(2 + Math.random() * 4));
+        state.coins = Math.max(0, state.coins - loss);
+        state.botCoins += loss;
+        state.streak = 0;
+        showResultBanner(`You Lose! ${playerItem.icon} < ${botItem.icon} (-${loss} 🪙)`);
+        log(`Round ${state.round}: LOSE (${botItem.name} beat ${playerItem.name})`);
+      } else {
+        showResultBanner(`Tie! ${playerItem.icon} = ${botItem.icon}`);
+        log(`Round ${state.round}: TIE (${playerItem.name} tied with ${botItem.name})`);
+      }
+
+      renderCoins();
+      renderShop();
+      renderBattleChoices();
+      renderBotInventory();
+      saveState();
+
+      await delay(2500);
+      battleStatus.textContent = "";
+    }
+
+    // --- Bot auto buy ---
+    function botAutoBuy() {
+      const affordable = itemKeys.filter(
+        (k) => !state.botInventory.has(k) && state.botCoins >= items[k].cost
+      );
+      if (affordable.length === 0) return;
+
+      const weighted = [];
+      affordable.forEach((k) => {
+        const w = { Common: 1, Uncommon: 1.25, Rare: 1.6, Epic: 2.2, Legendary: 3 }[
+          items[k].rarity
+        ] || 1;
+        for (let i = 0; i < Math.round(w * 2); i++) weighted.push(k);
+      });
+
+      const chosen = pick(weighted);
+      if (!chosen) return;
+      state.botCoins -= items[chosen].cost;
+      state.botInventory.add(chosen);
+      log(`Bot auto-bought ${items[chosen].name} for ${items[chosen].cost} coins.`);
+      renderBotInventory();
+      renderCoins();
+      saveState();
+    }
+
+    // --- Shuffle shop ---
+    function shuffleShop() {
+      for (let i = state.shopOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [state.shopOrder[i], state.shopOrder[j]] = [state.shopOrder[j], state.shopOrder[i]];
+      }
+      renderShop();
+      saveState();
+    }
+
+    // --- Reset game ---
+    function resetGame() {
+      if (!confirm("Are you sure you want to reset your progress?")) return;
+      state.coins = 60;
+      state.botCoins = 40;
+      state.playerInventory = new Set(["rock", "paper", "scissors"]);
+      state.botInventory = new Set(["rock", "paper", "scissors"]);
+      state.round = 0;
+      state.streak = 0;
+      state.botDifficulty = Number(botDifficultySlider.value) || 50;
+      state.shopOrder = [...itemKeys];
+      renderAll();
+      saveState();
+      log("Game reset.");
+    }
+
+    // --- Render all UI ---
+    function renderAll() {
+      renderCoins();
+      renderShop();
+      renderBattleChoices();
+      renderBotInventory();
+      roundCounter.textContent = state.round;
+      streakCounter.textContent = state.streak;
+      botDifficultySlider.value = state.botDifficulty;
+      botDifficultyLabel.textContent = `${state.botDifficulty}%`;
+    }
+
+    // --- Event listeners ---
+    botDifficultySlider.oninput = () => {
+      state.botDifficulty = Number(botDifficultySlider.value);
+      botDifficultyLabel.textContent = `${state.botDifficulty}%`;
+      saveState();
+    };
+
+    resetBtn.onclick = resetGame;
+
+    autoBotBuyBtn.onclick = () => {
+      state.autoBotBuy = !state.autoBotBuy;
+      autoBotBuyBtn.textContent = state.autoBotBuy
+        ? "Toggle Bot Auto-Buy (On)"
+        : "Toggle Bot Auto-Buy (Off)";
+      saveState();
+    };
+
+    shuffleShopBtn.onclick = () => {
+      shuffleShop();
+    };
+
+    // --- Initialization ---
+    loadState();
+    renderAll();
+    log("Game loaded.");
+
+  </script>
+</body>
+</html>

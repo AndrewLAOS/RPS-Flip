@@ -1,371 +1,324 @@
-/* Reset + base */
-* { box-sizing: border-box; }
+/* =========================
+   Ultimate RPS Flip — style.css
+   Very detailed, complex animations, and UI system
+   >200 lines
+   ========================= */
+
+/* ---------- Root theme ---------- */
 :root{
-  --bg-1:#0f1724; --bg-2:#0b1220;
-  --card:#0f172b88; --glass:#ffffff08;
-  --glass-2: rgba(255,255,255,0.04);
-  --accent: linear-gradient(135deg,#5b8dff,#7b61ff);
-  --muted:#9aa7c7;
+  --bg-1: #0b1220;
+  --bg-2: #1b2a4a;
+  --glass: rgba(255,255,255,0.04);
+  --glass-strong: rgba(255,255,255,0.08);
+  --accent-a: #ff8a00;
+  --accent-b: #e52e71;
+  --accent-c: #ffd27f;
+  --muted: #9aa7c7;
+  --good: #34d399;
+  --bad: #fb7185;
   --glass-border: rgba(255,255,255,0.06);
-  --glass-blur: 10px;
-  --radius:14px;
-  --gap:16px;
+  --radius: 16px;
+  --shadow-strong: 0 20px 50px rgba(2,6,23,0.6);
+  --card-elev: 0 10px 30px rgba(2,6,23,0.5);
+  --glass-blur: 8px;
+  --mono: "Segoe UI Mono", Consolas, "Liberation Mono", monospace;
+  --ui-font: "Comfortaa", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
 }
 
-/* page */
+/* ---------- Reset & base ---------- */
+*{box-sizing:border-box}
 html,body{height:100%}
 body{
   margin:0;
-  background: radial-gradient(1200px 600px at 10% 15%, #0f2458 0%, transparent 15%),
-              radial-gradient(900px 500px at 95% 85%, #2b0a5f 0%, transparent 12%),
-              linear-gradient(180deg,var(--bg-1),var(--bg-2));
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  color:#e6eef9;
+  font-family: var(--ui-font);
+  background:
+    radial-gradient(800px 400px at 10% 20%, rgba(229,46,113,0.06), transparent 4%),
+    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+  color: #eef2ff;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
-  padding:28px;
   display:flex;
   align-items:center;
   justify-content:center;
+  padding:28px;
 }
 
-/* app shell */
-.app-shell{
-  width: min(1200px, 96vw);
-  border-radius:22px;
-  overflow:hidden;
-  backdrop-filter: blur(var(--glass-blur));
+/* ---------- App container ---------- */
+.app {
+  width: 1120px;
+  max-width: 98vw;
+  min-height:720px;
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  box-shadow: 0 10px 40px rgba(3,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
-}
-
-/* topbar */
-.topbar{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:20px 28px;
-  border-bottom:1px solid var(--glass-border);
-  gap:12px;
-}
-.brand h1{
-  margin:0; font-size:1.35rem; letter-spacing:0.02em;
-  background:var(--accent); -webkit-background-clip:text; background-clip:text; color:transparent;
-}
-.brand .subtitle{ font-size:0.85rem; color:var(--muted); margin-top:4px; }
-
-/* controls */
-.controls{ display:flex; gap:18px; align-items:center; }
-.stat{ text-align:center; }
-.stat label{ display:block; font-size:0.8rem; color:var(--muted); }
-.stat-value{
-  margin-top:6px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-  border:1px solid var(--glass-border);
-  padding:6px 12px; border-radius:10px; min-width:64px; font-weight:700;
-}
-
-/* slider */
-.slider-wrap{ display:flex; gap:10px; align-items:center; }
-#difficulty{ width:160px; accent-color: #7b61ff; }
-#difficulty-value{ min-width:22px; text-align:center; font-weight:800; color:#dbe8ff; }
-
-/* main layout */
-.main-grid{
-  display:grid;
-  grid-template-columns: 1fr 380px;
-  gap:20px;
-  padding:22px;
-}
-.panel{
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  border-radius:12px;
-  padding:16px;
-  border:1px solid var(--glass-border);
-  box-shadow: 0 6px 18px rgba(2,6,23,0.55);
-}
-
-/* board panel */
-.panel-header{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
-.panel-header h2{ margin:0; font-size:1.05rem; color:#eaf1ff; }
-.result{ font-weight:800; color:#fff2; font-size:0.95rem; min-width:220px; text-align:right; }
-
-/* battle area */
-.battle-area{ display:flex; align-items:center; justify-content:space-between; padding:14px 4px; gap:12px; }
-.player-column, .bot-column{ display:flex; flex-direction:column; align-items:center; gap:8px; width:33%; }
-.label{ color:var(--muted); font-size:0.85rem; }
-.slot{
-  width:140px; height:140px; border-radius:12px; display:flex; align-items:center; justify-content:center;
-  font-size:48px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));
-  border:1px solid rgba(255,255,255,0.03);
-  box-shadow: inset 0 6px 18px rgba(0,0,0,0.35), 0 8px 28px rgba(2,6,23,0.6);
-}
-
-/* vs */
-.vs-block{ font-weight:900; font-size:1.35rem; color:#aebff8; text-shadow:0 1px 8px rgba(75,100,255,0.12); }
-
-/* choices grid */
-.choices-wrap{
-  margin-top:18px;
-  display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap:14px;
-}
-
-/* item card */
-.item{
-  display:flex; align-items:center; gap:12px; padding:12px; border-radius:12px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  border:1px solid rgba(255,255,255,0.02);
-  cursor:pointer; transition: transform .18s cubic-bezier(.2,.9,.2,1), box-shadow .18s;
-  user-select:none;
-}
-.item:hover{ transform: translateY(-6px) scale(1.02); box-shadow: 0 14px 36px rgba(10,25,80,0.45); }
-.item .meta{ display:flex; flex-direction:column; gap:4px; }
-.item .name{ font-weight:800; color:#eaf1ff; }
-.item .rarity{ font-size:0.75rem; padding:4px 8px; border-radius:999px; font-weight:800; color:#07102a; }
-/* size of emoji icon */
-.item .icon{ font-size:34px; width:54px; height:54px; display:flex; align-items:center; justify-content:center; }
-
-/* inventory / shop grids */
-.grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(100px,1fr)); gap:10px; }
-.small-grid{ grid-template-columns: repeat(auto-fit, minmax(72px,1fr)); }
-
-/* shop card */
-.shop-card{
-  display:flex; flex-direction:column; align-items:center; gap:8px; padding:10px; border-radius:10px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.008));
-  border:1px solid rgba(255,255,255,0.02);
-  transition: transform .18s, box-shadow .18s;
-}
-.shop-card .price{ font-weight:900; font-size:0.95rem; color:#fff; padding:6px 10px; border-radius:8px; background:rgba(0,0,0,0.12); }
-
-/* footer */
-.footer{ padding:12px 20px; border-top:1px solid var(--glass-border); text-align:center; color:var(--muted); font-size:0.85rem; }
-
-/* rarity colors */
-.rarity-Common{ background:#bfc6d1; color:#07102a; }
-.rarity-Uncommon{ background:#59c36a; color:#07220a; }
-.rarity-Rare{ background:#4ba3ff; color:#07102a; }
-.rarity-Epic{ background:#a86bff; color:#07102a; }
-.rarity-Legendary{ background:#ffb44d; color:#07102a; }
-.rarity-Mythic{ background:#ff6fa0; color:#07102a; }
-
-/* small score style */
-.score{ color:var(--muted); font-weight:700; }
-
-/* disabled / owned */
-.shop-card.disabled{ opacity:0.42; pointer-events:none; filter:grayscale(0.2); }
-
-/* responsive */
-@media (max-width: 940px){
-  .main-grid{ grid-template-columns: 1fr; }
-  .battle-area{ flex-direction:column; gap:18px; align-items:center; }
-  .slot{ width:120px; height:120px; font-size:40px; }
-}
-
-/* Animations (keyframes) */
-@keyframes rockShake{ 0%{transform:rotate(0)} 25%{transform:rotate(14deg)} 50%{transform:rotate(-10deg)} 75%{transform:rotate(8deg)} 100%{transform:rotate(0)} }
-@keyframes paperFlutter{ 0%{transform:translateY(0)} 50%{transform:translateY(-12px) rotate(6deg)} 100%{transform:translateY(0)} }
-@keyframes scissorsCut{ 0%{transform:rotate(0)} 50%{transform:rotate(30deg) translateX(6px)} 100%{transform:rotate(0)} }
-@keyframes fireFlicker{ 0%{filter:drop-shadow(0 0 6px #ff8c42)} 50%{filter:drop-shadow(0 0 20px #ffb06a)} 100%{filter:drop-shadow(0 0 6px #ff8c42)} }
-@keyframes waterSplash{ 0%{transform:scale(1)} 50%{transform:scale(1.18) translateY(-10px)} 100%{transform:scale(1)} }
-@keyframes robotBlink{ 0%{filter:brightness(1)} 50%{filter:brightness(1.6)} 100%{filter:brightness(1)} }
-@keyframes lightningStrike{ 0%{filter:brightness(1)} 50%{filter:brightness(2)} 100%{filter:brightness(1)} }
-@keyframes windBlow{ 0%{transform:translateX(0)} 50%{transform:translateX(12px) rotate(6deg)} 100%{transform:translateX(0)} }
-@keyframes earthPulse{ 0%{transform:scale(1)} 50%{transform:scale(1.08)} 100%{transform:scale(1)} }
-@keyframes wizardGlow{ 0%{box-shadow:0 0 6px #b18cff} 50%{box-shadow:0 0 26px #b18cff} 100%{box-shadow:0 0 6px #b18cff} }
-@keyframes dragonFire{ 0%{filter:hue-rotate(0)} 50%{filter:hue-rotate(40deg)} 100%{filter:hue-rotate(0)} }
-@keyframes phoenixRise{ 0%{transform:translateY(0) scale(1)} 50%{transform:translateY(-14px) scale(1.08)} 100%{transform:translateY(0) scale(1)} }
-@keyframes pulse{ 0%{transform:scale(1)} 50%{transform:scale(1.08)} 100%{transform:scale(1)} }
-
-/* utility */
-.hidden{ display:none !important; }
-/* Add to your existing style block or style.css */
-
-.shop-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 1.5rem;
-  padding: 0.5rem;
-  user-select: none;
-}
-
-.shop-item {
-  background: linear-gradient(145deg, #f9fafc, #e0e4f7);
   border-radius: 20px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  color: #222;
-  padding: 1rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-  cursor: default;
-  font-weight: 700;
-  user-select: none;
+  padding: 22px;
+  display:grid;
+  grid-template-columns: 360px 1fr;
+  gap:20px;
+  align-items:stretch;
+  box-shadow: var(--shadow-strong);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--glass-blur));
+  position:relative;
 }
 
-.shop-item:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+/* top-left glow decorative */
+.app::before{
+  content:"";
+  position:absolute;
+  left:-120px;
+  top:-80px;
+  width:420px;
+  height:420px;
+  background: radial-gradient(circle at 40% 40%, rgba(255,138,0,0.14), transparent 20%);
+  filter: blur(40px);
+  pointer-events:none;
 }
 
-.shop-icon {
-  font-size: 3rem;
-  margin-bottom: 0.4rem;
-  user-select: none;
+/* ---------- Left column ---------- */
+.sidebar {
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  padding:16px;
+  border-radius:14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+  border:1px solid rgba(255,255,255,0.02);
 }
 
-.shop-name {
-  font-size: 1.2rem;
-  margin-bottom: 0.2rem;
-  color: #1e2a50;
-  user-select: none;
+/* Brand */
+.brand {
+  display:flex;
+  gap:12px;
+  align-items:center;
+}
+.logo {
+  width:72px;height:72px;border-radius:14px;
+  background:linear-gradient(90deg,var(--accent-a),var(--accent-b));
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:28px;color:white;box-shadow: 0 10px 30px rgba(229,46,113,0.18);
+  transform: rotate(-6deg);
+}
+.brand h1{font-size:1.3rem;margin:0;color:var(--accent-c);letter-spacing:0.02em}
+.brand p{margin:2px 0 0 0;font-size:0.9rem;color:var(--muted)}
+
+/* Coins panel */
+.panel {
+  padding:12px;border-radius:12px;background:var(--glass);border:1px solid var(--glass-border);
+  display:flex;flex-direction:column;gap:8px;
+}
+.coins-row {display:flex;align-items:center;justify-content:space-between;gap:12px}
+.coin-display{display:flex;gap:8px;align-items:center}
+.coin-icon{width:36px;height:36px;border-radius:8px;background:linear-gradient(90deg,var(--accent-a),var(--accent-b));display:flex;align-items:center;justify-content:center;font-weight:900}
+.coin-text{font-weight:900;color:var(--accent-c);font-size:1.2rem}
+
+/* bot difficulty */
+.control {display:flex;flex-direction:column;gap:8px}
+.control .muted{font-size:0.85rem;color:var(--muted)}
+.range-wrap{display:flex;align-items:center;gap:12px}
+.range-wrap input[type="range"]{
+  -webkit-appearance:none;background:transparent;width:100%;
+}
+.range-wrap input[type="range"]::-webkit-slider-runnable-track{height:8px;background:linear-gradient(90deg,#222,#333);border-radius:999px}
+.range-wrap input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;margin-top:-6px;width:20px;height:20px;border-radius:50%;background:linear-gradient(90deg,var(--accent-a),var(--accent-b));box-shadow:0 6px 18px rgba(0,0,0,0.3)}
+.value-pill{min-width:48px;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,0.02);text-align:center;font-weight:800}
+
+/* ---------- Shop list ---------- */
+.shop-list{display:flex;flex-direction:column;gap:8px;max-height:320px;overflow:auto;padding-right:8px}
+.shop-item{
+  display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.02);
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+  transition: transform 0.28s cubic-bezier(.2,.9,.2,1), box-shadow 0.28s;
+}
+.shop-item:hover{transform:translateY(-6px);box-shadow:0 20px 50px rgba(0,0,0,0.45)}
+.shop-icon{font-size:28px}
+.shop-meta{flex:1}
+.shop-meta .name{font-weight:900}
+.shop-meta .rarity{font-style:italic;color:var(--accent-c);font-size:0.86rem}
+.shop-cost{font-weight:900;color:var(--accent-c)}
+.shop-cta button{background:linear-gradient(90deg,var(--accent-a),var(--accent-b));border:0;padding:8px 10px;border-radius:10px;color:white;font-weight:800;cursor:pointer}
+.shop-cta button[disabled]{opacity:0.45;cursor:not-allowed;transform:none}
+
+/* ---------- Right column: Game area ---------- */
+.game-area {
+  padding:18px;border-radius:14px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  display:flex;flex-direction:column;gap:16px;border:1px solid rgba(255,255,255,0.02);
 }
 
-.shop-rarity {
-  font-size: 0.9rem;
-  margin-bottom: 0.6rem;
-  color: #5a5a7a;
-  user-select: none;
+/* Top row: status + controls */
+.top-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.status-panel{display:flex;align-items:center;gap:10px}
+.status-panel .label{font-weight:900;color:var(--muted);font-size:0.9rem}
+.status-panel .value{font-weight:900;color:var(--accent-c);font-size:1rem}
+
+/* Battle area */
+.battle-stage{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  padding:16px;border-radius:12px;background:linear-gradient(180deg, rgba(0,0,0,0.08), rgba(255,255,255,0.01));
+  border:1px solid rgba(255,255,255,0.02);min-height:380px;position:relative;overflow:hidden;
 }
 
-.shop-cost {
-  font-weight: 900;
-  font-size: 1.1rem;
-  margin-bottom: 0.8rem;
-  color: #3a3a3a;
-  user-select: none;
+/* Animated background layers (parallax) */
+.battle-stage .bg-layer{
+  position:absolute;inset:0;pointer-events:none;
+}
+.bg-orb{position:absolute;width:480px;height:480px;border-radius:50%;filter:blur(60px);opacity:0.12;mix-blend-mode:screen}
+.bg-orb.a{left:-160px;top:-120px;background:radial-gradient(circle,#ff8a00,#ff8a0080)}
+.bg-orb.b{right:-140px;bottom:-200px;background:radial-gradient(circle,#e52e71,#e52e7170)}
+.bg-lines{position:absolute;inset:0;background-image:linear-gradient(90deg,rgba(255,255,255,0.01) 1px, transparent 1px);background-size:40px 40px;opacity:0.02}
+
+/* Arena: player card, bot card, middle */
+.arena{display:flex;align-items:center;gap:28px;position:relative;z-index:3}
+.card{
+  width:220px;height:220px;border-radius:16px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border:1px solid rgba(255,255,255,0.03);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px;position:relative;
+  box-shadow: var(--card-elev);
+}
+.card .label{font-weight:900;color:var(--muted);font-size:0.85rem}
+.card .icon{font-size:54px;filter:drop-shadow(0 8px 20px rgba(0,0,0,0.6))}
+
+/* Middle area with VS and animations */
+.vs-area{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.vs-bubble{
+  width:96px;height:96px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#141a2b,rgba(255,255,255,0.02));
+  border:1px solid rgba(255,255,255,0.02);font-weight:900;font-size:20px;position:relative;
+  box-shadow:0 8px 30px rgba(0,0,0,0.45);
+}
+.vs-bubble .mini{font-size:11px;color:var(--muted);font-weight:800}
+.vs-flare{position:absolute;inset:-22px;filter:blur(20px);opacity:0.12}
+
+/* Choice buttons area */
+.choices{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;justify-content:center}
+.choice-btn{
+  min-width:120px;padding:14px 18px;border-radius:14px;border:0;background:linear-gradient(145deg,#ffe6a7,#ffb347);
+  font-weight:900;font-size:1.05rem;color:#111;cursor:pointer;box-shadow:0 12px 30px rgba(255,151,0,0.14);
+  transition:transform 0.28s cubic-bezier(.2,.9,.2,1), box-shadow 0.28s;
+}
+.choice-btn:hover{transform:translateY(-8px) rotate(-2deg);box-shadow:0 20px 50px rgba(255,151,0,0.18)}
+.choice-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* Battle result text & animations */
+.result-banner{
+  margin-top:14px;padding:10px 14px;border-radius:12px;background:linear-gradient(90deg,rgba(0,0,0,0.35),transparent);
+  font-weight:900;font-size:1.05rem;letter-spacing:0.02em;display:inline-block;
+  opacity:0;transform:translateY(-8px) scale(0.98);transition:opacity 0.36s, transform 0.36s;
+}
+.result-banner.show{opacity:1;transform:translateY(0) scale(1)}
+
+/* Confetti container (particles via JS) */
+.confetti-wrap{position:absolute;inset:0;pointer-events:none;z-index:4;overflow:hidden}
+
+/* Coin burst animation (managed by JS + CSS) */
+.coin{
+  width:20px;height:20px;border-radius:6px;background:linear-gradient(90deg,var(--accent-c),#ffd27f);
+  box-shadow:0 6px 12px rgba(0,0,0,0.35);position:absolute;will-change:transform,opacity;
+  display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#222;
 }
 
-.shop-item button {
-  background: linear-gradient(145deg, #4a90e2, #357ABD);
-  border-radius: 22px;
-  padding: 0.6rem 1.2rem;
-  font-weight: 700;
-  font-size: 1rem;
-  border: none;
-  color: white;
-  box-shadow: 0 8px 18px #1f3c7acc;
-  cursor: pointer;
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
-  user-select: none;
-  width: 100%;
+/* ---------- Matchup graph ---------- */
+.matchup {
+  display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+  border:1px solid rgba(255,255,255,0.02);
+  min-height:200px;overflow:auto;
+}
+.matchup svg{max-width:100%;height:360px;display:block}
+
+/* ---------- Bot inventory ---------- */
+.bot-inventory{display:flex;gap:10px;flex-wrap:wrap;min-height:80px}
+.inventory-item{width:92px;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.015), transparent);border:1px solid rgba(255,255,255,0.02);display:flex;align-items:center;flex-direction:column;gap:6px}
+.inventory-icon{font-size:28px}
+
+/* ---------- Footer area ---------- */
+.footer{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:0.9rem;color:var(--muted)}
+.footer .links a{color:var(--muted);text-decoration:none;padding:6px;border-radius:8px}
+.footer .links a:hover{color:var(--accent-c);background:rgba(255,255,255,0.01)}
+
+/* ---------- Accessibility helpers ---------- */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* ---------- Complex Keyframes & Animations ---------- */
+
+/* subtle float for cards */
+@keyframes floaty {
+  0%{transform:translateY(0px)}
+  50%{transform:translateY(-8px)}
+  100%{transform:translateY(0px)}
 }
 
-.shop-item button:hover:not(:disabled) {
-  background: linear-gradient(145deg, #356cb0, #234b75);
-  box-shadow: 0 12px 28px #122d5acc;
+/* pop-in for shop items */
+@keyframes pop-in {
+  0%{opacity:0;transform:scale(0.84) translateY(8px)}
+  60%{opacity:1;transform:scale(1.03)}
+  100%{transform:scale(1)}
 }
 
-.shop-item button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+/* cardiopulse glow */
+@keyframes pulse-glow {
+  0%{box-shadow:0 0 0 rgba(229,46,113,0)}
+  50%{box-shadow:0 0 28px rgba(229,46,113,0.14)}
+  100%{box-shadow:0 0 0 rgba(229,46,113,0)}
 }
 
-#shop-status {
-  text-align: center;
-  font-weight: 700;
-  color: #e03e3e;
-  min-height: 1.4rem;
-  margin-top: 0.8rem;
-  user-select: none;
-}
-.shop-scroll::-webkit-scrollbar {
-  height: 8px;
-}
-.shop-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-.shop-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.4);
-  border-radius: 4px;
-}
-.shop-scroll {
-  -webkit-overflow-scrolling: touch;
+/* confetti rotations */
+@keyframes confetti-spin {
+  0%{transform:rotate(0deg)}
+  100%{transform:rotate(720deg)}
 }
 
-.shop-item {
-  flex: 0 0 140px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-  color: #222;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-weight: 600;
-  user-select: none;
-  cursor: default;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.shop-item:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.25);
-}
-.shop-icon {
-  font-size: 2.5rem;
-  margin-bottom: 0.3rem;
-  user-select: none;
-}
-.shop-name {
-  font-size: 1.1rem;
-  margin-bottom: 0.15rem;
-  text-align: center;
-}
-.shop-rarity {
-  font-size: 0.85rem;
-  color: #555;
-  margin-bottom: 0.5rem;
-  text-transform: capitalize;
-}
-.shop-cost {
-  font-weight: 700;
-  margin-bottom: 0.8rem;
-  text-align: center;
-}
-.shop-item button {
-  background: #4a90e2;
-  border: none;
-  border-radius: 16px;
-  color: white;
-  cursor: pointer;
-  font-weight: 700;
-  padding: 0.5rem 1rem;
-  width: 100%;
-  transition: background-color 0.3s ease;
-  user-select:none;
-}
-.shop-item button:hover:not(:disabled) {
-  background: #356cb0;
-}
-.shop-item button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.inventory-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: center;
-  padding: 1rem 0;
+/* subtle rotate for VS bubble */
+@keyframes vs-rotate {
+  0%{transform:rotate(-4deg) scale(0.98)}
+  50%{transform:rotate(4deg) scale(1.02)}
+  100%{transform:rotate(-4deg) scale(0.98)}
 }
 
-.inventory-item {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  color: #222;
-  padding: 1rem;
-  width: 100px;
-  font-weight: 600;
-  text-align: center;
-  user-select: none;
+/* slide-in for result banner */
+@keyframes slide-fade {
+  0%{opacity:0;transform:translateY(-14px) scale(0.98)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
 }
 
-.inventory-icon {
-  font-size: 2.5rem;
-  margin-bottom: 0.3rem;
+/* coin twinkle */
+@keyframes coin-twinkle {
+  0%{transform:scale(0.9) rotate(0deg);opacity:1}
+  50%{transform:scale(1.15) rotate(12deg);opacity:0.95}
+  100%{transform:scale(0.9) rotate(0deg);opacity:1}
 }
+
+/* ---------- Utility classes ---------- */
+.row{display:flex;gap:8px;align-items:center}
+.center{display:flex;align-items:center;justify-content:center}
+.mono{font-family:var(--mono)}
+.big{font-size:1.25rem;font-weight:900}
+.small{font-size:0.9rem;color:var(--muted)}
+.kv{display:flex;flex-direction:column}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 980px){
+  .app{grid-template-columns:1fr;min-height:760px;padding:14px}
+  .logo{width:56px;height:56px}
+  .card{width:180px;height:180px}
+}
+
+/* ---------- Extra long end: decorative animated SVG icon ---------- */
+/* The following is deliberately verbose: a CSS-driven mask + animated gradient for flair */
+.decorative-spark{
+  width:100%;height:56px;overflow:visible;display:block;position:relative;margin-top:6px;
+}
+.decorative-spark svg{width:100%;height:56px}
+.decorative-spark .path{stroke:rgba(255,255,255,0.06);stroke-width:2;fill:none}
+.decorative-spark .glow{stroke:rgba(255,138,0,0.12);stroke-width:12;filter:blur(8px)}
+.decorative-spark .pulse{stroke:linear-gradient(90deg,var(--accent-a),var(--accent-b));opacity:0.95;stroke-width:2}
+.decorative-spark .animated {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: spark-draw 2.8s cubic-bezier(.2,.9,.2,1) forwards;
+}
+@keyframes spark-draw {
+  0%{stroke-dashoffset:1000;opacity:0}
+  40%{opacity:1}
+  100%{stroke-dashoffset:0;opacity:1}
+}
+
+/* end of style.css */
