@@ -31,6 +31,40 @@ const botInventoryItemsDiv = document.getElementById('bot-inventory-items');
 // Nav buttons and screen sections (after adding role="tab" to buttons and class="screen" to sections)
 const navButtons = document.querySelectorAll('nav button[role="tab"]');
 const screenSections = document.querySelectorAll('main section.screen');
+function activateScreen(targetId, clickedButton) {
+  screens.forEach(screen => {
+    const isTarget = screen.id === targetId;
+    screen.classList.toggle('active', isTarget);
+    if (isTarget) {
+      screen.removeAttribute('hidden');
+      screen.setAttribute('tabindex', '0');
+      screen.focus();
+    } else {
+      screen.classList.remove('active');
+      screen.setAttribute('hidden', '');
+      screen.setAttribute('tabindex', '-1');
+    }
+  });
+
+  navButtons.forEach(btn => {
+    const isActive = btn === clickedButton;
+    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    btn.tabIndex = isActive ? 0 : -1;
+  });
+
+  // NEW: Call render functions depending on tab
+  if (targetId === 'battle-screen') {
+    renderBattleChoices();
+    battleStatus.textContent = 'Choose your item to battle!';
+  } else if (targetId === 'shop-screen') {
+    renderShop();
+    shopStatus.textContent = '';
+  } else if (targetId === 'matchup-screen') {
+    renderMatchupGraph();
+  } else if (targetId === 'bot-inventory-screen') {
+    renderBotInventory();
+  }
+}
 
 // === UTILS ===
 

@@ -5,66 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ultimate Rock, Paper, Scissors Flip</title>
 
-  <!-- Google Font -->
   <link href="https://fonts.googleapis.com/css2?family=Comfortaa&display=swap" rel="stylesheet" />
 
-  <!-- External CSS -->
-  <link rel="stylesheet" href="style.css" />
-
   <style>
-    /* Minimal inline to demo core layout */
+    /* Basic styles to focus on nav functionality */
 
-    /* Reset & base */
-    * {
-      box-sizing: border-box;
-    }
     body {
-      margin: 0;
+      margin: 0; font-family: 'Comfortaa', cursive, sans-serif;
       background: linear-gradient(135deg, #667eea, #764ba2);
-      font-family: 'Comfortaa', cursive, sans-serif;
       color: #f0f0f0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      display: flex; justify-content: center; align-items: center;
       min-height: 100vh;
       user-select: none;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
-
-    /* Container */
     .app-container {
       background: rgba(255 255 255 / 0.1);
       border-radius: 20px;
-      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+      padding: 2rem;
       width: 480px;
       max-width: 90vw;
-      padding: 2rem 2.5rem;
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
       gap: 1.5rem;
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255 255 255 / 0.15);
     }
-
-    /* Title */
-    h1 {
-      font-weight: 800;
-      font-size: 2.5rem;
-      text-align: center;
-      margin: 0;
-      letter-spacing: 0.05em;
-      background: linear-gradient(90deg, #ff8a00, #e52e71);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    /* Navigation Tabs */
     nav {
-      display: flex;
-      justify-content: space-between;
-      gap: 0.5rem;
-      user-select: none;
+      display: flex; gap: 0.5rem;
     }
     nav button {
       flex: 1;
@@ -76,127 +42,26 @@
       font-size: 1.05rem;
       color: #eee;
       cursor: pointer;
-      transition: background-color 0.3s ease, box-shadow 0.3s ease;
       outline-offset: 3px;
       outline-color: transparent;
+      transition: background-color 0.3s ease;
     }
-    nav button[aria-selected="true"],
-    nav button:hover {
+    nav button[aria-selected="true"] {
       background: linear-gradient(90deg, #ff8a00, #e52e71);
-      box-shadow: 0 6px 14px rgba(229, 46, 113, 0.7);
       color: white;
       outline-color: #e52e71;
+      box-shadow: 0 6px 14px rgba(229, 46, 113, 0.7);
     }
     nav button:focus-visible {
       outline: 3px solid #e52e71;
       outline-offset: 3px;
     }
-
-    /* Status bar */
-    .status-bar {
-      display: flex;
-      justify-content: space-between;
-      font-weight: 700;
-      font-size: 1.1rem;
-      padding: 0.25rem 0.5rem;
-      background: rgba(0, 0, 0, 0.25);
-      border-radius: 10px;
-      user-select: none;
-    }
-
-    /* Difficulty Slider */
-    .difficulty-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      font-weight: 700;
-      user-select: none;
-    }
-    .difficulty-wrapper label {
-      flex: 1;
-      font-size: 1rem;
-    }
-    .difficulty-wrapper input[type="range"] {
-      flex: 2;
-      cursor: pointer;
-    }
-    .difficulty-value {
-      min-width: 40px;
-      text-align: right;
-      font-size: 1rem;
-      color: #ff8a00;
-    }
-
-    /* Main Content area */
-    main {
-      flex-grow: 1;
-      min-height: 280px;
-      background: rgba(255 255 255 / 0.05);
-      border-radius: 16px;
-      padding: 1.5rem;
-      color: #f0f0f0;
-      overflow-y: auto;
-      user-select: none;
-      box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
-    }
-
-    /* Screens: only active screen visible */
-    section.screen {
+    main section.screen {
       display: none;
     }
-    section.screen.active {
+    main section.screen.active {
       display: block;
     }
-
-    /* Battle Choices container */
-    #battle-choices {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: center;
-      margin-bottom: 1rem;
-    }
-    button.choice-btn {
-      flex: 1 1 120px;
-      min-width: 110px;
-      padding: 1rem 1.5rem;
-      border-radius: 16px;
-      border: none;
-      background: linear-gradient(145deg, #ffe6a7, #ffb347);
-      color: #222;
-      font-weight: 700;
-      font-size: 1.2rem;
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.3s ease;
-      box-shadow: 0 4px 12px rgba(255, 151, 0, 0.5);
-    }
-    button.choice-btn:hover:not(:disabled) {
-      transform: scale(1.05);
-      box-shadow: 0 6px 18px rgba(255, 151, 0, 0.7);
-    }
-    button.choice-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    /* Battle status message */
-    #battle-status {
-      font-weight: 700;
-      font-size: 1.25rem;
-      text-align: center;
-      margin-top: 0.5rem;
-      min-height: 2rem;
-    }
-
-    /* Footer */
-    footer {
-      text-align: center;
-      font-size: 0.85rem;
-      color: #ccc;
-      padding-top: 1rem;
-      user-select: none;
-    }
-
   </style>
 </head>
 <body>
@@ -211,55 +76,78 @@
       <button id="nav-bot-inventory" aria-controls="bot-inventory-screen" aria-selected="false" role="tab" tabindex="-1">Bot Inventory</button>
     </nav>
 
-    <section class="status-bar" aria-live="polite" aria-atomic="true" aria-label="Game status">
-      <div id="coins-display" aria-label="Player coins">Coins: 0</div>
-      <div id="bot-coins-display" aria-label="Bot coins">Bot Coins: 0</div>
-    </section>
-
-    <section class="difficulty-wrapper" aria-label="Bot difficulty control">
-      <label for="bot-difficulty-slider">Bot Difficulty</label>
-      <input
-        type="range"
-        id="bot-difficulty-slider"
-        min="0"
-        max="100"
-        value="50"
-        aria-valuemin="0"
-        aria-valuemax="100"
-        aria-valuenow="50"
-        aria-label="Adjust bot difficulty"
-      />
-      <span id="bot-difficulty-label" class="difficulty-value">50%</span>
-    </section>
-
     <main>
-
       <section id="battle-screen" role="tabpanel" tabindex="0" aria-label="Battle screen" class="screen active">
-        <div id="battle-choices" role="list" aria-live="polite" aria-atomic="true" aria-relevant="additions removals"></div>
-        <div id="battle-status" role="status" aria-live="polite" aria-atomic="true"></div>
+        <!-- Battle screen content -->
+        <div id="battle-choices"></div>
+        <div id="battle-status"></div>
       </section>
 
       <section id="shop-screen" role="tabpanel" tabindex="-1" aria-label="Shop screen" class="screen" hidden>
-        <!-- shop content will be rendered by JS -->
+        <!-- Shop screen content -->
       </section>
 
       <section id="matchup-screen" role="tabpanel" tabindex="-1" aria-label="Matchup graph screen" class="screen" hidden>
-        <div id="matchup-graph"></div>
+        <!-- Matchup graph content -->
       </section>
 
       <section id="bot-inventory-screen" role="tabpanel" tabindex="-1" aria-label="Bot Inventory screen" class="screen" hidden>
-        <h2>Bot Inventory</h2>
-        <div id="bot-inventory-items" class="inventory-list" tabindex="0"></div>
+        <!-- Bot inventory content -->
       </section>
-
     </main>
-
-    <footer>
-      <small>© 2025 Ultimate Rock, Paper, Scissors Flip</small>
-    </footer>
 
   </div>
 
-  <script type="module" src="game.js"></script>
+  <script>
+    // Nav buttons and screens
+    const navButtons = document.querySelectorAll('nav button[role="tab"]');
+    const screens = document.querySelectorAll('main section.screen');
+
+    function activateScreen(targetId, clickedButton) {
+      screens.forEach(screen => {
+        const isTarget = screen.id === targetId;
+        screen.classList.toggle('active', isTarget);
+        if (isTarget) {
+          screen.removeAttribute('hidden');
+          screen.setAttribute('tabindex', '0');
+          screen.focus();
+        } else {
+          screen.classList.remove('active');
+          screen.setAttribute('hidden', '');
+          screen.setAttribute('tabindex', '-1');
+        }
+      });
+
+      navButtons.forEach(btn => {
+        const isActive = btn === clickedButton;
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        btn.tabIndex = isActive ? 0 : -1;
+      });
+    }
+
+    navButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const targetId = button.getAttribute('aria-controls');
+        activateScreen(targetId, button);
+      });
+    });
+
+    // Optional: arrow key navigation for tabs
+    navButtons.forEach((button, idx) => {
+      button.addEventListener('keydown', (e) => {
+        let newIndex = null;
+        if (e.key === 'ArrowRight') {
+          newIndex = (idx + 1) % navButtons.length;
+        } else if (e.key === 'ArrowLeft') {
+          newIndex = (idx - 1 + navButtons.length) % navButtons.length;
+        }
+        if (newIndex !== null) {
+          e.preventDefault();
+          navButtons[newIndex].focus();
+          navButtons[newIndex].click();
+        }
+      });
+    });
+  </script>
 </body>
 </html>
