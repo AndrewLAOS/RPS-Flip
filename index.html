@@ -1,345 +1,166 @@
-<!DOCTYPE html>
-<html lang="en" >
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ultimate Rock, Paper, Scissors Flip</title>
+<script type="module">
+import { items } from './items.js';
 
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Comfortaa&display=swap" rel="stylesheet" />
+// --- State ---
+let playerCoins = 100;
+let botInventory = [];
+let botDifficulty = 50;
+const choices = ["Rock", "Paper", "Scissors", "Flip"];
 
-  <style>
-    /* Reset & base */
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      margin: 0;
-      font-family: 'Comfortaa', cursive, sans-serif;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: #f0f0f0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      user-select: none;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
+// --- DOM Elements ---
+const battleChoicesEl = document.getElementById('battle-choices');
+const battleStatusEl = document.getElementById('battle-status');
+const shopItemsEl = document.getElementById('shop-items');
+const shopStatusEl = document.getElementById('shop-status');
+const botInventoryEl = document.getElementById('bot-inventory-items');
+const difficultySlider = document.getElementById('bot-difficulty-slider');
+const difficultyLabel = document.getElementById('bot-difficulty-label');
 
-    /* Container */
-    .app-container {
-      background: rgba(255 255 255 / 0.1);
-      border-radius: 20px;
-      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
-      width: 480px;
-      max-width: 90vw;
-      padding: 2rem 2.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255 255 255 / 0.15);
-    }
+// --- Navigation ---
+const screens = document.querySelectorAll('.screen');
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    // switch aria-selected
+    document.querySelectorAll('nav button').forEach(b => {
+      b.setAttribute('aria-selected', 'false');
+      b.tabIndex = -1;
+    });
+    btn.setAttribute('aria-selected', 'true');
+    btn.tabIndex = 0;
 
-    /* Title */
-    h1 {
-      font-weight: 900;
-      font-size: 2.8rem;
-      text-align: center;
-      margin: 0;
-      letter-spacing: 0.05em;
-      background: linear-gradient(90deg, #ff8a00, #e52e71);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      user-select: none;
-    }
+    // switch screens
+    screens.forEach(screen => {
+      if (screen.id === btn.getAttribute('aria-controls')) {
+        screen.classList.add('active');
+        screen.removeAttribute('hidden');
+      } else {
+        screen.classList.remove('active');
+        screen.setAttribute('hidden', '');
+      }
+    });
+  });
+});
 
-    /* Navigation Tabs */
-    nav {
-      display: flex;
-      gap: 0.5rem;
-      user-select: none;
-    }
-    nav button {
-      flex: 1;
-      background: rgba(255 255 255 / 0.15);
-      border: none;
-      padding: 0.85rem 1rem;
-      border-radius: 14px;
-      font-weight: 700;
-      font-size: 1.1rem;
-      color: #eee;
-      cursor: pointer;
-      transition: background-color 0.3s ease, box-shadow 0.3s ease;
-      outline-offset: 3px;
-      outline-color: transparent;
-      box-shadow: inset 0 0 8px rgba(255 255 255 / 0.2);
-    }
-    nav button[aria-selected="true"],
-    nav button:hover {
-      background: linear-gradient(90deg, #ff8a00, #e52e71);
-      box-shadow: 0 6px 18px rgba(229, 46, 113, 0.85);
-      color: white;
-      outline-color: #e52e71;
-    }
-    nav button:focus-visible {
-      outline: 3px solid #e52e71;
-      outline-offset: 3px;
-    }
+// --- Battle UI ---
+function renderChoices() {
+  battleChoicesEl.innerHTML = '';
+  choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = choice;
+    btn.addEventListener('click', () => handleBattle(choice));
+    battleChoicesEl.appendChild(btn);
+  });
+}
 
-    /* Main Content area */
-    main {
-      flex-grow: 1;
-      min-height: 300px;
-      background: rgba(255 255 255 / 0.05);
-      border-radius: 18px;
-      padding: 1.75rem 2rem;
-      color: #f0f0f0;
-      overflow-y: auto;
-      user-select: none;
-      box-shadow: inset 0 0 24px rgba(0,0,0,0.25);
-    }
+function handleBattle(playerChoice) {
+  const botChoice = botPick();
+  const result = getResult(playerChoice, botChoice);
+  battleStatusEl.textContent = `You chose ${playerChoice}, Bot chose ${botChoice}. ${result}`;
+}
 
-    /* Screens: only active screen visible */
-    section.screen {
-      display: none;
-    }
-    section.screen.active {
-      display: block;
-    }
+function botPick() {
+  // Bot difficulty affects predictability
+  if (Math.random() * 100 < botDifficulty) {
+    // Bot tries to counter player’s last choice
+    return choices[Math.floor(Math.random() * choices.length)];
+  }
+  return choices[Math.floor(Math.random() * choices.length)];
+}
 
-    /* Battle Choices container */
-    #battle-choices {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: center;
-      margin-bottom: 1rem;
-    }
-    button.choice-btn {
-      flex: 1 1 120px;
-      min-width: 110px;
-      padding: 1rem 1.5rem;
-      border-radius: 18px;
-      border: none;
-      background: linear-gradient(145deg, #ffe6a7, #ffb347);
-      color: #222;
-      font-weight: 700;
-      font-size: 1.3rem;
-      cursor: pointer;
-      transition: transform 0.25s ease, box-shadow 0.35s ease;
-      box-shadow: 0 5px 15px rgba(255, 151, 0, 0.6);
-      user-select: none;
-    }
-    button.choice-btn:hover:not(:disabled) {
-      transform: scale(1.08);
-      box-shadow: 0 8px 28px rgba(255, 151, 0, 0.8);
-    }
-    button.choice-btn:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
+function getResult(player, bot) {
+  if (player === bot) return "It's a tie!";
+  if (
+    (player === "Rock" && bot === "Scissors") ||
+    (player === "Paper" && bot === "Rock") ||
+    (player === "Scissors" && bot === "Paper") ||
+    (player === "Flip" && Math.random() > 0.5)
+  ) {
+    playerCoins += 10;
+    return "You win!";
+  } else {
+    playerCoins -= 5;
+    return "You lose!";
+  }
+}
 
-    /* Battle status message */
-    #battle-status {
-      font-weight: 700;
-      font-size: 1.3rem;
-      text-align: center;
-      margin-top: 0.8rem;
-      min-height: 2.4rem;
-      user-select: text;
-      line-height: 1.3;
-    }
+// --- Shop ---
+function renderShop() {
+  shopItemsEl.innerHTML = '';
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'shop-item';
 
-    /* Shop screen styling */
-    #shop-items {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      max-height: 280px;
-      overflow-y: auto;
-      user-select: none;
-    }
-    .shop-item {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      background: rgba(255 255 255 / 0.1);
-      padding: 0.8rem 1.2rem;
-      border-radius: 16px;
-      box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
-      transition: background-color 0.25s ease;
-    }
-    .shop-item:hover {
-      background: rgba(255 255 255 / 0.2);
-    }
-    .shop-icon {
-      font-size: 1.7rem;
-      user-select: none;
-    }
-    .shop-name {
-      flex-grow: 1;
-      font-weight: 700;
-      font-size: 1.2rem;
-      user-select: text;
-    }
-    .shop-rarity {
-      font-style: italic;
-      color: #ffd27f;
-      user-select: none;
-    }
-    .shop-cost {
-      font-weight: 700;
-      color: #ffb347;
-      user-select: none;
-    }
-    .shop-item button {
-      background: linear-gradient(90deg, #ff8a00, #e52e71);
-      border: none;
-      color: white;
-      font-weight: 700;
-      font-size: 1rem;
-      padding: 0.5rem 1rem;
-      border-radius: 14px;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(229, 46, 113, 0.75);
-      transition: background-color 0.3s ease;
-    }
-    .shop-item button:disabled {
-      background: rgba(255 255 255 / 0.3);
-      cursor: not-allowed;
-      box-shadow: none;
-      color: #aaa;
-    }
+    const icon = document.createElement('div');
+    icon.className = 'shop-icon';
+    icon.textContent = item.icon;
 
-    /* Matchup graph container */
-    #matchup-graph {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 280px;
-    }
+    const name = document.createElement('div');
+    name.className = 'shop-name';
+    name.textContent = item.name;
 
-    /* Bot inventory styling */
-    #bot-inventory-items {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      max-height: 280px;
-      overflow-y: auto;
-      user-select: none;
-    }
-    .inventory-item {
-      background: rgba(255 255 255 / 0.1);
-      border-radius: 14px;
-      padding: 0.8rem 1rem;
-      width: 110px;
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
-      text-align: center;
-      color: #fff;
-    }
-    .inventory-icon {
-      font-size: 2.4rem;
-      margin-bottom: 0.3rem;
-      user-select: none;
-    }
-    .inventory-name {
-      font-weight: 700;
-      font-size: 1.1rem;
-      user-select: text;
-    }
-    .inventory-rarity {
-      font-style: italic;
-      color: #ffd27f;
-      font-size: 0.9rem;
-      user-select: none;
-    }
+    const rarity = document.createElement('div');
+    rarity.className = 'shop-rarity';
+    rarity.textContent = item.rarity;
 
-    /* Scrollbar styling */
-    main::-webkit-scrollbar,
-    #shop-items::-webkit-scrollbar,
-    #bot-inventory-items::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    main::-webkit-scrollbar-thumb,
-    #shop-items::-webkit-scrollbar-thumb,
-    #bot-inventory-items::-webkit-scrollbar-thumb {
-      background: rgba(229, 46, 113, 0.6);
-      border-radius: 10px;
-    }
-    main::-webkit-scrollbar-track,
-    #shop-items::-webkit-scrollbar-track,
-    #bot-inventory-items::-webkit-scrollbar-track {
-      background: transparent;
-    }
+    const cost = document.createElement('div');
+    cost.className = 'shop-cost';
+    cost.textContent = `${item.cost} coins`;
 
-    /* Footer */
-    footer {
-      text-align: center;
-      font-size: 0.8rem;
-      color: #ccc;
-      padding-top: 1rem;
-      user-select: none;
-    }
+    const btn = document.createElement('button');
+    btn.textContent = "Buy";
+    btn.disabled = playerCoins < item.cost;
+    btn.addEventListener('click', () => buyItem(item));
 
-  </style>
-</head>
-<body>
-  <div class="app-container" role="main" aria-label="Ultimate Rock Paper Scissors Flip Game">
+    div.append(icon, name, rarity, cost, btn);
+    shopItemsEl.appendChild(div);
+  });
+}
 
-    <h1>Ultimate Rock, Paper, Scissors Flip</h1>
+function buyItem(item) {
+  if (playerCoins >= item.cost) {
+    playerCoins -= item.cost;
+    botInventory.push(item);
+    shopStatusEl.textContent = `Bought ${item.name}!`;
+    renderShop();
+    renderBotInventory();
+  } else {
+    shopStatusEl.textContent = `Not enough coins!`;
+  }
+}
 
-    <nav role="tablist" aria-label="Game navigation">
-      <button id="nav-battle" aria-controls="battle-screen" aria-selected="true" role="tab" tabindex="0">Battle</button>
-      <button id="nav-shop" aria-controls="shop-screen" aria-selected="false" role="tab" tabindex="-1">Shop</button>
-      <button id="nav-matchup" aria-controls="matchup-screen" aria-selected="false" role="tab" tabindex="-1">Matchups</button>
-      <button id="nav-bot-inventory" aria-controls="bot-inventory-screen" aria-selected="false" role="tab" tabindex="-1">Bot Inventory</button>
-    </nav>
+// --- Bot Inventory ---
+function renderBotInventory() {
+  botInventoryEl.innerHTML = '';
+  botInventory.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'inventory-item';
 
-    <main>
-      <section id="battle-screen" role="tabpanel" tabindex="0" aria-label="Battle screen" class="screen active" >
-        <div id="battle-choices" aria-live="polite" aria-atomic="true" aria-relevant="additions"></div>
-        <div id="battle-status" role="status" aria-live="polite" aria-atomic="true" style="margin-top:0.6rem;"></div>
-      </section>
+    const icon = document.createElement('div');
+    icon.className = 'inventory-icon';
+    icon.textContent = item.icon;
 
-      <section id="shop-screen" role="tabpanel" tabindex="-1" aria-label="Shop screen" class="screen" hidden>
-        <div id="shop-items"></div>
-        <div id="shop-status" style="margin-top:0.6rem; font-weight:700;"></div>
-      </section>
+    const name = document.createElement('div');
+    name.className = 'inventory-name';
+    name.textContent = item.name;
 
-      <section id="matchup-screen" role="tabpanel" tabindex="-1" aria-label="Matchup graph screen" class="screen" hidden>
-        <div id="matchup-graph"></div>
-      </section>
+    const rarity = document.createElement('div');
+    rarity.className = 'inventory-rarity';
+    rarity.textContent = item.rarity;
 
-      <section id="bot-inventory-screen" role="tabpanel" tabindex="-1" aria-label="Bot Inventory screen" class="screen" hidden>
-        <div id="bot-inventory-items"></div>
-      </section>
-    </main>
-<section aria-label="Bot difficulty control" style="margin-top: 1rem; text-align: center; user-select: none;">
-  <label for="bot-difficulty-slider" style="font-weight: 700; font-size: 1rem; color: #ffd27f;">Bot Difficulty</label><br />
-  <input
-    type="range"
-    id="bot-difficulty-slider"
-    min="0"
-    max="100"
-    value="50"
-    style="width: 80%; margin-top: 0.25rem;"
-    aria-valuemin="0"
-    aria-valuemax="100"
-    aria-valuenow="50"
-    aria-label="Adjust bot difficulty"
-  />
-  <div id="bot-difficulty-label" style="margin-top: 0.3rem; color: #ffd27f; font-weight: 700;">50%</div>
-</section>
+    div.append(icon, name, rarity);
+    botInventoryEl.appendChild(div);
+  });
+}
 
-    <footer>
-      <small>© 2025 Ultimate Rock, Paper, Scissors Flip</small>
-    </footer>
+// --- Difficulty Control ---
+difficultySlider.addEventListener('input', () => {
+  botDifficulty = Number(difficultySlider.value);
+  difficultyLabel.textContent = `${botDifficulty}%`;
+});
 
-  </div>
-
-  <script type="module" src="game.js"></script>
-</body>
-</html>
+// --- Init ---
+renderChoices();
+renderShop();
+renderBotInventory();
+</script>
