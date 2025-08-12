@@ -6,17 +6,52 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<!-- Add this button somewhere appropriate in your index.html -->
-<button id="btnGoOnline" class="btn" aria-label="Go to Online Mode">Play Online</button>
-
-<script>
-  document.getElementById('btnGoOnline').addEventListener('click', () => {
-    window.location.href = 'online.html'; // Adjust path if your online.html is in a different folder
-  });
-</script>
-
 <body>
-  <title>Ultimate RPS Flip Online</title>
+
+  <nav class="main-nav" role="navigation" aria-label="Main navigation">
+  <ul>
+    <li><a href="index.html" aria-current="page">Home</a></li>
+    <li><a href="matchchart.html">Matchup Chart</a></li>
+    <li><a href="online.html">Online Mode</a></li>
+  </ul>
+</nav>
+
+<style>
+  .main-nav {
+    background-color: #ff8a00;
+    padding: 12px 20px;
+    font-family: 'Comfortaa', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    user-select: none;
+  }
+  .main-nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+  }
+  .main-nav a {
+    color: #0b1220;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+  }
+  .main-nav a:hover,
+  .main-nav a:focus {
+    background-color: #e67600;
+    outline: none;
+  }
+  .main-nav a[aria-current="page"] {
+    background-color: #e52e71;
+    color: white;
+    cursor: default;
+  }
+</style>
+
   <div class="app" role="application" aria-label="Ultimate Rock Paper Scissors Flip Game">
     <!-- LEFT: sidebar -->
     <aside class="sidebar" aria-label="Game controls and shop">
@@ -27,7 +62,6 @@
           <p class="small">Deluxe edition — curated items, bot AI, and big animations.</p>
         </div>
       </div>
-
       <div class="panel coins-panel" role="status" aria-live="polite">
         <div class="coins-row">
           <div class="coin-display">

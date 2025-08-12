@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ultimate RPS Flip — Matchup Chart</title>
+<style>
+  body {
+    font-family: "Comfortaa", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #0b1220;
+    color: #eef2ff;
+    padding: 20px;
+    margin: 0;
+  }
+  h1 {
+    text-align: center;
+    color: #ffd27f;
+    margin-bottom: 20px;
+  }
+  .nav-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .nav-buttons button {
+    background: #ff8a00;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 700;
+    color: #0b1220;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    user-select: none;
+    font-size: 1rem;
+  }
+  .nav-buttons button:hover {
+    background: #e67600;
+  }
+  .nav-buttons button.active {
+    background: #e52e71;
+    color: white;
+    cursor: default;
+  }
+  table {
+    width: 100%;
+    max-width: 960px;
+    border-collapse: collapse;
+    margin: 0 auto;
+    background: #1b2a4a;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(2, 6, 23, 0.7);
+  }
+  th, td {
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 10px;
+    text-align: center;
+    font-weight: 700;
+    user-select: none;
+  }
+  th {
+    background: #ff8a00;
+    color: #0b1220;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  th:first-child {
+    background: #e52e71;
+    color: white;
+  }
+  td.win {
+    background: #34d399; /* green */
+    color: #0b1220;
+  }
+  td.lose {
+    background: #fb7185; /* red */
+    color: #0b1220;
+  }
+  td.draw {
+    background: #9aa7c7; /* muted gray */
+    color: #0b1220;
+  }
+  td.no-relation {
+    color: #64748b; /* lighter gray */
+  }
+  tbody tr:hover {
+    background: rgba(229, 46, 113, 0.1);
+  }
+  caption {
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    color: #ffd27f;
+  }
+  /* Responsive horizontal scroll wrapper */
+  .table-wrapper {
+    overflow-x: auto;
+  }
+</style>
+</head>
+<body>
+  <h1>Ultimate RPS Flip — Matchup Chart</h1>
+
+  <nav class="nav-buttons" role="navigation" aria-label="Main navigation">
+    <button onclick="location.href='index.html'" aria-label="Go to Bot Mode">Bot Mode</button>
+    <button onclick="location.href='online.html'" aria-label="Go to Online Mode">Online Mode</button>
+    <button class="active" aria-current="page" aria-label="Current Page: Matchup Chart">Matchup Chart</button>
+  </nav>
+
+  <div class="table-wrapper" id="matchup-container" aria-label="Matchup Chart"></div>
+
+  <script type="module">
+    import { items, itemKeys } from './items.js';
+
+    function generateMatchupMatrix() {
+      const table = document.createElement('table');
+      table.setAttribute('role', 'grid');
+      table.setAttribute('aria-describedby', 'caption');
+
+      const caption = document.createElement('caption');
+      caption.id = 'caption';
+      caption.textContent = 'Item matchup results: Win, Lose, Draw or no relation';
+      table.appendChild(caption);
+
+      // Header row
+      const headerRow = document.createElement('tr');
+      headerRow.appendChild(document.createElement('th')); // empty top-left cell
+
+      itemKeys.forEach(key => {
+        const th = document.createElement('th');
+        th.scope = "col";
+        th.textContent = `${items[key].icon} ${items[key].name}`;
+        headerRow.appendChild(th);
+      });
+      table.appendChild(headerRow);
+
+      // Body rows
+      itemKeys.forEach(rowKey => {
+        const tr = document.createElement('tr');
+        const rowHeader = document.createElement('th');
+        rowHeader.scope = "row";
+        rowHeader.textContent = `${items[rowKey].icon} ${items[rowKey].name}`;
+        tr.appendChild(rowHeader);
+
+        itemKeys.forEach(colKey => {
+          const td = document.createElement('td');
+
+          if (rowKey === colKey) {
+            td.textContent = 'Draw';
+            td.classList.add('draw');
+          } else if (items[rowKey].beats.includes(colKey)) {
+            td.textContent = 'Win';
+            td.classList.add('win');
+          } else if (items[colKey].beats.includes(rowKey)) {
+            td.textContent = 'Lose';
+            td.classList.add('lose');
+          } else {
+            td.textContent = '—';
+            td.classList.add('no-relation');
+          }
+          tr.appendChild(td);
+        });
+
+        table.appendChild(tr);
+      });
+
+      return table;
+    }
+
+    const container = document.getElementById('matchup-container');
+    container.appendChild(generateMatchupMatrix());
+  </script>
+</body>
+</html>
