@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RPS Game with Shop & Fun Items</title>
+  <style>
+    /* Reset & base styles */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+      color: #222;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 2em;
+    }
+    h1 {
+      margin-bottom: 0.3em;
+    }
+    #container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      padding: 1.5em 2em;
+      max-width: 450px;
+      width: 90vw;
+      text-align: center;
+      min-height: 430px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .nav-buttons {
+      margin-bottom: 1em;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+    .nav-buttons button {
+      padding: 8px 18px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      background: #66a6ff;
+      color: white;
+      transition: background 0.3s ease;
+    }
+    .nav-buttons button.active {
+      background: #1e54b7;
+      font-weight: bold;
+      box-shadow: 0 0 10px #1e54b7;
+    }
+    .nav-buttons button:hover:not(.active) {
+      background: #7ab8ff;
+    }
+
+    #coin-display {
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 0.8em;
+      color: #444;
+    }
+
+    /* Choices (playable items) */
+    .choices {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 1em;
+      min-height: 90px;
+    }
+    button.choice {
+      background: #f0f0f0;
+      border: 2px solid #66a6ff;
+      border-radius: 10px;
+      padding: 15px 18px;
+      cursor: pointer;
+      font-size: 18px;
+      width: 80px;
+      user-select: none;
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    button.choice:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    button.choice:hover:not(:disabled) {
+      background: #66a6ff;
+      color: white;
+      transform: scale(1.15);
+      box-shadow: 0 0 10px #66a6ff;
+    }
+    .choice-icon {
+      font-size: 38px;
+      line-height: 1;
+    }
+
+    /* Results message */
+    .results {
+      font-weight: 600;
+      min-height: 2.5em;
+      margin-bottom: 1em;
+      font-size: 18px;
+      min-height: 44px;
+    }
+
+    /* Scoreboard */
+    .scoreboard {
+      display: flex;
+      justify-content: space-around;
+      font-size: 18px;
+      margin-bottom: 1.2em;
+      color: #222;
+    }
+    .scoreboard div {
+      background: #66a6ff;
+      color: white;
+      border-radius: 8px;
+      padding: 0.5em 1.4em;
+      min-width: 110px;
+      user-select: none;
+    }
+
+    /* Shop styles */
+    #shop {
+      display: none;
+      flex-direction: column;
+      gap: 1.3em;
+      max-height: 260px;
+      overflow-y: auto;
+      padding: 0 8px;
+    }
+    #shop .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #e5f0ff;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      user-select: none;
+    }
+    #shop .item.disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    #shop .item:hover:not(.disabled) {
+      background: #66a6ff;
+      color: white;
+    }
+    #shop .item .name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #shop .item .name .icon {
+      font-size: 30px;
+    }
+    #shop .item .price {
+      font-weight: 700;
+      min-width: 60px;
+      user-select: none;
+    }
+    #shop .item.owned {
+      background: #a4d4ff;
+      cursor: default;
+      color: #0a3d8f;
+      font-weight: 600;
+    }
+
+    /* Animations */
+    @keyframes rockShake {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(10deg); }
+      50% { transform: rotate(-10deg); }
+      75% { transform: rotate(8deg); }
+    }
+
+    @keyframes paperFlutter {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(5deg); }
+    }
+
+    @keyframes scissorsCut {
+      0% { transform: rotate(0deg); }
+      50% { transform: rotate(20deg) translateX(5px); }
+      100% { transform: rotate(0deg) translateX(0); }
+    }
+
+    @keyframes fireFlicker {
+      0%, 100% { filter: drop-shadow(0 0 5px #ff6); }
+      50% { filter: drop-shadow(0 0 15px #ff0); }
+    }
+
+    @keyframes waterSplash {
+      0%, 100% { transform: scale(1) translateY(0); }
+      50% { transform: scale(1.2) translateY(-10px); }
+    }
+
+    @keyframes robotBlink {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.6); }
+    }
+
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h1>RPS Game with Shop & Fun Items</h1>
+    <div class="nav-buttons">
+      <button id="btnGame" class="active">Game</button>
+      <button id="btnShop">Shop</button>
+    </div>
+    <div id="coin-display">Coins: <span id="coins">0</span></div>
+
+    <!-- Game View -->
+    <div id="game">
+      <div class="choices" id="choices">
+        <!-- Choices buttons dynamically inserted -->
+      </div>
+      <div class="results" id="results">Choose your item to play!</div>
+      <div class="scoreboard">
+        <div>Player: <span id="playerScore">0</span></div>
+        <div>Bot: <span id="botScore">0</span></div>
+      </div>
+    </div>
+
+    <!-- Shop View -->
+    <div id="shop">
+      <!-- Shop items dynamically inserted -->
+    </div>
+  </div>
+
+  <footer style="margin-top: 1.5em; font-size: 14px; color: #222a; user-select:none;">
+    Made by Andrew — Deploy on Netlify
+  </footer>
+
+  <script type="module">
+    import { animateChoice } from './animations/animations.js';
+
+    // All items with icon, cost, and beats array
+    const allItems = {
+      rock: { icon: '✊', cost: 0, beats: ['scissors', 'fire'], base: true },
+      paper: { icon: '✋', cost: 0, beats: ['rock', 'robot'], base: true },
+      scissors: { icon: '✌️', cost: 0, beats: ['paper', 'water'], base: true },
+      fire: { icon: '🔥', cost: 15, beats: ['paper', 'robot'] },
+      water: { icon: '💧', cost: 15, beats: ['rock', 'fire'] },
+      robot: { icon: '🤖', cost: 20, beats: ['scissors', 'water'] },
+    };
+
+    // Game state
+    let coins = 0;
+    let playerScore = 0;
+    let botScore = 0;
+
+    // Owned items - start with base only
+    let ownedItems = new Set(Object.keys(allItems).filter(k => allItems[k].base));
+
+    // DOM references
+    const coinsSpan = document.getElementById('coins');
+    const resultsDiv = document.getElementById('results');
+    const playerScoreSpan = document.getElementById('playerScore');
+    const botScoreSpan = document.getElementById('botScore');
+    const choicesDiv = document.getElementById('choices');
+    const shopDiv = document.getElementById('shop');
+
+    const btnGame = document.getElementById('btnGame');
+    const btnShop = document.getElementById('btnShop');
+    const gameView = document.getElementById('game');
+    const shopView = document.getElementById('shop');
+
+    // Utility
+    function capitalize(word) {
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    }
+
+    function updateCoins() {
+      coinsSpan.textContent = coins;
+    }
+    function updateScores() {
+      playerScoreSpan.textContent = playerScore;
+      botScoreSpan.textContent = botScore;
+    }
+
+    // Build choices buttons based on owned items
+    function buildChoices() {
+      choicesDiv.innerHTML = '';
+      const sortedOwned = [...ownedItems].sort();
+      for (const item of sortedOwned) {
+        const btn = document.createElement('button');
+        btn.classList.add('choice');
+        btn.dataset.choice = item;
+        btn.innerHTML = `<span class="choice-icon">${allItems[item].icon}</span>${capitalize(item)}`;
+        choicesDiv.appendChild(btn);
+      }
+      // Add event listeners
+      choicesDiv.querySelectorAll('button.choice').forEach(btn => {
+        btn.addEventListener('click', () => {
+          playRound(btn.dataset.choice);
+        });
+      });
+    }
+
+    // Build shop items list
+    function buildShop() {
+      shopDiv.innerHTML = '';
+      // Show only items NOT owned and their prices
+      for (const [item, data] of Object.entries(allItems)) {
+        if (ownedItems.has(item)) continue; // skip owned
+
+        const div = document.createElement('div');
+        div.classList.add('item');
+        if (coins < data.cost) div.classList.add('disabled');
+        div.dataset.item = item;
+
+        div.innerHTML = `
+          <div class="name"><span class="icon">${data.icon}</span> ${capitalize(item)}</div>
+          <div class="price">${data.cost} 💰</div>
+        `;
+        shopDiv.appendChild(div);
+      }
+      // Buy event
+      shopDiv.querySelectorAll('.item:not(.disabled)').forEach(div => {
+        div.addEventListener('click', () => {
+          buyItem(div.dataset.item);
+        });
+      });
+    }
+
+    // Buy item logic
+    function buyItem(item) {
+      const cost = allItems[item].cost;
+      if (coins >= cost && !ownedItems.has(item)) {
+        coins -= cost;
+        ownedItems.add(item);
+        resultsDiv.textContent = `You bought ${capitalize(item)}!`;
+        updateCoins();
+        buildShop();
+        buildChoices();
+      }
+    }
+
+    // Bot chooses randomly from all items
+    function getRandomChoice() {
+      const itemsArray = Object.keys(allItems);
+      return itemsArray[Math.floor(Math.random() * itemsArray.length)];
+    }
+
+    // Play round logic
+    function playRound(playerChoice) {
+      const botChoice = getRandomChoice();
+
+      if (playerChoice === botChoice) {
+        resultsDiv.textContent = `Tie! Both chose ${capitalize(playerChoice)}.`;
+      } else if (allItems[playerChoice].beats.includes(botChoice)) {
+        playerScore++;
+        coins += 5; // reward 5 coins per win
+        resultsDiv.textContent = `You Win! ${capitalize(playerChoice)} beats ${capitalize(botChoice)}. +5 coins 🎉`;
+      } else {
+        botScore++;
+        resultsDiv.textContent = `You Lose! ${capitalize(botChoice)} beats ${capitalize(playerChoice)}.`;
+      }
+      updateScores();
+      updateCoins();
+
+      const playerBtn = [...choicesDiv.children].find(b => b.dataset.choice === playerChoice);
+      // For bot animation, create a temporary dummy button with icon in the game area:
+      const botBtn = document.createElement('button');
+      botBtn.classList.add('choice');
+      botBtn.style.position = 'absolute';
+      botBtn.style.opacity = '0.7';
+      botBtn.style.pointerEvents = 'none';
+      botBtn.style.top = '50px';
+      botBtn.style.left = 'calc(50% + 130px)';
+      botBtn.style.width = '80px';
+      botBtn.style.height = '80px';
+      botBtn.style.fontSize = '38px';
+      botBtn.style.borderRadius = '10px';
+      botBtn.style.border = '2px solid #f44336';
+      botBtn.innerHTML = `<span class="choice-icon">${allItems[botChoice].icon}</span>${capitalize(botChoice)}`;
+      document.getElementById('container').appendChild(botBtn);
+
+      animateChoice(playerBtn, botBtn, playerChoice, botChoice).then(() => {
+        botBtn.remove();
+      });
+    }
+
+    // Navigation logic
+    btnGame.addEventListener('click', () => {
+      btnGame.classList.add('active');
+      btnShop.classList.remove('active');
+      gameView.style.display = 'flex';
+      shopView.style.display = 'none';
+      resultsDiv.textContent = 'Choose your item to play!';
+    });
+    btnShop.addEventListener('click', () => {
+      btnShop.classList.add('active');
+      btnGame.classList.remove('active');
+      gameView.style.display = 'none';
+      shopView.style.display = 'flex';
+      resultsDiv.textContent = 'Buy new items by earning coins!';
+      buildShop();
+    });
+
+    // Init UI
+    updateCoins();
+    updateScores();
+    buildChoices();
+
+  </script>
+</body>
+</html>
