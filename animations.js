@@ -1,5 +1,4 @@
 export function animateChoice(playerBtn, botBtn, playerChoice, botChoice) {
-  // Reset styles
   const resetStyle = (btn) => {
     btn.style.animation = 'none';
     btn.style.filter = 'none';
@@ -9,7 +8,6 @@ export function animateChoice(playerBtn, botBtn, playerChoice, botChoice) {
   resetStyle(playerBtn);
   resetStyle(botBtn);
 
-  // Helper: add animation and return a Promise for end of animation
   function addAnimation(btn, animName) {
     return new Promise((resolve) => {
       btn.style.animation = `${animName} 0.7s ease forwards`;
@@ -20,7 +18,6 @@ export function animateChoice(playerBtn, botBtn, playerChoice, botChoice) {
     });
   }
 
-  // Map item name to CSS animation names
   const animationsMap = {
     rock: 'rockShake',
     paper: 'paperFlutter',
@@ -28,20 +25,22 @@ export function animateChoice(playerBtn, botBtn, playerChoice, botChoice) {
     fire: 'fireFlicker',
     water: 'waterSplash',
     robot: 'robotBlink',
+    lightning: 'lightningStrike',
+    wind: 'windBlow',
+    earth: 'earthPulse',
+    wizard: 'wizardGlow',
+    dragon: 'dragonFire',
   };
 
-  // Player animations
   const playerAnim = animationsMap[playerChoice] || 'pulse';
-  // Bot animations
   const botAnim = animationsMap[botChoice] || 'pulse';
 
-  // Scale and shadow colors
   playerBtn.style.transform = 'scale(1.3)';
-  playerBtn.style.boxShadow = '0 0 15px 5px #4CAF50';
-  botBtn.style.transform = 'scale(1.3)';
-  botBtn.style.boxShadow = '0 0 15px 5px #f44336';
+  playerBtn.style.boxShadow = `0 0 20px 6px #4CAF50`;
 
-  // Run animations simultaneously, then reset scale and shadow after done
+  botBtn.style.transform = 'scale(1.3)';
+  botBtn.style.boxShadow = `0 0 20px 6px #f44336`;
+
   return Promise.all([
     addAnimation(playerBtn, playerAnim),
     addAnimation(botBtn, botAnim)
