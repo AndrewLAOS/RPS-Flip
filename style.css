@@ -545,247 +545,34 @@ body {
   display: block;
 }
 
-/* ---------- Bot inventory ---------- */
-.bot-inventory {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  min-height: 80px;
-}
-.inventory-item {
-  width: 92px;
-  padding: 10px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent);
-  border: 1px solid rgba(255, 255, 255, 0.02);
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  gap: 6px;
-  user-select: none;
-}
-.inventory-icon {
-  font-size: 28px;
-}
-
-/* ---------- Footer area ---------- */
-.footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.9rem;
-  color: var(--muted);
-  user-select: none;
-}
-.footer .links a {
-  color: var(--muted);
-  text-decoration: none;
-  padding: 6px;
-  border-radius: 8px;
-}
-.footer .links a:hover {
-  color: var(--accent-c);
-  background: rgba(255, 255, 255, 0.01);
-}
-
-/* ---------- Accessibility helpers ---------- */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* ---------- Complex Keyframes & Animations ---------- */
-
-/* subtle float for cards */
-@keyframes floaty {
+/* ---------- Animations ---------- */
+@keyframes vs-rotate {
   0% {
-    transform: translateY(0px);
+    transform: rotate(0deg) translateY(0);
   }
   50% {
-    transform: translateY(-8px);
+    transform: rotate(12deg) translateY(2px);
   }
   100% {
-    transform: translateY(0px);
+    transform: rotate(0deg) translateY(0);
   }
 }
-
-/* pop-in for shop items */
 @keyframes pop-in {
   0% {
     opacity: 0;
-    transform: scale(0.84) translateY(8px);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(1.03);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-/* cardiopulse glow */
-@keyframes pulse-glow {
-  0% {
-    box-shadow: 0 0 0 rgba(229, 46, 113, 0);
-  }
-  50% {
-    box-shadow: 0 0 28px rgba(229, 46, 113, 0.14);
-  }
-  100% {
-    box-shadow: 0 0 0 rgba(229, 46, 113, 0);
-  }
-}
-
-/* confetti rotations */
-@keyframes confetti-spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(720deg);
-  }
-}
-
-/* subtle rotate for VS bubble */
-@keyframes vs-rotate {
-  0% {
-    transform: rotate(-4deg) scale(0.98);
-  }
-  50% {
-    transform: rotate(4deg) scale(1.02);
-  }
-  100% {
-    transform: rotate(-4deg) scale(0.98);
-  }
-}
-
-/* slide-in for result banner */
-@keyframes slide-fade {
-  0% {
-    opacity: 0;
-    transform: translateY(-14px) scale(0.98);
+    transform: translateY(30px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
-/* coin twinkle */
-@keyframes coin-twinkle {
-  0% {
-    transform: scale(0.9) rotate(0deg);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.15) rotate(12deg);
-    opacity: 0.95;
-  }
-  100% {
-    transform: scale(0.9) rotate(0deg);
-    opacity: 1;
-  }
+/* ---------- Scrollbar for shop list ---------- */
+.shop-list::-webkit-scrollbar {
+  width: 6px;
 }
-
-/* ---------- Utility classes ---------- */
-.row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+.shop-list::-webkit-scrollbar-thumb {
+  background: var(--accent-a);
+  border-radius: 6px;
 }
-.center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.mono {
-  font-family: var(--mono);
-}
-.big {
-  font-size: 1.25rem;
-  font-weight: 900;
-}
-.small {
-  font-size: 0.9rem;
-  color: var(--muted);
-}
-.kv {
-  display: flex;
-  flex-direction: column;
-}
-
-/* ---------- Responsive ---------- */
-@media (max-width: 980px) {
-  .app {
-    grid-template-columns: 1fr;
-    min-height: 760px;
-    padding: 14px;
-  }
-  .logo {
-    width: 56px;
-    height: 56px;
-  }
-  .card {
-    width: 180px;
-    height: 180px;
-  }
-}
-
-/* ---------- Extra long end: decorative animated SVG icon ---------- */
-/* The following is deliberately verbose: a CSS-driven mask + animated gradient for flair */
-.decorative-spark {
-  width: 100%;
-  height: 56px;
-  overflow: visible;
-  display: block;
-  position: relative;
-  margin-top: 6px;
-}
-.decorative-spark svg {
-  width: 100%;
-  height: 56px;
-}
-.decorative-spark .path {
-  stroke: rgba(255, 255, 255, 0.06);
-  stroke-width: 2;
-  fill: none;
-}
-.decorative-spark .glow {
-  stroke: rgba(255, 138, 0, 0.12);
-  stroke-width: 12;
-  filter: blur(8px);
-}
-.decorative-spark .pulse {
-  stroke: linear-gradient(90deg, var(--accent-a), var(--accent-b));
-  opacity: 0.95;
-  stroke-width: 2;
-}
-.decorative-spark .animated {
-  stroke-dasharray: 1000;
-  stroke-dashoffset: 1000;
-  animation: spark-draw 2.8s cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
-}
-@keyframes spark-draw {
-  0% {
-    stroke-dashoffset: 1000;
-    opacity: 0;
-  }
-  40% {
-    opacity: 1;
-  }
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-}
-
-/* end of style.css */

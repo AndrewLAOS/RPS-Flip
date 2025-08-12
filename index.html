@@ -6,17 +6,17 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <header class="page-header">
-    <h1>Ultimate RPS Flip</h1>
-  </header>
+<!-- Add this button somewhere appropriate in your index.html -->
+<button id="btnGoOnline" class="btn" aria-label="Go to Online Mode">Play Online</button>
 
-  <div class="app" role="application" aria-label="Ultimate Rock Paper Scissors Flip Game">
-    <!-- existing content -->
-  </div>
-</body>
+<script>
+  document.getElementById('btnGoOnline').addEventListener('click', () => {
+    window.location.href = 'online.html'; // Adjust path if your online.html is in a different folder
+  });
+</script>
 
 <body>
+  <title>Ultimate RPS Flip Online</title>
   <div class="app" role="application" aria-label="Ultimate Rock Paper Scissors Flip Game">
     <!-- LEFT: sidebar -->
     <aside class="sidebar" aria-label="Game controls and shop">
