@@ -1,35 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Ultimate Rock, Paper, Scissors Flip</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="game-container">
-    <header>
-      <h1>Epic Whimsical RPS Shop</h1>
-      <p>Coins: <span id="coins">10</span></p>
-      <p>Bot Difficulty: <span id="botDifficulty">1</span></p>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Ultimate RPS Flip</h1>
+        <div class="subtitle">A polished, strategic take on Rock • Paper • Scissors</div>
+      </div>
+
+      <div class="controls">
+        <div class="stat">
+          <label>Coins</label>
+          <div id="coins" class="stat-value">0</div>
+        </div>
+
+        <div class="stat">
+          <label>Bot Difficulty</label>
+          <div class="slider-wrap">
+            <input id="difficulty" type="range" min="1" max="10" value="5" />
+            <div id="difficulty-value">5</div>
+          </div>
+        </div>
+      </div>
     </header>
 
-    <section id="player-items" class="item-grid"></section>
+    <main class="main-grid">
+      <section class="panel board" aria-labelledby="board-title">
+        <div class="panel-header">
+          <h2 id="board-title">Battle Field</h2>
+          <div id="result" class="result" aria-live="polite"></div>
+        </div>
 
-    <section id="battlefield">
-      <div id="player-choice" class="choice-slot"></div>
-      <span class="vs">VS</span>
-      <div id="bot-choice" class="choice-slot"></div>
-    </section>
+        <div class="battle-area">
+          <div class="player-column">
+            <div class="label">You</div>
+            <div id="player-slot" class="slot">—</div>
+            <div id="player-score" class="score">Wins: <span>0</span></div>
+          </div>
 
-    <section id="shop" class="shop-section">
-      <h2>Shop</h2>
-      <div id="shop-items" class="item-grid"></div>
-    </section>
+          <div class="vs-block">VS</div>
+
+          <div class="bot-column">
+            <div class="label">Bot</div>
+            <div id="bot-slot" class="slot">—</div>
+            <div id="bot-score" class="score">Wins: <span>0</span></div>
+          </div>
+        </div>
+
+        <div class="choices-wrap" id="choices" aria-label="Player choices"></div>
+      </section>
+
+      <aside class="panel shop" aria-labelledby="shop-title">
+        <div class="panel-header">
+          <h2 id="shop-title">Shop & Inventory</h2>
+        </div>
+
+        <div class="inventory">
+          <h3>Your Inventory</h3>
+          <div id="inventory" class="grid small-grid"></div>
+        </div>
+
+        <div class="shop-list">
+          <h3>Buy Items</h3>
+          <div id="shop-items" class="grid"></div>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="footer">
+      <small>Designed &amp; balanced for fun. Higher rarities often beat many lower rarities — but clever counters exist.</small>
+    </footer>
   </div>
 
-  <script src="items.js"></script>
-  <script src="script.js"></script>
-  <script src="animations.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
