@@ -73,13 +73,7 @@
     #matchup-screen {
       width: 100%;
       max-width: 900px;
-      background: rgba(255 255 255 / 0.15);
-      border-radius: 20px;
-      padding: 1rem 2rem 2rem 2rem;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-      display: none;
-      color: #222;
-      user-select: none;
+      margin-bottom: 2rem;
     }
 
     /* Battle choices */
@@ -119,11 +113,50 @@
     }
 
     /* Shop styles */
-    #shop-items {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    #shop-nav {
+      display: flex;
+      align-items: center;
       gap: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid rgba(255 255 255 / 0.2);
       margin-bottom: 1rem;
+    }
+    #btn-shop-back {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.6rem;
+      cursor: pointer;
+    }
+    #shop-categories {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .shop-tab {
+      background: #337ab7;
+      border: none;
+      color: white;
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-weight: 600;
+      user-select:none;
+    }
+    .shop-tab.active {
+      background: #225a91;
+      font-weight: 700;
+      box-shadow: 0 0 10px #337ab7aa;
+    }
+
+    #shop-items {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      scroll-behavior: smooth;
     }
     .shop-item {
       background: white;
@@ -131,6 +164,8 @@
       box-shadow: 0 6px 15px rgba(0,0,0,0.15);
       color: #222;
       padding: 1rem;
+      min-width: 130px;
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -149,6 +184,7 @@
       font-size: 0.85rem;
       color: #555;
       margin-bottom: 0.5rem;
+      text-transform: capitalize;
     }
     .shop-cost {
       font-weight: 700;
@@ -185,6 +221,9 @@
       width: 100%;
       height: 600px;
       user-select:none;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      background: #222a;
     }
   </style>
 </head>
@@ -211,12 +250,22 @@
       <div id="battle-status" role="status" aria-live="polite" aria-atomic="true"></div>
     </section>
 
-    <section id="shop-screen" role="region" aria-label="Shop screen">
-      <div id="shop-items"></div>
+    <section id="shop-screen" role="region" aria-label="Shop screen" hidden>
+      <nav id="shop-nav" aria-label="Shop navigation">
+        <button id="btn-shop-back" aria-label="Back to main menu">← Back</button>
+        <div id="shop-categories" role="tablist" aria-label="Shop categories">
+          <button class="shop-tab active" role="tab" aria-selected="true" data-category="all">All Items</button>
+          <button class="shop-tab" role="tab" aria-selected="false" data-category="common">Common</button>
+          <button class="shop-tab" role="tab" aria-selected="false" data-category="rare">Rare</button>
+          <button class="shop-tab" role="tab" aria-selected="false" data-category="epic">Epic</button>
+          <button class="shop-tab" role="tab" aria-selected="false" data-category="legendary">Legendary</button>
+        </div>
+      </nav>
+      <div id="shop-items" class="shop-scroll" tabindex="0"></div>
       <div id="shop-status" aria-live="polite" aria-atomic="true"></div>
     </section>
 
-    <section id="matchup-screen" role="region" aria-label="Matchup graph screen">
+    <section id="matchup-screen" role="region" aria-label="Matchup graph screen" hidden>
       <div id="matchup-graph"></div>
     </section>
   </main>

@@ -10,9 +10,13 @@ let botInventory = Object.keys(items); // bot can choose any item
 let playerChoice = null;
 let botChoice = null;
 
-let botDifficulty = 50; // default 0-100 slider
+let botDifficulty = 50; // 0-100 slider default
 
-// Screen refs
+let currentShopCategory = 'all'; // for filtering shop items
+
+// === DOM ELEMENTS ===
+
+// Screens
 const screens = {
   battle: document.getElementById('battle-screen'),
   shop: document.getElementById('shop-screen'),
@@ -32,6 +36,14 @@ const shopStatus = document.getElementById('shop-status');
 
 const matchupGraphDiv = document.getElementById('matchup-graph');
 
+// Nav buttons
+const navBattle = document.getElementById('nav-battle');
+const navShop = document.getElementById('nav-shop');
+const navMatchup = document.getElementById('nav-matchup');
+
+const btnShopBack = document.getElementById('btn-shop-back');
+const shopTabs = document.querySelectorAll('.shop-tab');
+
 // === UTILS ===
 
 // Check if itemA beats itemB
@@ -39,56 +51,51 @@ function doesBeat(itemA, itemB) {
   return items[itemA].beats.includes(itemB);
 }
 
-// Get result of battle
-// Returns 'win', 'lose', or 'tie'
+// Determine battle result: 'win', 'lose', or 'tie'
 function getBattleResult(playerItem, botItem) {
   if (playerItem === botItem) return 'tie';
   if (doesBeat(playerItem, botItem)) return 'win';
   if (doesBeat(botItem, playerItem)) return 'lose';
-  return 'tie'; // fallback
+  return 'tie'; // fallback, e.g. no beats defined
 }
 
-// Update coin display
+// Update coins display text
 function updateCoins() {
   coinsDisplay.textContent = `Coins: ${playerCoins}`;
 }
 
-// Update bot difficulty label
+// Update bot difficulty label text
 function updateBotDifficultyLabel() {
   botDifficultyLabel.textContent = `Bot Difficulty: ${botDifficultySlider.value}%`;
 }
 
-// Choose bot item based on difficulty:
-// 0 = random choice, 100 = picks best counter to player item if known
+// Bot chooses an item based on difficulty and player choice
 function botChoose(playerItem) {
   if (botDifficulty === 0 || !playerItem) {
-    // pure random from bot inventory
+    // Random choice from bot inventory
     return botInventory[Math.floor(Math.random() * botInventory.length)];
   }
 
-  // Calculate weighted chances: higher difficulty = more chance to pick counter
   const difficultyPercent = botDifficulty / 100;
-
-  // Find counters to player choice
   const counters = botInventory.filter(item => doesBeat(item, playerItem));
 
   if (counters.length === 0 || Math.random() > difficultyPercent) {
-    // random pick, no guaranteed counter
+    // Random if no counters or failed probability check
     return botInventory[Math.floor(Math.random() * botInventory.length)];
   }
 
-  // Pick best counter randomly among counters
+  // Pick random counter among best counters
   return counters[Math.floor(Math.random() * counters.length)];
 }
 
 // === BATTLE SCREEN ===
 
-// Clear previous choices UI
+// Clear battle choice buttons
 function clearBattleChoices() {
   battleChoicesDiv.innerHTML = '';
 }
 
-// Populate battle choices buttons with player's owned items
+// Render player's available items as clickable buttons
 function renderBattleChoices() {
   clearBattleChoices();
   playerInventory.forEach((key) => {
@@ -102,14 +109,14 @@ function renderBattleChoices() {
   });
 }
 
-// Handle player choosing an item
+// Handle player picking an item to battle
 function handlePlayerChoice(choiceKey) {
   playerChoice = choiceKey;
   botChoice = botChoose(playerChoice);
   resolveBattle();
 }
 
-// Show battle result and update coins/inventory
+// Display result, update coins, and re-enable buttons
 function resolveBattle() {
   battleStatus.textContent = '... battling ...';
   disableBattleChoices(true);
@@ -131,7 +138,7 @@ function resolveBattle() {
   }, 1500);
 }
 
-// Enable or disable battle choices buttons
+// Enable or disable battle buttons
 function disableBattleChoices(disable) {
   const buttons = battleChoicesDiv.querySelectorAll('button');
   buttons.forEach(btn => btn.disabled = disable);
@@ -139,49 +146,44 @@ function disableBattleChoices(disable) {
 
 // === SHOP SCREEN ===
 
-// Clear shop items
+// Clear shop items list
 function clearShop() {
   shopItemsDiv.innerHTML = '';
 }
 
-// Render shop items player doesn't own
-function renderShop() {
-  clearShop();
-  let anyAffordable = false;
+// Filter and render shop items by rarity category and exclude owned items
+function filterShopItems(category = 'all') {
+  const allItems = Object.entries(items);
+  let filtered = category === 'all'
+    ? allItems.filter(([key]) => !playerInventory.has(key))
+    : allItems.filter(([key, item]) => item.rarity.toLowerCase() === category.toLowerCase() && !playerInventory.has(key));
 
-  for (const key in items) {
-    if (!playerInventory.has(key)) {
-      const item = items[key];
-      const itemDiv = document.createElement('div');
-      itemDiv.className = 'shop-item';
+  shopItemsDiv.innerHTML = '';
 
-      itemDiv.innerHTML = `
-        <span class="shop-icon">${item.icon}</span>
-        <span class="shop-name">${item.name}</span>
-        <span class="shop-rarity">${item.rarity}</span>
-        <span class="shop-cost">${item.cost} coins</span>
-      `;
-
-      const buyBtn = document.createElement('button');
-      buyBtn.textContent = 'Buy';
-      buyBtn.disabled = playerCoins < item.cost;
-      buyBtn.onclick = () => buyItem(key);
-      itemDiv.appendChild(buyBtn);
-
-      shopItemsDiv.appendChild(itemDiv);
-
-      if (playerCoins >= item.cost) anyAffordable = true;
-    }
-  }
-
-  if (!anyAffordable) {
-    shopStatus.textContent = 'No items available to buy or insufficient coins.';
+  if (filtered.length === 0) {
+    shopStatus.textContent = 'No items in this category.';
   } else {
     shopStatus.textContent = '';
   }
+
+  filtered.forEach(([key, item]) => {
+    const card = document.createElement('div');
+    card.className = 'shop-item';
+    card.innerHTML = `
+      <div class="shop-icon">${item.icon}</div>
+      <div class="shop-name">${item.name}</div>
+      <div class="shop-rarity">${item.rarity}</div>
+      <div class="shop-cost">${item.cost} Coins</div>
+      <button ${playerCoins < item.cost ? 'disabled' : ''} data-key="${key}">Buy</button>
+    `;
+    shopItemsDiv.appendChild(card);
+
+    const btn = card.querySelector('button');
+    btn.addEventListener('click', () => buyItem(key));
+  });
 }
 
-// Buy an item if enough coins
+// Buy item if affordable and not owned
 function buyItem(key) {
   const item = items[key];
   if (playerCoins >= item.cost && !playerInventory.has(key)) {
@@ -196,42 +198,26 @@ function buyItem(key) {
   }
 }
 
-// === BOT DIFFICULTY ===
+// Render shop according to current filter category
+function renderShop() {
+  filterShopItems(currentShopCategory);
+}
+
+// === BOT DIFFICULTY SLIDER ===
 
 botDifficultySlider.oninput = () => {
   botDifficulty = Number(botDifficultySlider.value);
   updateBotDifficultyLabel();
 };
 
-// === SCREEN NAVIGATION ===
-
-function showScreen(screenName) {
-  for (const key in screens) {
-    screens[key].style.display = (key === screenName) ? 'block' : 'none';
-  }
-  if (screenName === 'battle') {
-    renderBattleChoices();
-    battleStatus.textContent = 'Choose your item to battle!';
-  } else if (screenName === 'shop') {
-    renderShop();
-    shopStatus.textContent = '';
-  } else if (screenName === 'matchup') {
-    renderMatchupGraph();
-  }
-}
-
 // === MATCHUP GRAPH ===
 
-// We'll create a simple graph showing items as colored nodes with arrows showing beats relations
-// Use a lightweight graph lib or plain SVG / canvas — here plain SVG example
-
 function renderMatchupGraph() {
-  matchupGraphDiv.innerHTML = ''; // clear
+  matchupGraphDiv.innerHTML = ''; // clear old graph
 
   const width = 800;
   const height = 600;
 
-  // Create SVG container
   const svgNS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(svgNS, "svg");
   svg.setAttribute("width", width);
@@ -239,7 +225,6 @@ function renderMatchupGraph() {
   svg.style.border = "1px solid #ccc";
   matchupGraphDiv.appendChild(svg);
 
-  // Layout nodes in a circle
   const keys = Object.keys(items);
   const centerX = width / 2;
   const centerY = height / 2;
@@ -247,6 +232,7 @@ function renderMatchupGraph() {
 
   const nodePositions = {};
 
+  // Arrange nodes in circle
   keys.forEach((key, i) => {
     const angle = (i / keys.length) * 2 * Math.PI - Math.PI / 2;
     const x = centerX + radius * Math.cos(angle);
@@ -256,13 +242,29 @@ function renderMatchupGraph() {
 
   // Color by rarity
   const rarityColors = {
-    Common: "#a0a0a0",
-    Uncommon: "#3cb371",
-    Rare: "#1e90ff",
-    Epic: "#ba55d3",
-    Legendary: "#ff8c00",
-    Mythic: "#dc143c",
+    common: "#a0a0a0",
+    uncommon: "#3cb371",
+    rare: "#1e90ff",
+    epic: "#ba55d3",
+    legendary: "#ff8c00",
+    mythic: "#dc143c",
   };
+
+  // Arrowhead marker
+  const defs = document.createElementNS(svgNS, "defs");
+  const marker = document.createElementNS(svgNS, "marker");
+  marker.setAttribute("id", "arrowhead");
+  marker.setAttribute("markerWidth", "10");
+  marker.setAttribute("markerHeight", "7");
+  marker.setAttribute("refX", "0");
+  marker.setAttribute("refY", "3.5");
+  marker.setAttribute("orient", "auto");
+  const polygon = document.createElementNS(svgNS, "polygon");
+  polygon.setAttribute("points", "0 0, 10 3.5, 0 7");
+  polygon.setAttribute("fill", "#999");
+  marker.appendChild(polygon);
+  defs.appendChild(marker);
+  svg.appendChild(defs);
 
   // Draw arrows for beats
   keys.forEach((key) => {
@@ -283,28 +285,12 @@ function renderMatchupGraph() {
     });
   });
 
-  // Define arrowhead marker
-  const defs = document.createElementNS(svgNS, "defs");
-  const marker = document.createElementNS(svgNS, "marker");
-  marker.setAttribute("id", "arrowhead");
-  marker.setAttribute("markerWidth", "10");
-  marker.setAttribute("markerHeight", "7");
-  marker.setAttribute("refX", "0");
-  marker.setAttribute("refY", "3.5");
-  marker.setAttribute("orient", "auto");
-  const polygon = document.createElementNS(svgNS, "polygon");
-  polygon.setAttribute("points", "0 0, 10 3.5, 0 7");
-  polygon.setAttribute("fill", "#999");
-  marker.appendChild(polygon);
-  defs.appendChild(marker);
-  svg.appendChild(defs);
-
-  // Draw nodes
+  // Draw nodes (circles and icons)
   keys.forEach((key) => {
     const pos = nodePositions[key];
-    const color = rarityColors[items[key].rarity] || "#666";
+    const rarityKey = items[key].rarity.toLowerCase();
+    const color = rarityColors[rarityKey] || "#666";
 
-    // Draw circle
     const circle = document.createElementNS(svgNS, "circle");
     circle.setAttribute("cx", pos.x);
     circle.setAttribute("cy", pos.y);
@@ -314,7 +300,6 @@ function renderMatchupGraph() {
     circle.setAttribute("stroke-width", "2");
     svg.appendChild(circle);
 
-    // Draw icon text
     const textIcon = document.createElementNS(svgNS, "text");
     textIcon.setAttribute("x", pos.x);
     textIcon.setAttribute("y", pos.y + 8);
@@ -325,24 +310,78 @@ function renderMatchupGraph() {
     textIcon.textContent = items[key].icon;
     svg.appendChild(textIcon);
 
-    // Tooltip (title)
+    // Tooltip
     const title = document.createElementNS(svgNS, "title");
     title.textContent = `${items[key].name} (${items[key].rarity})`;
     circle.appendChild(title);
   });
 }
 
-// === INIT ===
+// === SCREEN NAVIGATION ===
 
-// Initial render coins & difficulty label
+function showScreen(screen) {
+  // Hide all screens
+  Object.values(screens).forEach(s => s.hidden = true);
+
+  // Reset nav aria-selected
+  navBattle.setAttribute('aria-selected', 'false');
+  navShop.setAttribute('aria-selected', 'false');
+  navMatchup.setAttribute('aria-selected', 'false');
+
+  // Show selected
+  screen.hidden = false;
+
+  // Mark nav selected
+  if (screen === screens.battle) navBattle.setAttribute('aria-selected', 'true');
+  if (screen === screens.shop) navShop.setAttribute('aria-selected', 'true');
+  if (screen === screens.matchup) navMatchup.setAttribute('aria-selected', 'true');
+
+  // Render contents
+  if (screen === screens.battle) {
+    renderBattleChoices();
+    battleStatus.textContent = 'Choose your item to battle!';
+  }
+  if (screen === screens.shop) {
+    renderShop();
+    shopStatus.textContent = '';
+  }
+  if (screen === screens.matchup) {
+    renderMatchupGraph();
+  }
+}
+
+// === EVENT LISTENERS ===
+
+// Navigation buttons
+navBattle.addEventListener('click', () => showScreen(screens.battle));
+navShop.addEventListener('click', () => showScreen(screens.shop));
+navMatchup.addEventListener('click', () => showScreen(screens.matchup));
+
+// Shop back button returns to battle screen
+btnShopBack.addEventListener('click', () => showScreen(screens.battle));
+
+// Shop category tabs filtering
+shopTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    shopTabs.forEach(t => {
+      t.classList.remove('active');
+      t.setAttribute('aria-selected', 'false');
+    });
+    tab.classList.add('active');
+    tab.setAttribute('aria-selected', 'true');
+
+    currentShopCategory = tab.dataset.category;
+    filterShopItems(currentShopCategory);
+  });
+});
+
+// Bot difficulty slider updates
+botDifficultySlider.addEventListener('input', () => {
+  botDifficulty = Number(botDifficultySlider.value);
+  updateBotDifficultyLabel();
+});
+
+// === INITIAL SETUP ===
 updateCoins();
 updateBotDifficultyLabel();
-
-// Initially show battle screen
-showScreen('battle');
-
-// === NAVIGATION BUTTONS ===
-// Assuming you have nav buttons with these IDs
-document.getElementById('nav-battle').onclick = () => showScreen('battle');
-document.getElementById('nav-shop').onclick = () => showScreen('shop');
-document.getElementById('nav-matchup').onclick = () => showScreen('matchup');
+showScreen(screens.battle); // default start screen

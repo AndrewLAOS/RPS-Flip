@@ -272,3 +272,76 @@ body{
   margin-top: 0.8rem;
   user-select: none;
 }
+.shop-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.shop-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.shop-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+}
+.shop-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+.shop-item {
+  flex: 0 0 140px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+  color: #222;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-weight: 600;
+  user-select: none;
+  cursor: default;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.shop-item:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+}
+.shop-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.3rem;
+  user-select: none;
+}
+.shop-name {
+  font-size: 1.1rem;
+  margin-bottom: 0.15rem;
+  text-align: center;
+}
+.shop-rarity {
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 0.5rem;
+  text-transform: capitalize;
+}
+.shop-cost {
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+  text-align: center;
+}
+.shop-item button {
+  background: #4a90e2;
+  border: none;
+  border-radius: 16px;
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+  width: 100%;
+  transition: background-color 0.3s ease;
+  user-select:none;
+}
+.shop-item button:hover:not(:disabled) {
+  background: #356cb0;
+}
+.shop-item button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
