@@ -242,12 +242,14 @@
       <p id="login-status"></p>
     </div>
 
-    <div id="match-section" hidden>
-      <label for="match-id-input">Enter Match ID to Join or Create:</label><br/>
-      <input type="text" id="match-id-input" maxlength="10" placeholder="e.g. ABC123" autocomplete="off" aria-label="Match ID input" />
-      <button id="btnJoinMatch">Join/Create Match</button>
-      <p id="match-status"></p>
-    </div>
+   <div id="match-section" hidden>
+  <button id="btnCreateMatch">Create New Match</button>
+  <br/><br/>
+  <label for="match-id-input">Enter Match ID to Join:</label><br/>
+  <input type="text" id="match-id-input" maxlength="10" placeholder="e.g. ABC123" autocomplete="off" aria-label="Match ID input" />
+  <button id="btnJoinMatch">Join Match</button>
+  <p id="match-status"></p>
+</div>
 
     <div id="game-section" hidden aria-live="polite" aria-atomic="true">
       <div class="player-area" aria-label="Players area">
@@ -281,6 +283,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <script>
+
     // Initialize Firebase (compat)
     const firebaseConfig = {
       apiKey: "AIzaSyAqmG4OxLp7f1kktoLwicGR4O2SLwqNBk0",
