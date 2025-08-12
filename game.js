@@ -88,7 +88,6 @@ function botTryToBuyItem() {
   botCoins -= item.cost;
   botInventory.add(key);
 
-  console.log(`Bot bought ${item.name}!`);
   updateBotCoinsDisplay();
   if (!document.getElementById('bot-inventory-screen').hidden) renderBotInventory();
 }
@@ -144,9 +143,19 @@ function resolveBattle() {
 
     updateCoins();
     updateBotCoinsDisplay();
-    disableBattleChoices(false);
 
     botTryToBuyItem();
+
+    // Clear choices for next battle
+    playerChoice = null;
+    botChoice = null;
+
+    // Delay reset so player can see result, then re-enable buttons
+    setTimeout(() => {
+      battleStatus.textContent = 'Choose your item to battle!';
+      disableBattleChoices(false);
+    }, 1200);
+
   }, 1500);
 }
 
@@ -352,7 +361,6 @@ function activateScreen(targetId, clickedButton) {
     btn.tabIndex = isActive ? 0 : -1;
   });
 
-  // Update content on screen change
   if (targetId === 'battle-screen') {
     renderBattleChoices();
     battleStatus.textContent = 'Choose your item to battle!';
@@ -368,10 +376,12 @@ function activateScreen(targetId, clickedButton) {
 
 // === EVENT LISTENERS ===
 
-botDifficultySlider.oninput = () => {
-  botDifficulty = Number(botDifficultySlider.value);
-  updateBotDifficultyLabel();
-};
+if (botDifficultySlider) {
+  botDifficultySlider.oninput = () => {
+    botDifficulty = Number(botDifficultySlider.value);
+    updateBotDifficultyLabel();
+  };
+}
 
 navButtons.forEach(button => {
   button.addEventListener('click', () => {
