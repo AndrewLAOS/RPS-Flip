@@ -1,83 +1,226 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ultimate Rock, Paper, Scissors Flip</title>
-  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Minimal inline styles to demo layout before your full style.css loads */
+
+    body {
+      font-family: 'Comfortaa', cursive, sans-serif;
+      margin: 0; padding: 1rem;
+      background: linear-gradient(135deg, #4a90e2, #50e3c2);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      user-select: none;
+    }
+
+    nav {
+      margin-bottom: 1rem;
+    }
+    nav button {
+      background: rgba(255 255 255 / 0.2);
+      border: none;
+      border-radius: 20px;
+      color: white;
+      font-weight: 700;
+      padding: 0.6rem 1.2rem;
+      margin: 0 0.5rem;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.3s ease;
+    }
+    nav button:hover {
+      background: rgba(255 255 255 / 0.4);
+    }
+
+    #coins-display {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      text-shadow: 0 0 8px #0008;
+    }
+
+    label {
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      user-select:none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    input[type=range] {
+      cursor: pointer;
+      vertical-align: middle;
+    }
+    #bot-difficulty-label {
+      min-width: 40px;
+      text-align: right;
+      font-weight: 700;
+      color: #f0f0f0;
+      text-shadow: 0 0 5px #0008;
+    }
+
+    /* Screens */
+    #battle-screen,
+    #shop-screen,
+    #matchup-screen {
+      width: 100%;
+      max-width: 900px;
+      background: rgba(255 255 255 / 0.15);
+      border-radius: 20px;
+      padding: 1rem 2rem 2rem 2rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      display: none;
+      color: #222;
+      user-select: none;
+    }
+
+    /* Battle choices */
+    #battle-choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      justify-content: center;
+    }
+    button.choice-btn {
+      background: linear-gradient(145deg, #e0e8ff, #c4d7ff);
+      border-radius: 16px;
+      border: none;
+      box-shadow: 0 6px 15px #3a55b8cc;
+      font-weight: 700;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 1rem 1.5rem;
+      transition: box-shadow 0.3s ease, transform 0.2s ease;
+      user-select: none;
+    }
+    button.choice-btn:hover:not(:disabled) {
+      box-shadow: 0 10px 30px #27448acc;
+      transform: scale(1.1);
+    }
+    button.choice-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #battle-status {
+      font-weight: 700;
+      font-size: 1.25rem;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    /* Shop styles */
+    #shop-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .shop-item {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+      color: #222;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-weight: 600;
+      user-select: none;
+    }
+    .shop-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.3rem;
+    }
+    .shop-name {
+      font-size: 1.1rem;
+      margin-bottom: 0.15rem;
+    }
+    .shop-rarity {
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 0.5rem;
+    }
+    .shop-cost {
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+    }
+    .shop-item button {
+      background: #4a90e2;
+      border: none;
+      border-radius: 16px;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      padding: 0.5rem 1rem;
+      width: 100%;
+      transition: background-color 0.3s ease;
+    }
+    .shop-item button:hover:not(:disabled) {
+      background: #356cb0;
+    }
+    .shop-item button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    #shop-status {
+      text-align: center;
+      font-weight: 600;
+      color: #f44336;
+      min-height: 1.3rem;
+      user-select:none;
+    }
+
+    /* Matchup graph container */
+    #matchup-graph {
+      width: 100%;
+      height: 600px;
+      user-select:none;
+    }
+  </style>
 </head>
 <body>
-  <div id="app" class="app-shell">
-    <header class="topbar">
-      <div class="brand">
-        <h1>Ultimate RPS Flip</h1>
-        <div class="subtitle">A polished, strategic take on Rock • Paper • Scissors</div>
-      </div>
+  <h1>Ultimate Rock, Paper, Scissors Flip</h1>
 
-      <div class="controls">
-        <div class="stat">
-          <label>Coins</label>
-          <div id="coins" class="stat-value">0</div>
-        </div>
+  <nav aria-label="Main navigation">
+    <button id="nav-battle" aria-controls="battle-screen" aria-selected="true">Battle</button>
+    <button id="nav-shop" aria-controls="shop-screen" aria-selected="false">Shop</button>
+    <button id="nav-matchup" aria-controls="matchup-screen" aria-selected="false">Matchups</button>
+  </nav>
 
-        <div class="stat">
-          <label>Bot Difficulty</label>
-          <div class="slider-wrap">
-            <input id="difficulty" type="range" min="1" max="10" value="5" />
-            <div id="difficulty-value">5</div>
-          </div>
-        </div>
-      </div>
-    </header>
+  <div id="coins-display" aria-live="polite" aria-atomic="true">Coins: 0</div>
 
-    <main class="main-grid">
-      <section class="panel board" aria-labelledby="board-title">
-        <div class="panel-header">
-          <h2 id="board-title">Battle Field</h2>
-          <div id="result" class="result" aria-live="polite"></div>
-        </div>
+  <label for="bot-difficulty-slider">
+    Bot Difficulty:
+    <input type="range" id="bot-difficulty-slider" min="0" max="100" value="50" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" />
+    <span id="bot-difficulty-label">50%</span>
+  </label>
 
-        <div class="battle-area">
-          <div class="player-column">
-            <div class="label">You</div>
-            <div id="player-slot" class="slot">—</div>
-            <div id="player-score" class="score">Wins: <span>0</span></div>
-          </div>
+  <main>
+    <section id="battle-screen" role="region" aria-label="Battle screen">
+      <div id="battle-choices" role="list" aria-live="polite" aria-atomic="true" aria-relevant="additions removals"></div>
+      <div id="battle-status" role="status" aria-live="polite" aria-atomic="true"></div>
+    </section>
 
-          <div class="vs-block">VS</div>
+    <section id="shop-screen" role="region" aria-label="Shop screen">
+      <div id="shop-items"></div>
+      <div id="shop-status" aria-live="polite" aria-atomic="true"></div>
+    </section>
 
-          <div class="bot-column">
-            <div class="label">Bot</div>
-            <div id="bot-slot" class="slot">—</div>
-            <div id="bot-score" class="score">Wins: <span>0</span></div>
-          </div>
-        </div>
+    <section id="matchup-screen" role="region" aria-label="Matchup graph screen">
+      <div id="matchup-graph"></div>
+    </section>
+  </main>
 
-        <div class="choices-wrap" id="choices" aria-label="Player choices"></div>
-      </section>
-
-      <aside class="panel shop" aria-labelledby="shop-title">
-        <div class="panel-header">
-          <h2 id="shop-title">Shop & Inventory</h2>
-        </div>
-
-        <div class="inventory">
-          <h3>Your Inventory</h3>
-          <div id="inventory" class="grid small-grid"></div>
-        </div>
-
-        <div class="shop-list">
-          <h3>Buy Items</h3>
-          <div id="shop-items" class="grid"></div>
-        </div>
-      </aside>
-    </main>
-
-    <footer class="footer">
-      <small>Designed &amp; balanced for fun. Higher rarities often beat many lower rarities — but clever counters exist.</small>
-    </footer>
-  </div>
-
-  <script type="module" src="script.js"></script>
+  <script type="module" src="game.js"></script>
 </body>
 </html>
