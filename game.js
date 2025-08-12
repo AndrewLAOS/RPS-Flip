@@ -28,52 +28,16 @@ const matchupGraphDiv = document.getElementById('matchup-graph');
 
 const botInventoryItemsDiv = document.getElementById('bot-inventory-items');
 
-// Nav buttons and screen sections (after adding role="tab" to buttons and class="screen" to sections)
+// Nav buttons and screen sections
 const navButtons = document.querySelectorAll('nav button[role="tab"]');
 const screenSections = document.querySelectorAll('main section.screen');
-function activateScreen(targetId, clickedButton) {
-  screens.forEach(screen => {
-    const isTarget = screen.id === targetId;
-    screen.classList.toggle('active', isTarget);
-    if (isTarget) {
-      screen.removeAttribute('hidden');
-      screen.setAttribute('tabindex', '0');
-      screen.focus();
-    } else {
-      screen.classList.remove('active');
-      screen.setAttribute('hidden', '');
-      screen.setAttribute('tabindex', '-1');
-    }
-  });
 
-  navButtons.forEach(btn => {
-    const isActive = btn === clickedButton;
-    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
-    btn.tabIndex = isActive ? 0 : -1;
-  });
+// === UTILITIES ===
 
-  // NEW: Call render functions depending on tab
-  if (targetId === 'battle-screen') {
-    renderBattleChoices();
-    battleStatus.textContent = 'Choose your item to battle!';
-  } else if (targetId === 'shop-screen') {
-    renderShop();
-    shopStatus.textContent = '';
-  } else if (targetId === 'matchup-screen') {
-    renderMatchupGraph();
-  } else if (targetId === 'bot-inventory-screen') {
-    renderBotInventory();
-  }
-}
-
-// === UTILS ===
-
-// Check if itemA beats itemB
 function doesBeat(itemA, itemB) {
   return items[itemA].beats.includes(itemB);
 }
 
-// Get battle result: 'win', 'lose', or 'tie'
 function getBattleResult(playerItem, botItem) {
   if (playerItem === botItem) return 'tie';
   if (doesBeat(playerItem, botItem)) return 'win';
@@ -81,20 +45,20 @@ function getBattleResult(playerItem, botItem) {
   return 'tie';
 }
 
-// === UPDATE UI ===
 function updateCoins() {
   coinsDisplay.textContent = `Coins: ${playerCoins}`;
 }
+
 function updateBotCoinsDisplay() {
   botCoinsDisplay.textContent = `Bot Coins: ${botCoins}`;
 }
+
 function updateBotDifficultyLabel() {
   botDifficultyLabel.textContent = `Bot Difficulty: ${botDifficultySlider.value}%`;
 }
 
 // === BOT LOGIC ===
 
-// Bot picks choice from its inventory based on difficulty and player choice
 function botChoose(playerItem) {
   const botItems = Array.from(botInventory);
 
@@ -113,7 +77,6 @@ function botChoose(playerItem) {
   return counters[Math.floor(Math.random() * counters.length)];
 }
 
-// Bot tries to buy one affordable item it doesn't have
 function botTryToBuyItem() {
   const affordable = Object.entries(items)
     .filter(([key, item]) => !botInventory.has(key) && botCoins >= item.cost);
@@ -193,23 +156,20 @@ function clearShop() {
   shopItemsDiv.innerHTML = '';
 }
 
-function renderShop(category = 'all') {
+function renderShop() {
   clearShop();
   let anyAffordable = false;
 
   const allItems = Object.entries(items).filter(([key]) => !playerInventory.has(key));
-  const filteredItems = category === 'all'
-    ? allItems
-    : allItems.filter(([_, item]) => item.rarity.toLowerCase() === category.toLowerCase());
 
-  if (filteredItems.length === 0) {
-    shopStatus.textContent = 'No items available in this category.';
+  if (allItems.length === 0) {
+    shopStatus.textContent = 'No items available to buy.';
     return;
   } else {
     shopStatus.textContent = '';
   }
 
-  filteredItems.forEach(([key, item]) => {
+  allItems.forEach(([key, item]) => {
     const itemDiv = document.createElement('div');
     itemDiv.className = 'shop-item';
     itemDiv.innerHTML = `
@@ -407,6 +367,7 @@ function activateScreen(targetId, clickedButton) {
 }
 
 // === EVENT LISTENERS ===
+
 botDifficultySlider.oninput = () => {
   botDifficulty = Number(botDifficultySlider.value);
   updateBotDifficultyLabel();
@@ -437,6 +398,7 @@ navButtons.forEach((button, idx) => {
 });
 
 // === INIT ===
+
 updateCoins();
 updateBotCoinsDisplay();
 updateBotDifficultyLabel();
