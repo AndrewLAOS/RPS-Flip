@@ -291,16 +291,17 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <script>
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyAqmG4OxLp7f1kktoLwicGR4O2SLwqNBk0",
-      authDomain: "rps-flip.firebaseapp.com",
-      projectId: "rps-flip",
-      storageBucket: "rps-flip.appspot.com",
-      messagingSenderId: "1044307931173",
-      appId: "1:1044307931173:web:efa8c8bcf4cd82c1e14fcc",
-      measurementId: "G-57Z3NG9FJN"
-    };
+   const firebaseConfig = {
+  apiKey: "AIzaSyAqmG4OxLp7f1kktoLwicGR4O2SLwqNBk0",
+  authDomain: "rps-flip.firebaseapp.com",
+  databaseURL: "https://rps-flip-default-rtdb.firebaseio.com",  // <-- Add this line!
+  projectId: "rps-flip",
+  storageBucket: "rps-flip.appspot.com",
+  messagingSenderId: "1044307931173",
+  appId: "1:1044307931173:web:efa8c8bcf4cd82c1e14fcc",
+  measurementId: "G-57Z3NG9FJN"
+};
+
     firebase.initializeApp(firebaseConfig);
 
     const auth = firebase.auth();
