@@ -282,6 +282,23 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <script>
+    // Firebase Auth Sign-In with Google
+document.getElementById('btnGoogleLogin').addEventListener('click', () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider)
+    .then((result) => {
+      const user = result.user;
+      alert(`Welcome, ${user.displayName}! You are signed in.`);
+      // You can hide the login section and show game UI here
+      // For example:
+      document.getElementById('login-section').style.display = 'none';
+      document.getElementById('match-section').style.display = 'block'; // if you have a match section
+    })
+    .catch((error) => {
+      alert('Sign-in failed: ' + error.message);
+    });
+});
+
  // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
