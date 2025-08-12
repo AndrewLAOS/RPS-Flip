@@ -1,416 +1,177 @@
-import { items } from './items.js';
-
-// === GAME STATE ===
-let playerCoins = 0;
-let playerInventory = new Set(['rock', 'paper', 'scissors']); // starting items
-
-let botCoins = 0;
-let botInventory = new Set(['rock', 'paper', 'scissors']); // bot starting items
-
-let playerChoice = null;
-let botChoice = null;
-
-let botDifficulty = 50; // 0-100 slider
-
-// === DOM REFERENCES ===
-const coinsDisplay = document.getElementById('coins-display');
-const botCoinsDisplay = document.getElementById('bot-coins-display');
-const botDifficultySlider = document.getElementById('bot-difficulty-slider');
-const botDifficultyLabel = document.getElementById('bot-difficulty-label');
-
-const battleChoicesDiv = document.getElementById('battle-choices');
-const battleStatus = document.getElementById('battle-status');
-
-const shopItemsDiv = document.getElementById('shop-items');
-const shopStatus = document.getElementById('shop-status');
-
-const matchupGraphDiv = document.getElementById('matchup-graph');
-
-const botInventoryItemsDiv = document.getElementById('bot-inventory-items');
-
-// Nav buttons and screen sections
-const navButtons = document.querySelectorAll('nav button[role="tab"]');
-const screenSections = document.querySelectorAll('main section.screen');
-
-// === UTILITIES ===
-
-function doesBeat(itemA, itemB) {
-  return items[itemA].beats.includes(itemB);
-}
-
-function getBattleResult(playerItem, botItem) {
-  if (playerItem === botItem) return 'tie';
-  if (doesBeat(playerItem, botItem)) return 'win';
-  if (doesBeat(botItem, playerItem)) return 'lose';
-  return 'tie';
-}
-
-function updateCoins() {
-  coinsDisplay.textContent = `Coins: ${playerCoins}`;
-}
-
-function updateBotCoinsDisplay() {
-  botCoinsDisplay.textContent = `Bot Coins: ${botCoins}`;
-}
-
-function updateBotDifficultyLabel() {
-  botDifficultyLabel.textContent = `Bot Difficulty: ${botDifficultySlider.value}%`;
-}
-
-// === BOT LOGIC ===
-
-function botChoose(playerItem) {
-  const botItems = Array.from(botInventory);
-
-  if (botDifficulty === 0 || !playerItem) {
-    // pure random
-    return botItems[Math.floor(Math.random() * botItems.length)];
-  }
-
-  const difficultyPercent = botDifficulty / 100;
-  const counters = botItems.filter(item => doesBeat(item, playerItem));
-
-  if (counters.length === 0 || Math.random() > difficultyPercent) {
-    return botItems[Math.floor(Math.random() * botItems.length)];
-  }
-
-  return counters[Math.floor(Math.random() * counters.length)];
-}
-
-function botTryToBuyItem() {
-  const affordable = Object.entries(items)
-    .filter(([key, item]) => !botInventory.has(key) && botCoins >= item.cost);
-
-  if (affordable.length === 0) return;
-
-  const [key, item] = affordable[Math.floor(Math.random() * affordable.length)];
-
-  botCoins -= item.cost;
-  botInventory.add(key);
-
-  updateBotCoinsDisplay();
-  if (!document.getElementById('bot-inventory-screen').hidden) renderBotInventory();
-}
-
-// === BATTLE SCREEN ===
-
-function clearBattleChoices() {
-  battleChoicesDiv.innerHTML = '';
-}
-
-function renderBattleChoices() {
-  clearBattleChoices();
-  playerInventory.forEach(key => {
-    const item = items[key];
-    const btn = document.createElement('button');
-    btn.className = 'choice-btn';
-    btn.textContent = `${item.icon} ${item.name}`;
-    btn.title = `Rarity: ${item.rarity}\nCost: ${item.cost}`;
-    btn.onclick = () => handlePlayerChoice(key);
-    battleChoicesDiv.appendChild(btn);
-  });
-}
-
-function disableBattleChoices(disable) {
-  const buttons = battleChoicesDiv.querySelectorAll('button');
-  buttons.forEach(btn => btn.disabled = disable);
-}
-
-function handlePlayerChoice(choiceKey) {
-  playerChoice = choiceKey;
-  botChoice = botChoose(playerChoice);
-  resolveBattle();
-}
-
-function resolveBattle() {
-  battleStatus.textContent = '... battling ...';
-  disableBattleChoices(true);
-
-  const result = getBattleResult(playerChoice, botChoice);
-
-  setTimeout(() => {
-    if (result === 'win') {
-      battleStatus.innerHTML = `You Win! 🎉<br>Your ${items[playerChoice].icon} beats Bot's ${items[botChoice].icon}`;
-      playerCoins++;
-      botCoins = Math.max(0, botCoins - 1);
-    } else if (result === 'lose') {
-      battleStatus.innerHTML = `You Lose! 😞<br>Bot's ${items[botChoice].icon} beats your ${items[playerChoice].icon}`;
-      playerCoins = Math.max(0, playerCoins - 1);
-      botCoins++;
-    } else {
-      battleStatus.innerHTML = `It's a Tie! 😐<br>You both chose ${items[playerChoice].icon}`;
+// game.js
+document.addEventListener("DOMContentLoaded", () => {
+    if (typeof items === "undefined") {
+        console.error("items.js not loaded or 'items' array missing!");
+        return;
     }
 
-    updateCoins();
-    updateBotCoinsDisplay();
+    let coins = 50;
+    let playerInventory = ["Rock", "Paper", "Scissors"];
+    let botInventory = ["Rock", "Paper", "Scissors"];
+    let difficulty = 50;
 
-    botTryToBuyItem();
+    // ===== DOM REFS =====
+    const COIN_EL = document.getElementById("coin-count");
+    const BATTLE_STATUS = document.getElementById("battle-status");
+    const DIFFICULTY_SLIDER = document.getElementById("difficulty-slider");
+    const DIFFICULTY_VALUE = document.getElementById("difficulty-value");
 
-    // Clear choices for next battle
-    playerChoice = null;
-    botChoice = null;
+    // ===== SCREEN NAVIGATION =====
+    const navButtons = document.querySelectorAll("nav button");
+    const screens = document.querySelectorAll(".screen");
 
-    // Delay reset so player can see result, then re-enable buttons
-    setTimeout(() => {
-      battleStatus.textContent = 'Choose your item to battle!';
-      disableBattleChoices(false);
-    }, 1200);
+    navButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const targetId = btn.getAttribute("aria-controls");
+            screens.forEach(screen => {
+                const active = screen.id === targetId;
+                screen.classList.toggle("active", active);
+                screen.hidden = !active;
+            });
 
-  }, 1500);
-}
-
-// === SHOP SCREEN ===
-
-function clearShop() {
-  shopItemsDiv.innerHTML = '';
-}
-
-function renderShop() {
-  clearShop();
-  let anyAffordable = false;
-
-  const allItems = Object.entries(items).filter(([key]) => !playerInventory.has(key));
-
-  if (allItems.length === 0) {
-    shopStatus.textContent = 'No items available to buy.';
-    return;
-  } else {
-    shopStatus.textContent = '';
-  }
-
-  allItems.forEach(([key, item]) => {
-    const itemDiv = document.createElement('div');
-    itemDiv.className = 'shop-item';
-    itemDiv.innerHTML = `
-      <span class="shop-icon">${item.icon}</span>
-      <span class="shop-name">${item.name}</span>
-      <span class="shop-rarity">${item.rarity}</span>
-      <span class="shop-cost">${item.cost} coins</span>
-    `;
-    const buyBtn = document.createElement('button');
-    buyBtn.textContent = 'Buy';
-    buyBtn.disabled = playerCoins < item.cost;
-    buyBtn.onclick = () => buyItem(key);
-
-    itemDiv.appendChild(buyBtn);
-    shopItemsDiv.appendChild(itemDiv);
-
-    if (playerCoins >= item.cost) anyAffordable = true;
-  });
-
-  if (!anyAffordable) {
-    shopStatus.textContent = 'No items available to buy or insufficient coins.';
-  }
-}
-
-function buyItem(key) {
-  const item = items[key];
-  if (playerCoins >= item.cost && !playerInventory.has(key)) {
-    playerCoins -= item.cost;
-    playerInventory.add(key);
-    updateCoins();
-    renderShop();
-    renderBattleChoices();
-    shopStatus.textContent = `You bought ${item.name}!`;
-  } else {
-    shopStatus.textContent = 'Cannot buy item.';
-  }
-}
-
-// === BOT INVENTORY SCREEN ===
-
-function renderBotInventory() {
-  botInventoryItemsDiv.innerHTML = '';
-
-  if (botInventory.size === 0) {
-    botInventoryItemsDiv.textContent = "Bot has no items.";
-    return;
-  }
-
-  botInventory.forEach(key => {
-    const item = items[key];
-    const itemDiv = document.createElement('div');
-    itemDiv.className = 'inventory-item';
-    itemDiv.innerHTML = `
-      <div class="inventory-icon">${item.icon}</div>
-      <div class="inventory-name">${item.name}</div>
-      <div class="inventory-rarity">${item.rarity}</div>
-    `;
-    botInventoryItemsDiv.appendChild(itemDiv);
-  });
-}
-
-// === MATCHUP GRAPH SCREEN ===
-
-function renderMatchupGraph() {
-  matchupGraphDiv.innerHTML = '';
-
-  const width = 800;
-  const height = 600;
-  const svgNS = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(svgNS, "svg");
-  svg.setAttribute("width", width);
-  svg.setAttribute("height", height);
-  svg.style.border = "1px solid #ccc";
-  matchupGraphDiv.appendChild(svg);
-
-  const keys = Object.keys(items);
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const radius = 240;
-  const nodePositions = {};
-
-  keys.forEach((key, i) => {
-    const angle = (i / keys.length) * 2 * Math.PI - Math.PI / 2;
-    const x = centerX + radius * Math.cos(angle);
-    const y = centerY + radius * Math.sin(angle);
-    nodePositions[key] = { x, y };
-  });
-
-  const rarityColors = {
-    Common: "#a0a0a0",
-    Uncommon: "#3cb371",
-    Rare: "#1e90ff",
-    Epic: "#ba55d3",
-    Legendary: "#ff8c00",
-    Mythic: "#dc143c",
-  };
-
-  // Arrow defs
-  const defs = document.createElementNS(svgNS, "defs");
-  const marker = document.createElementNS(svgNS, "marker");
-  marker.setAttribute("id", "arrowhead");
-  marker.setAttribute("markerWidth", "10");
-  marker.setAttribute("markerHeight", "7");
-  marker.setAttribute("refX", "0");
-  marker.setAttribute("refY", "3.5");
-  marker.setAttribute("orient", "auto");
-  const polygon = document.createElementNS(svgNS, "polygon");
-  polygon.setAttribute("points", "0 0, 10 3.5, 0 7");
-  polygon.setAttribute("fill", "#999");
-  marker.appendChild(polygon);
-  defs.appendChild(marker);
-  svg.appendChild(defs);
-
-  // Draw arrows for beats
-  keys.forEach((key) => {
-    const fromPos = nodePositions[key];
-    items[key].beats.forEach((beatsKey) => {
-      if (!nodePositions[beatsKey]) return;
-      const toPos = nodePositions[beatsKey];
-
-      const line = document.createElementNS(svgNS, "line");
-      line.setAttribute("x1", fromPos.x);
-      line.setAttribute("y1", fromPos.y);
-      line.setAttribute("x2", toPos.x);
-      line.setAttribute("y2", toPos.y);
-      line.setAttribute("stroke", "#999");
-      line.setAttribute("stroke-width", "2");
-      line.setAttribute("marker-end", "url(#arrowhead)");
-      svg.appendChild(line);
+            navButtons.forEach(b => b.setAttribute("aria-selected", b === btn));
+        });
     });
-  });
 
-  // Draw nodes
-  keys.forEach((key) => {
-    const pos = nodePositions[key];
-    const color = rarityColors[items[key].rarity] || "#666";
+    // ===== DIFFICULTY SLIDER =====
+    DIFFICULTY_SLIDER.addEventListener("input", (e) => {
+        difficulty = parseInt(e.target.value, 10);
+        DIFFICULTY_VALUE.textContent = difficulty;
+        DIFFICULTY_SLIDER.setAttribute("aria-valuenow", difficulty);
+    });
 
-    const circle = document.createElementNS(svgNS, "circle");
-    circle.setAttribute("cx", pos.x);
-    circle.setAttribute("cy", pos.y);
-    circle.setAttribute("r", 28);
-    circle.setAttribute("fill", color);
-    circle.setAttribute("stroke", "#333");
-    circle.setAttribute("stroke-width", "2");
-    svg.appendChild(circle);
-
-    const textIcon = document.createElementNS(svgNS, "text");
-    textIcon.setAttribute("x", pos.x);
-    textIcon.setAttribute("y", pos.y + 8);
-    textIcon.setAttribute("font-size", "20");
-    textIcon.setAttribute("font-family", "Arial, sans-serif");
-    textIcon.setAttribute("fill", "#fff");
-    textIcon.setAttribute("text-anchor", "middle");
-    textIcon.textContent = items[key].icon;
-    svg.appendChild(textIcon);
-
-    const title = document.createElementNS(svgNS, "title");
-    title.textContent = `${items[key].name} (${items[key].rarity})`;
-    circle.appendChild(title);
-  });
-}
-
-// === SCREEN NAVIGATION ===
-
-function activateScreen(targetId, clickedButton) {
-  screenSections.forEach(screen => {
-    const isTarget = screen.id === targetId;
-    screen.hidden = !isTarget;
-    if (isTarget) {
-      screen.setAttribute('tabindex', '0');
-      screen.focus();
-    } else {
-      screen.removeAttribute('tabindex');
+    // ===== BATTLE SYSTEM =====
+    function renderBattleChoices() {
+        const container = document.getElementById("battle-choices");
+        container.innerHTML = "";
+        playerInventory.forEach(name => {
+            const item = items.find(i => i.name === name);
+            if (item) {
+                const btn = document.createElement("button");
+                btn.textContent = `${item.emoji} ${item.name}`;
+                btn.addEventListener("click", () => startBattle(item));
+                container.appendChild(btn);
+            }
+        });
     }
-  });
 
-  navButtons.forEach(btn => {
-    const isActive = btn === clickedButton;
-    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
-    btn.tabIndex = isActive ? 0 : -1;
-  });
+    function startBattle(playerItem) {
+        const botItem = chooseBotItem();
+        const result = getBattleResult(playerItem, botItem);
+        updateBattleStatus(playerItem, botItem, result);
+        if (result === "win") {
+            coins += 10;
+            updateCoins();
+        }
+    }
 
-  if (targetId === 'battle-screen') {
+    function chooseBotItem() {
+        const allItems = botInventory.map(name => items.find(i => i.name === name));
+        if (Math.random() < difficulty / 100) {
+            const playerItems = playerInventory.map(name => items.find(i => i.name === name));
+            const counters = allItems.filter(bi =>
+                playerItems.some(pi => bi.beats.includes(pi.name))
+            );
+            if (counters.length > 0) {
+                return counters[Math.floor(Math.random() * counters.length)];
+            }
+        }
+        return allItems[Math.floor(Math.random() * allItems.length)];
+    }
+
+    function getBattleResult(playerItem, botItem) {
+        if (playerItem.name === botItem.name) return "draw";
+        if (playerItem.beats.includes(botItem.name)) return "win";
+        return "lose";
+    }
+
+    function updateBattleStatus(playerItem, botItem, result) {
+        let msg = `You chose ${playerItem.emoji} ${playerItem.name}. Bot chose ${botItem.emoji} ${botItem.name}. `;
+        if (result === "win") msg += "You win! 🎉 +10 coins";
+        if (result === "lose") msg += "You lose! 😢";
+        if (result === "draw") msg += "It’s a draw! 🤝";
+        BATTLE_STATUS.textContent = msg;
+    }
+
+    // ===== COINS =====
+    function updateCoins() {
+        COIN_EL.textContent = coins;
+    }
+
+    // ===== SHOP =====
+    function renderShop() {
+        const shopContainer = document.getElementById("shop-items");
+        shopContainer.innerHTML = "";
+        items.forEach(item => {
+            const card = document.createElement("div");
+            card.className = "shop-item";
+            card.innerHTML = `
+                <div class="item-info">
+                    <span class="item-emoji">${item.emoji}</span>
+                    <span class="item-name">${item.name}</span>
+                </div>
+                <span class="item-rarity ${item.rarity.toLowerCase()}">${item.rarity}</span>
+                <button>Buy (${item.cost} 💰)</button>
+            `;
+            const btn = card.querySelector("button");
+            btn.addEventListener("click", () => {
+                if (coins >= item.cost && !playerInventory.includes(item.name)) {
+                    coins -= item.cost;
+                    playerInventory.push(item.name);
+                    updateCoins();
+                    renderBattleChoices();
+                    btn.disabled = true;
+                }
+            });
+            if (playerInventory.includes(item.name)) {
+                btn.disabled = true;
+            }
+            shopContainer.appendChild(card);
+        });
+    }
+
+    // ===== MATCHUPS =====
+    function renderMatchups() {
+        const table = document.createElement("table");
+        const header = document.createElement("tr");
+        header.innerHTML = `<th></th>` + items.map(i => `<th>${i.name}</th>`).join("");
+        table.appendChild(header);
+
+        items.forEach(rowItem => {
+            const row = document.createElement("tr");
+            row.innerHTML = `<th>${rowItem.name}</th>` +
+                items.map(colItem => {
+                    if (rowItem.name === colItem.name) return `<td>—</td>`;
+                    if (rowItem.beats.includes(colItem.name)) return `<td>✅</td>`;
+                    if (colItem.beats.includes(rowItem.name)) return `<td>❌</td>`;
+                    return `<td>🤝</td>`;
+                }).join("");
+            table.appendChild(row);
+        });
+
+        const container = document.getElementById("matchup-chart");
+        container.innerHTML = "";
+        container.appendChild(table);
+    }
+
+    // ===== BOT INVENTORY =====
+    function renderBotInventory() {
+        const container = document.getElementById("bot-inventory-list");
+        container.innerHTML = "";
+        botInventory.forEach(name => {
+            const item = items.find(i => i.name === name);
+            if (item) {
+                const div = document.createElement("div");
+                div.textContent = `${item.emoji} ${item.name}`;
+                container.appendChild(div);
+            }
+        });
+    }
+
+    // ===== INIT =====
+    updateCoins();
     renderBattleChoices();
-    battleStatus.textContent = 'Choose your item to battle!';
-  } else if (targetId === 'shop-screen') {
     renderShop();
-    shopStatus.textContent = '';
-  } else if (targetId === 'matchup-screen') {
-    renderMatchupGraph();
-  } else if (targetId === 'bot-inventory-screen') {
+    renderMatchups();
     renderBotInventory();
-  }
-}
-
-// === EVENT LISTENERS ===
-
-if (botDifficultySlider) {
-  botDifficultySlider.oninput = () => {
-    botDifficulty = Number(botDifficultySlider.value);
-    updateBotDifficultyLabel();
-  };
-}
-
-navButtons.forEach(button => {
-  button.addEventListener('click', () => {
-    const targetId = button.getAttribute('aria-controls');
-    activateScreen(targetId, button);
-  });
 });
-
-// Keyboard arrow navigation for tabs
-navButtons.forEach((button, idx) => {
-  button.addEventListener('keydown', (e) => {
-    let newIndex = null;
-    if (e.key === 'ArrowRight') {
-      newIndex = (idx + 1) % navButtons.length;
-    } else if (e.key === 'ArrowLeft') {
-      newIndex = (idx - 1 + navButtons.length) % navButtons.length;
-    }
-    if (newIndex !== null) {
-      e.preventDefault();
-      navButtons[newIndex].focus();
-      navButtons[newIndex].click();
-    }
-  });
-});
-
-// === INIT ===
-
-updateCoins();
-updateBotCoinsDisplay();
-updateBotDifficultyLabel();
-
-activateScreen('battle-screen', navButtons[0]);
