@@ -291,16 +291,16 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <script>
-   const firebaseConfig = {
-  apiKey: "AIzaSyAqmG4OxLp7f1kktoLwicGR4O2SLwqNBk0",
-  authDomain: "rps-flip.firebaseapp.com",
-  databaseURL: "https://rps-flip-default-rtdb.firebaseio.com",  // <-- Add this line!
-  projectId: "rps-flip",
-  storageBucket: "rps-flip.appspot.com",
-  messagingSenderId: "1044307931173",
-  appId: "1:1044307931173:web:efa8c8bcf4cd82c1e14fcc",
-  measurementId: "G-57Z3NG9FJN"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyAqmG4OxLp7f1kktoLwicGR4O2SLwqNBk0",
+      authDomain: "rps-flip.firebaseapp.com",
+      databaseURL: "https://rps-flip-default-rtdb.firebaseio.com",
+      projectId: "rps-flip",
+      storageBucket: "rps-flip.appspot.com",
+      messagingSenderId: "1044307931173",
+      appId: "1:1044307931173:web:efa8c8bcf4cd82c1e14fcc",
+      measurementId: "G-57Z3NG9FJN"
+    };
 
     firebase.initializeApp(firebaseConfig);
 
@@ -394,24 +394,38 @@
         matchStatus.textContent = 'Please sign in first.';
         return;
       }
-      btnCreateMatch.disabled = true;
-      btnJoinMatch.disabled = true;
-      matchIdInput.disabled = true;
-      matchStatus.textContent = '';
-      generatedMatchIdDisplay.textContent = '';
-      showLoading(true);
-
-      let newMatchId;
-      while (true) {
-        newMatchId = generateMatchId();
-        const snap = await db.ref(`matches/${newMatchId}`).once('value');
-        if (!snap.exists()) break;
-      }
-
-      gameRef = db.ref(`matches/${newMatchId}`);
-
+      
       try {
-        await gameRef.set({
+        btnCreateMatch.disabled = true;
+        btnJoinMatch.disabled = true;
+        matchIdInput.disabled = true;
+        showLoading(true);
+        
+        let newMatchId = generateMatchId();
+        console.log('Trying to create match with ID:', newMatchId);
+
+        let newMatchRef = db.ref(`matches/${newMatchId}`);
+        let snapshot = await newMatchRef.once('value');
+
+        let tries = 0;
+        while (snapshot.exists() && tries < 5) {
+          console.log('Match ID exists, generating new one...');
+          newMatchId = generateMatchId();
+          console.log('Retrying with new match ID:', newMatchId);
+          newMatchRef = db.ref(`matches/${newMatchId}`);
+          snapshot = await newMatchRef.once('value');
+          tries++;
+        }
+        if (tries >= 5) {
+          matchStatus.textContent = 'Failed to generate unique match ID. Try again later.';
+          btnCreateMatch.disabled = false;
+          btnJoinMatch.disabled = false;
+          matchIdInput.disabled = false;
+          showLoading(false);
+          return;
+        }
+
+        await newMatchRef.set({
           player1: {
             uid: currentUser.uid,
             name: currentUser.displayName,
@@ -424,28 +438,28 @@
           started: false,
           createdAt: firebase.database.ServerValue.TIMESTAMP,
         });
+
+        matchId = newMatchId;
+        playerNumber = 'player1';
+        opponentId = 'player2';
+
+        generatedMatchIdDisplay.textContent = `Match created! Share this code: ${newMatchId}`;
+        matchStatus.textContent = '';
+        
+        matchSection.hidden = true;
+        gameSection.hidden = false;
+
+        setupGameUI();
+        listenForGameUpdates();
+
       } catch (e) {
         matchStatus.textContent = 'Error creating match: ' + e.message;
+      } finally {
         btnCreateMatch.disabled = false;
         btnJoinMatch.disabled = false;
         matchIdInput.disabled = false;
         showLoading(false);
-        return;
       }
-
-      matchId = newMatchId;
-      playerNumber = 'player1';
-      opponentId = 'player2';
-
-      generatedMatchIdDisplay.textContent = `Match created! Share this code: ${newMatchId}`;
-      matchStatus.textContent = '';
-      showLoading(false);
-
-      matchSection.hidden = true;
-      gameSection.hidden = false;
-
-      setupGameUI();
-      listenForGameUpdates();
     });
 
     btnJoinMatch.addEventListener('click', () => {
@@ -468,219 +482,231 @@
       let snap;
       try {
         snap = await gameRef.once('value');
-      } catch (e) {
-        matchStatus.textContent = 'Error accessing match: ' + e.message;
-        resetJoinControls();
-        showLoading(false);
-        return;
-      }
-
-      const matchData = snap.val();
-
-      if (!matchData) {
-        matchStatus.textContent = `Match ID "${id}" not found.`;
-        resetJoinControls();
-        showLoading(false);
-        return;
-      }
-
-      // Check if player2 spot is free or current user already in match
-      if (!matchData.player2) {
-        // Join as player2
-        try {
-          await gameRef.update({
-            player2: {
-              uid: currentUser.uid,
-              name: currentUser.displayName,
-              choice: null,
-              score: 0,
-            },
-            started: true,
-            turn: 'player1',
-            result: null
-          });
-          playerNumber = 'player2';
-          opponentId = 'player1';
-        } catch (e) {
-          matchStatus.textContent = 'Error joining match: ' + e.message;
-          resetJoinControls();
+        if (!snap.exists()) {
+          matchStatus.textContent = 'Match not found.';
+          btnCreateMatch.disabled = false;
+          btnJoinMatch.disabled = false;
+          matchIdInput.disabled = false;
           showLoading(false);
           return;
         }
-      } else if (matchData.player1.uid === currentUser.uid) {
-        playerNumber = 'player1';
-        opponentId = 'player2';
-      } else if (matchData.player2.uid === currentUser.uid) {
-        playerNumber = 'player2';
-        opponentId = 'player1';
-      } else {
-        matchStatus.textContent = 'Match is full. Try another ID.';
-        resetJoinControls();
+      } catch (err) {
+        matchStatus.textContent = 'Error joining match: ' + err.message;
+        btnCreateMatch.disabled = false;
+        btnJoinMatch.disabled = false;
+        matchIdInput.disabled = false;
         showLoading(false);
         return;
       }
 
-      matchId = id;
-      generatedMatchIdDisplay.textContent = '';
-      matchStatus.textContent = `Joined match ${id} as ${playerNumber.toUpperCase()}`;
-      showLoading(false);
+      let matchData = snap.val();
 
+      if (matchData.player2 && matchData.player2.uid !== currentUser.uid) {
+        matchStatus.textContent = 'Match already has two players.';
+        btnCreateMatch.disabled = false;
+        btnJoinMatch.disabled = false;
+        matchIdInput.disabled = false;
+        showLoading(false);
+        return;
+      }
+
+      if (!matchData.player2) {
+        // Join as player2
+        try {
+          await gameRef.child('player2').set({
+            uid: currentUser.uid,
+            name: currentUser.displayName,
+            choice: null,
+            score: 0,
+          });
+          await gameRef.child('started').set(true);
+        } catch (e) {
+          matchStatus.textContent = 'Error joining match: ' + e.message;
+          btnCreateMatch.disabled = false;
+          btnJoinMatch.disabled = false;
+          matchIdInput.disabled = false;
+          showLoading(false);
+          return;
+        }
+        playerNumber = 'player2';
+        opponentId = 'player1';
+      } else {
+        // Rejoin or spectator? For now, deny
+        if (matchData.player1.uid === currentUser.uid) {
+          playerNumber = 'player1';
+          opponentId = 'player2';
+        } else if (matchData.player2.uid === currentUser.uid) {
+          playerNumber = 'player2';
+          opponentId = 'player1';
+        } else {
+          matchStatus.textContent = 'Match full.';
+          btnCreateMatch.disabled = false;
+          btnJoinMatch.disabled = false;
+          matchIdInput.disabled = false;
+          showLoading(false);
+          return;
+        }
+      }
+
+      matchId = id;
+
+      generatedMatchIdDisplay.textContent = '';
+      matchStatus.textContent = '';
       matchSection.hidden = true;
       gameSection.hidden = false;
 
       setupGameUI();
       listenForGameUpdates();
-    }
-
-    function resetJoinControls() {
-      btnCreateMatch.disabled = false;
-      btnJoinMatch.disabled = false;
-      matchIdInput.disabled = false;
+      showLoading(false);
     }
 
     function setupGameUI() {
       playerNameLabel.textContent = currentUser.displayName;
       opponentNameLabel.textContent = 'Waiting for opponent...';
-      clearChoices();
+      resetCards();
+      renderChoices();
+      statusText.textContent = '';
+    }
 
-      for (const key in ITEMS) {
-        const item = ITEMS[key];
+    function resetCards() {
+      playerCardInner.classList.remove('flipped');
+      opponentCardInner.classList.remove('flipped');
+      playerCardBack.textContent = '?';
+      opponentCardBack.textContent = '?';
+    }
+
+    function renderChoices() {
+      choicesDiv.innerHTML = '';
+      Object.entries(ITEMS).forEach(([key, item]) => {
         const btn = document.createElement('button');
         btn.className = 'choice';
         btn.setAttribute('role', 'listitem');
         btn.setAttribute('aria-label', `Choose ${item.name}`);
-        btn.innerHTML = `${item.icon}<div class="choice-label">${item.name}</div>`;
-        btn.onclick = () => {
-          makeChoice(key);
-        };
+        btn.textContent = item.icon;
+        const label = document.createElement('div');
+        label.className = 'choice-label';
+        label.textContent = item.name;
+        btn.appendChild(label);
+
+        btn.addEventListener('click', () => {
+          selectChoice(key);
+        });
         choicesDiv.appendChild(btn);
+      });
+    }
+
+    let selectedChoice = null;
+
+    async function selectChoice(choiceKey) {
+      if (!gameRef || !playerNumber) return;
+
+      selectedChoice = choiceKey;
+      statusText.textContent = `You selected ${ITEMS[choiceKey].name}. Waiting for opponent...`;
+
+      // Disable buttons to prevent multiple clicks
+      Array.from(choicesDiv.children).forEach(btn => btn.disabled = true);
+
+      try {
+        await gameRef.child(`${playerNumber}/choice`).set(choiceKey);
+      } catch (e) {
+        statusText.textContent = 'Error sending choice: ' + e.message;
+        Array.from(choicesDiv.children).forEach(btn => btn.disabled = false);
       }
-      updateStatus('Waiting for opponent to join...');
     }
 
-    function clearChoices() {
-      choicesDiv.innerHTML = '';
-    }
-
+    // Listen for game updates
     function listenForGameUpdates() {
-      if (!gameRef) return;
+      if (!matchId) return;
+      if (gameRef) gameRef.off();
+
+      gameRef = db.ref(`matches/${matchId}`);
+
       gameRef.on('value', snapshot => {
         const data = snapshot.val();
         if (!data) {
-          updateStatus('Match ended or does not exist.');
-          gameSection.hidden = true;
-          matchSection.hidden = false;
-          resetJoinControls();
+          statusText.textContent = 'Match data lost.';
           return;
         }
-        if (!data.player2) {
+
+        if (!data.started) {
+          statusText.textContent = 'Waiting for opponent to join...';
           opponentNameLabel.textContent = 'Waiting for opponent...';
-          updateStatus('Waiting for opponent to join...');
-          disableChoices(true);
+          resetCards();
+          Array.from(choicesDiv.children).forEach(btn => btn.disabled = true);
           return;
-        } else {
-          opponentNameLabel.textContent = data[opponentId]?.name || 'Opponent';
         }
 
-        const playerData = data[playerNumber];
-        const opponentData = data[opponentId];
+        // Show opponent name
+        if (data[playerNumber]) {
+          playerNameLabel.textContent = data[playerNumber].name || currentUser.displayName;
+        }
+        if (data[opponentId]) {
+          opponentNameLabel.textContent = data[opponentId].name || 'Opponent';
+        } else {
+          opponentNameLabel.textContent = 'Waiting for opponent...';
+        }
 
-        updateCard(playerCardInner, playerCardBack, playerData?.choice);
-        updateCard(opponentCardInner, opponentCardBack, opponentData?.choice);
+        // Show choices and flip cards if both chosen
+        const playerChoice = data[playerNumber]?.choice;
+        const opponentChoice = data[opponentId]?.choice;
 
-        if (playerData.choice && opponentData.choice) {
-          const result = getResult(playerData.choice, opponentData.choice);
-          updateStatusResult(result);
-          disableChoices(true);
+        if (playerChoice) {
+          playerCardBack.textContent = ITEMS[playerChoice].icon;
+          playerCardInner.classList.add('flipped');
+        } else {
+          playerCardBack.textContent = '?';
+          playerCardInner.classList.remove('flipped');
+        }
+        if (opponentChoice) {
+          opponentCardBack.textContent = ITEMS[opponentChoice].icon;
+          opponentCardInner.classList.add('flipped');
+        } else {
+          opponentCardBack.textContent = '?';
+          opponentCardInner.classList.remove('flipped');
+        }
 
+        // Determine and show result if both chose
+        if (playerChoice && opponentChoice) {
+          const result = determineResult(playerChoice, opponentChoice);
+          if (result === 'win') {
+            statusText.innerHTML = `<span class="win-text">You Win! 🎉</span>`;
+          } else if (result === 'lose') {
+            statusText.innerHTML = `<span class="lose-text">You Lose. 😞</span>`;
+          } else {
+            statusText.innerHTML = `<span class="tie-text">It's a Tie! 🤝</span>`;
+          }
+
+          // Reset after 3 seconds
           setTimeout(() => {
-            gameRef.update({
-              [`${playerNumber}/choice`]: null,
-              [`${opponentId}/choice`]: null,
-              result: null,
-              turn: 'player1'
-            });
-            clearFlipAnimations();
-            updateStatus('Your turn!');
-            disableChoices(false);
+            // Clear choices to allow next round
+            gameRef.child(`${playerNumber}/choice`).set(null);
+            gameRef.child(`${opponentId}/choice`).set(null);
+            statusText.textContent = 'Make your choice!';
+            selectedChoice = null;
+            Array.from(choicesDiv.children).forEach(btn => btn.disabled = false);
           }, 3000);
         } else {
-          if (data.turn === playerNumber) {
-            updateStatus("Your turn! Choose an item.");
-            disableChoices(false);
+          // Enable choices if player's turn and no choice selected yet
+          if (!playerChoice) {
+            statusText.textContent = 'Make your choice!';
+            Array.from(choicesDiv.children).forEach(btn => btn.disabled = false);
           } else {
-            updateStatus("Opponent's turn, please wait...");
-            disableChoices(true);
+            statusText.textContent = 'Waiting for opponent...';
+            Array.from(choicesDiv.children).forEach(btn => btn.disabled = true);
           }
         }
       });
     }
 
-    function updateCard(cardInner, cardBack, choice) {
-      if (!choice) {
-        cardBack.textContent = '';
-        cardInner.classList.remove('flipped');
-      } else {
-        cardBack.textContent = ITEMS[choice].icon;
-        if (!cardInner.classList.contains('flipped')) {
-          cardInner.classList.add('flipped');
-          cardBack.classList.add('animate-flip');
-          setTimeout(() => {
-            cardBack.classList.remove('animate-flip');
-          }, 800);
-        }
-      }
-    }
+    function determineResult(playerChoice, opponentChoice) {
+      if (playerChoice === opponentChoice) return 'tie';
 
-    function clearFlipAnimations() {
-      playerCardInner.classList.remove('flipped');
-      opponentCardInner.classList.remove('flipped');
-    }
+      if (ITEMS[playerChoice].beats.includes(opponentChoice)) return 'win';
 
-    function disableChoices(disable) {
-      const buttons = choicesDiv.querySelectorAll('button.choice');
-      buttons.forEach(btn => btn.disabled = disable);
-    }
+      if (ITEMS[opponentChoice].beats.includes(playerChoice)) return 'lose';
 
-    function makeChoice(choiceKey) {
-      disableChoices(true);
-      updateStatus('Waiting for opponent...');
-      gameRef.once('value').then(snapshot => {
-        const data = snapshot.val();
-        if (data.turn !== playerNumber) {
-          updateStatus('Not your turn!');
-          disableChoices(false);
-          return;
-        }
-        gameRef.update({
-          [`${playerNumber}/choice`]: choiceKey,
-          turn: opponentId
-        });
-      });
-    }
-
-    function getResult(p1Choice, p2Choice) {
-      if (p1Choice === p2Choice) return 'tie';
-      if (ITEMS[p1Choice].beats.includes(p2Choice)) return 'win';
-      return 'lose';
-    }
-
-    function updateStatusResult(result) {
-      if (result === 'win') {
-        statusText.textContent = 'You Win! 🎉';
-        statusText.className = 'win-text';
-      } else if (result === 'lose') {
-        statusText.textContent = 'You Lose! 😞';
-        statusText.className = 'lose-text';
-      } else {
-        statusText.textContent = "It's a Tie! 😐";
-        statusText.className = 'tie-text';
-      }
-    }
-
-    function updateStatus(text) {
-      statusText.textContent = text;
-      statusText.className = '';
+      // Defensive fallback (if no rules match)
+      return 'tie';
     }
   </script>
 </body>
