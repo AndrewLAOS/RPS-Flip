@@ -234,6 +234,8 @@
     <button id="nav-battle" aria-controls="battle-screen" aria-selected="true">Battle</button>
     <button id="nav-shop" aria-controls="shop-screen" aria-selected="false">Shop</button>
     <button id="nav-matchup" aria-controls="matchup-screen" aria-selected="false">Matchups</button>
+<button id="nav-bot-inventory" aria-controls="bot-inventory-screen" aria-selected="false">Bot Inventory</button>
+
   </nav>
 
   <div id="coins-display" aria-live="polite" aria-atomic="true">Coins: 0</div>
@@ -245,10 +247,17 @@
   </label>
 
   <main>
+    
+<!-- Add this new section inside <main> -->
+<section id="bot-inventory-screen" role="region" aria-label="Bot Inventory screen" hidden>
+  <h2>Bot Inventory</h2>
+  <div id="bot-inventory-items" class="inventory-list" tabindex="0"></div>
+</section>
     <section id="battle-screen" role="region" aria-label="Battle screen">
       <div id="battle-choices" role="list" aria-live="polite" aria-atomic="true" aria-relevant="additions removals"></div>
       <div id="battle-status" role="status" aria-live="polite" aria-atomic="true"></div>
     </section>
+<div id="bot-coins-display" aria-live="polite" aria-atomic="true">Bot Coins: 0</div>
 
     <section id="shop-screen" role="region" aria-label="Shop screen" hidden>
       <nav id="shop-nav" aria-label="Shop navigation">
