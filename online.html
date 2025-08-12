@@ -175,7 +175,6 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    user-select:none;
   }
   button.choice:hover:not(:disabled) {
     box-shadow: 0 10px 30px #3a55b8cc;
@@ -282,44 +281,21 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <script>
-    // Firebase Auth Sign-In with Google
-document.getElementById('btnGoogleLogin').addEventListener('click', () => {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  firebase.auth().signInWithPopup(provider)
-    .then((result) => {
-      const user = result.user;
-      alert(`Welcome, ${user.displayName}! You are signed in.`);
-      // You can hide the login section and show game UI here
-      // For example:
-      document.getElementById('login-section').style.display = 'none';
-      document.getElementById('match-section').style.display = 'block'; // if you have a match section
-    })
-    .catch((error) => {
-      alert('Sign-in failed: ' + error.message);
-    });
-});
+    // Initialize Firebase (compat)
+    const firebaseConfig = {
+      apiKey: "AIzaSyAqmG4OxLp7f1kktoLwicGR4O2SLwqNBk0",
+      authDomain: "rps-flip.firebaseapp.com",
+      projectId: "rps-flip",
+      storageBucket: "rps-flip.appspot.com",
+      messagingSenderId: "1044307931173",
+      appId: "1:1044307931173:web:efa8c8bcf4cd82c1e14fcc",
+      measurementId: "G-57Z3NG9FJN"
+    };
 
- // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+    firebase.initializeApp(firebaseConfig);
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyAqmG4OxLp7f1kktoLwicGR4O2SLwqNBk0",
-  authDomain: "rps-flip.firebaseapp.com",
-  projectId: "rps-flip",
-  storageBucket: "rps-flip.firebasestorage.app",
-  messagingSenderId: "1044307931173",
-  appId: "1:1044307931173:web:efa8c8bcf4cd82c1e14fcc",
-  measurementId: "G-57Z3NG9FJN"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+    const auth = firebase.auth();
+    const db = firebase.database();
 
     // Items with icons & matchups
     const ITEMS = {
@@ -360,12 +336,13 @@ const analytics = getAnalytics(app);
     let opponentId = null;
     let gameRef = null;
 
-    // Authentication
+    // Google sign-in
     btnGoogleLogin.addEventListener('click', () => {
       const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(err => {
-        loginStatus.textContent = 'Login failed: ' + err.message;
-      });
+      auth.signInWithPopup(provider)
+        .catch(err => {
+          loginStatus.textContent = 'Login failed: ' + err.message;
+        });
     });
 
     auth.onAuthStateChanged(user => {
@@ -477,12 +454,15 @@ const analytics = getAnalytics(app);
         const item = ITEMS[key];
         const btn = document.createElement('button');
         btn.className = 'choice';
-        btn.setAttribute('data-choice', key);
-        btn.setAttribute('aria-label', `Play ${item.name}`);
+        btn.setAttribute('role', 'listitem');
+        btn.setAttribute('aria-label', `Choose ${item.name}`);
         btn.innerHTML = `${item.icon}<div class="choice-label">${item.name}</div>`;
-        btn.addEventListener('click', () => makeChoice(key));
+        btn.onclick = () => {
+          makeChoice(key);
+        };
         choicesDiv.appendChild(btn);
       }
+      updateStatus('Waiting for opponent to join...');
     }
 
     // Clear choices buttons
@@ -490,140 +470,138 @@ const analytics = getAnalytics(app);
       choicesDiv.innerHTML = '';
     }
 
-    // Listen for real-time match updates
+    // Listen for realtime game updates
     function listenForGameUpdates() {
       gameRef.on('value', snapshot => {
         const data = snapshot.val();
-        if (!data) return;
-
-        // Update
-        // Update opponent info
-        const opponent = data[opponentId];
-        if (opponent) {
-          opponentNameLabel.textContent = opponent.name || 'Opponent';
-        } else {
+        if (!data) {
+          updateStatus('Match ended or does not exist.');
+          gameSection.hidden = true;
+          matchSection.hidden = false;
+          return;
+        }
+        if (!data.player2) {
           opponentNameLabel.textContent = 'Waiting for opponent...';
+          updateStatus('Waiting for opponent to join...');
+          return;
+        } else {
+          opponentNameLabel.textContent = data[opponentId]?.name || 'Opponent';
         }
 
-        // Current player's data
         const playerData = data[playerNumber];
-        if (!playerData) return;
+        const opponentData = data[opponentId];
 
-        // Show cards flips if choices are made
-        const playerChoice = playerData.choice;
-        const opponentChoice = opponent ? opponent.choice : null;
+        // Show choices flipped or not
+        updateCard(playerCardInner, playerCardBack, playerData?.choice);
+        updateCard(opponentCardInner, opponentCardBack, opponentData?.choice);
 
-        if (playerChoice) {
-          flipCard(playerCardInner, playerCardBack, ITEMS[playerChoice].icon, ITEMS[playerChoice].name);
-        } else {
-          resetCard(playerCardInner, playerCardBack);
-        }
-
-        if (opponentChoice) {
-          flipCard(opponentCardInner, opponentCardBack, ITEMS[opponentChoice].icon, ITEMS[opponentChoice].name);
-        } else {
-          resetCard(opponentCardInner, opponentCardBack);
-        }
-
-        // Show status messages
-        if (!opponent) {
-          statusText.textContent = 'Waiting for opponent to join...';
-          disableChoices(true);
-          return;
-        }
-
-        if (!playerChoice) {
-          statusText.textContent = 'Your turn: Choose your item';
-          disableChoices(false);
-          return;
-        }
-
-        if (!opponentChoice) {
-          statusText.textContent = 'Waiting for opponent to choose...';
-          disableChoices(true);
-          return;
-        }
-
-        // Both have chosen - show result
-        if (data.result) {
-          let winner = data.result.winner;
-          if (winner === playerNumber) {
-            statusText.innerHTML = `<span class="win-text">🎉 You won this round! ${ITEMS[playerChoice].name} beats ${ITEMS[opponentChoice].name}</span>`;
-          } else if (winner === opponentId) {
-            statusText.innerHTML = `<span class="lose-text">😞 You lost this round. ${ITEMS[opponentChoice].name} beats ${ITEMS[playerChoice].name}</span>`;
-          } else {
-            statusText.innerHTML = `<span class="tie-text">🤝 It's a tie! Both chose ${ITEMS[playerChoice].name}</span>`;
-          }
+        // Determine game logic if both chose
+        if (playerData.choice && opponentData.choice) {
+          const result = getResult(playerData.choice, opponentData.choice);
+          updateStatusResult(result);
           disableChoices(true);
 
-          // Wait 3 seconds then reset round
+          // After 3 seconds reset choices for next round
           setTimeout(() => {
-            gameRef.child('player1/choice').set(null);
-            gameRef.child('player2/choice').set(null);
-            gameRef.child('result').set(null);
-            statusText.textContent = 'Your turn: Choose your item';
+            gameRef.update({
+              [`${playerNumber}/choice`]: null,
+              [`${opponentId}/choice`]: null,
+              result: null,
+              turn: 'player1'
+            });
+            clearFlipAnimations();
+            updateStatus('Your turn!');
             disableChoices(false);
-            resetCard(playerCardInner, playerCardBack);
-            resetCard(opponentCardInner, opponentCardBack);
           }, 3000);
+        } else {
+          if (data.turn === playerNumber) {
+            updateStatus("Your turn! Choose an item.");
+            disableChoices(false);
+          } else {
+            updateStatus("Opponent's turn, please wait...");
+            disableChoices(true);
+          }
         }
       });
     }
 
-    // Player makes a choice
-    async function makeChoice(choice) {
-      disableChoices(true);
-      statusText.textContent = `You chose ${ITEMS[choice].name}. Waiting for opponent...`;
-
-      try {
-        await gameRef.child(`${playerNumber}/choice`).set(choice);
-      } catch (error) {
-        statusText.textContent = 'Error submitting choice. Try again.';
-        disableChoices(false);
-        return;
-      }
-
-      // Check if opponent has chosen
-      const snapshot = await gameRef.once('value');
-      const data = snapshot.val();
-      if (!data) return;
-      const opponentChoice = data[opponentId]?.choice;
-
-      if (opponentChoice) {
-        // Determine winner and update result
-        const winner = determineWinner(choice, opponentChoice);
-        await gameRef.child('result').set({ winner });
+    // Update card display with flip animation
+    function updateCard(cardInner, cardBack, choice) {
+      if (!choice) {
+        cardBack.textContent = '';
+        cardInner.classList.remove('flipped');
+      } else {
+        cardBack.textContent = ITEMS[choice].icon;
+        if (!cardInner.classList.contains('flipped')) {
+          cardInner.classList.add('flipped');
+          cardBack.classList.add('animate-flip');
+          setTimeout(() => {
+            cardBack.classList.remove('animate-flip');
+          }, 800);
+        }
       }
     }
 
-    // Determine winner helper
-    function determineWinner(choice1, choice2) {
-      if (choice1 === choice2) return 'tie';
-      if (ITEMS[choice1].beats.includes(choice2)) return playerNumber;
-      if (ITEMS[choice2].beats.includes(choice1)) return opponentId;
-      return 'tie';
+    // Remove flip animation classes after reset
+    function clearFlipAnimations() {
+      playerCardInner.classList.remove('flipped');
+      opponentCardInner.classList.remove('flipped');
     }
 
-    // Flip card animation
-    function flipCard(cardInner, cardBack, icon, name) {
-      if (cardInner.classList.contains('flipped')) return; // Already flipped
-      cardBack.innerHTML = `<div style="font-size:3.5rem">${icon}</div><div style="margin-top:8px; font-weight:700;">${name}</div>`;
-      cardInner.classList.add('flipped');
-    }
-
-    // Reset card to back face "?"
-    function resetCard(cardInner, cardBack) {
-      if (!cardInner.classList.contains('flipped')) return;
-      cardInner.classList.remove('flipped');
-      cardBack.innerHTML = '';
-    }
-
-    // Enable or disable all choice buttons
+    // Disable or enable choice buttons
     function disableChoices(disable) {
-      choicesDiv.querySelectorAll('button.choice').forEach(btn => {
+      const buttons = choicesDiv.querySelectorAll('button.choice');
+      buttons.forEach(btn => {
         btn.disabled = disable;
       });
     }
+
+    // When player selects choice
+    function makeChoice(choiceKey) {
+      disableChoices(true);
+      updateStatus('Waiting for opponent...');
+      gameRef.once('value').then(snapshot => {
+        const data = snapshot.val();
+        if (data.turn !== playerNumber) {
+          updateStatus('Not your turn!');
+          disableChoices(false);
+          return;
+        }
+        gameRef.update({
+          [`${playerNumber}/choice`]: choiceKey,
+          turn: opponentId
+        });
+      });
+    }
+
+    // Determine game result from choices
+    // Returns 'win', 'lose', or 'tie' for player
+    function getResult(p1Choice, p2Choice) {
+      if (p1Choice === p2Choice) return 'tie';
+      if (ITEMS[p1Choice].beats.includes(p2Choice)) return 'win';
+      return 'lose';
+    }
+
+    // Update status text with result styling
+    function updateStatusResult(result) {
+      if (result === 'win') {
+        statusText.textContent = 'You Win! 🎉';
+        statusText.className = 'win-text';
+      } else if (result === 'lose') {
+        statusText.textContent = 'You Lose! 😞';
+        statusText.className = 'lose-text';
+      } else {
+        statusText.textContent = 'It\'s a Tie! 😐';
+        statusText.className = 'tie-text';
+      }
+    }
+
+    // Update generic status text
+    function updateStatus(text) {
+      statusText.textContent = text;
+      statusText.className = '';
+    }
+
   </script>
 </body>
 </html>
