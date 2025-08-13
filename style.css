@@ -22,8 +22,8 @@
   --font-heading: 'Poppins', sans-serif;
   --font-body: 'Poppins', sans-serif;
   --font-mono: 'Roboto Mono', monospace;
-  --border-radius: 10px; /* Increased from 8px */
-  --spacing: 20px; /* Increased from 16px */
+  --border-radius: 12px; /* Increased from 10px */
+  --spacing: 24px; /* Increased from 20px */
 
   /* Rarity Colors */
   --rarity-common: #b0b0b0; /* Grey */
@@ -46,7 +46,7 @@ html, body {
   font-family: var(--font-body);
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-size: 18px; /* Increased from 16px */
+  font-size: 20px; /* Increased from 18px */
   line-height: 1.6;
 }
 
@@ -65,7 +65,7 @@ button {
   background-color: var(--accent-color);
   color: var(--bg-primary);
   border: none;
-  padding: 10px 20px; /* Increased from 8px 16px */
+  padding: 12px 24px; /* Increased from 10px 20px */
   border-radius: var(--border-radius);
   font-family: var(--font-body);
   font-weight: 600;
@@ -90,9 +90,9 @@ button:disabled {
 input[type="range"] {
   -webkit-appearance: none;
   width: 100%;
-  height: 8px;
+  height: 10px; /* Increased from 8px */
   background: var(--border-color);
-  border-radius: 4px;
+  border-radius: 5px; /* Increased from 4px */
   outline: none;
   opacity: 0.7;
   transition: opacity 0.2s;
@@ -101,19 +101,19 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 24px; /* Increased from 20px */
+  height: 24px; /* Increased from 20px */
   border-radius: 50%;
   background: var(--accent-color);
   cursor: pointer;
 }
 
 .small {
-  font-size: 1em; /* Increased from 0.9em */
+  font-size: 1em;
 }
 
 .small-muted {
-  font-size: 0.9em; /* Increased from 0.85em */
+  font-size: 0.9em;
   color: var(--text-muted);
 }
 
@@ -136,7 +136,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .sidebar {
-  width: 300px;
+  width: 350px; /* Increased from 300px */
   display: flex;
   flex-direction: column;
   gap: var(--spacing);
@@ -147,7 +147,7 @@ input[type="range"]::-webkit-slider-thumb {
   top: 0;
   left: 0;
   width: 100%;
-  padding: 10px;
+  padding: 12px; /* Increased from 10px */
   background: rgba(var(--bg-primary), 0.8);
   backdrop-filter: blur(5px);
   z-index: 100;
@@ -180,7 +180,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .logo {
-  font-size: 3em; /* Increased from 2.5em */
+  font-size: 3.5em; /* Increased from 3em */
   font-weight: 700;
   color: var(--accent-color);
   font-family: var(--font-mono);
@@ -203,16 +203,16 @@ input[type="range"]::-webkit-slider-thumb {
 .coin-display {
   display: flex;
   align-items: center;
-  gap: 12px; /* Increased from 8px */
+  gap: 16px; /* Increased from 12px */
 }
 
 .coin-icon {
-  font-size: 1.8em; /* Increased from 1.5em */
+  font-size: 2em; /* Increased from 1.8em */
 }
 
 .coin-text {
   font-family: var(--font-mono);
-  font-size: 1.8em; /* Increased from 1.5em */
+  font-size: 2em; /* Increased from 1.8em */
   font-weight: 700;
 }
 
@@ -223,7 +223,7 @@ input[type="range"]::-webkit-slider-thumb {
 .value-pill {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  padding: 4px 8px;
+  padding: 6px 12px; /* Increased from 4px 8px */
   border-radius: var(--border-radius);
   font-weight: 700;
 }
@@ -231,7 +231,7 @@ input[type="range"]::-webkit-slider-thumb {
 .range-wrap {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px; /* Increased from 8px */
 }
 
 .control {
@@ -241,30 +241,30 @@ input[type="range"]::-webkit-slider-thumb {
 .shop-list {
   display: flex;
   flex-direction: column;
-  gap: 12px; /* Increased from 8px */
-  margin-top: 12px; /* Increased from 8px */
-  height: 250px; /* Increased from 200px */
+  gap: 16px; /* Increased from 12px */
+  margin-top: 16px; /* Increased from 12px */
+  height: 300px; /* Increased from 250px */
   overflow-y: auto;
 }
 
 .shop-list::-webkit-scrollbar {
-  width: 8px;
+  width: 10px; /* Increased from 8px */
 }
 
 .shop-list::-webkit-scrollbar-thumb {
   background-color: var(--border-color);
-  border-radius: 4px;
+  border-radius: 5px; /* Increased from 4px */
 }
 
 .shop-item {
   display: flex;
   align-items: center;
-  gap: 16px; /* Increased from 12px */
-  padding: 10px; /* Increased from 8px */
+  gap: 20px; /* Increased from 16px */
+  padding: 12px; /* Increased from 10px */
   background-color: var(--bg-primary);
   border-radius: var(--border-radius);
   transition: background-color 0.2s;
-  border: 2px solid transparent; /* Added a transparent border */
+  border: 3px solid transparent; /* Increased from 2px */
 }
 
 .shop-item:hover {
@@ -272,7 +272,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .shop-item .icon {
-  font-size: 2.2em; /* Increased from 1.8em */
+  font-size: 2.5em; /* Increased from 2.2em */
   line-height: 1;
 }
 
@@ -281,7 +281,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .shop-item button {
-  padding: 8px 16px; /* Increased from 6px 12px */
+  padding: 10px 20px; /* Increased from 8px 16px */
 }
 
 .shop-item.owned {
@@ -328,14 +328,14 @@ input[type="range"]::-webkit-slider-thumb {
 .bot-inventory {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px; /* Increased from 8px */
 }
 
 .bot-inv-item {
   background-color: var(--bg-primary);
-  padding: 4px 8px;
+  padding: 6px 12px; /* Increased from 4px 8px */
   border-radius: var(--border-radius);
-  font-size: 0.9em;
+  font-size: 1em; /* Increased from 0.9em */
 }
 
 .footer {
@@ -366,7 +366,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .status-panel .value {
-  font-size: 3em; /* Increased from 2.5em */
+  font-size: 3.5em; /* Increased from 3em */
   font-weight: 700;
 }
 
@@ -387,13 +387,13 @@ input[type="range"]::-webkit-slider-thumb {
   display: flex;
   justify-content: space-around;
   width: 100%;
-  max-width: 800px; /* Increased from 700px */
-  gap: 50px; /* Increased from 40px */
+  max-width: 900px; /* Increased from 800px */
+  gap: 60px; /* Increased from 50px */
 }
 
 .card {
-  width: 240px; /* Increased from 200px */
-  height: 300px; /* Increased from 250px */
+  width: 280px; /* Increased from 240px */
+  height: 350px; /* Increased from 300px */
   background-color: var(--bg-primary);
   border-radius: var(--border-radius);
   display: flex;
@@ -410,14 +410,14 @@ input[type="range"]::-webkit-slider-thumb {
 
 .card .label {
   position: absolute;
-  top: 12px; /* Increased from 10px */
-  left: 12px; /* Increased from 10px */
+  top: 16px; /* Increased from 12px */
+  left: 16px; /* Increased from 12px */
   font-weight: 700;
-  font-size: 1.2em; /* Increased from 1.1em */
+  font-size: 1.4em; /* Increased from 1.2em */
 }
 
 .card .icon {
-  font-size: 6em; /* Increased from 5em */
+  font-size: 7em; /* Increased from 6em */
   transition: transform 0.4s;
 }
 
@@ -426,41 +426,41 @@ input[type="range"]::-webkit-slider-thumb {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 12px; /* Increased from 8px */
 }
 
 .vs-bubble {
   background-color: var(--accent-color);
   color: var(--bg-primary);
   border-radius: 50%;
-  width: 60px; /* Increased from 50px */
-  height: 60px; /* Increased from 50px */
+  width: 70px; /* Increased from 60px */
+  height: 70px; /* Increased from 60px */
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 1.4em; /* Increased from 1.2em */
+  font-size: 1.6em; /* Increased from 1.4em */
 }
 
 .choices {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 16px; /* Increased from 12px */
+  gap: 20px; /* Increased from 16px */
   margin-top: var(--spacing);
 }
 
 .choice-btn {
-  padding: 16px 32px; /* Increased from 12px 24px */
-  font-size: 1.4em; /* Increased from 1.2em */
+  padding: 20px 40px; /* Increased from 16px 32px */
+  font-size: 1.6em; /* Increased from 1.4em */
 }
 
 .result-banner {
   margin-top: var(--spacing);
-  font-size: 2.5em; /* Increased from 2em */
+  font-size: 3em; /* Increased from 2.5em */
   font-weight: 700;
   text-align: center;
-  min-height: 3.5em; /* Increased from 3em */
+  min-height: 4em; /* Increased from 3.5em */
 }
 
 /*
@@ -477,8 +477,8 @@ input[type="range"]::-webkit-slider-thumb {
 
 .confetti-dot {
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: 12px; /* Increased from 10px */
+  height: 12px; /* Increased from 10px */
   background: var(--accent-color);
   border-radius: 50%;
   animation: fall 3s ease-in forwards;
