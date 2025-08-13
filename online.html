@@ -1,244 +1,216 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Ultimate RPS Flip - Online Mode</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ultimate RPS Flip - Online Mode</title>
 
-<!-- Google Font -->
-<link href="https://fonts.googleapis.com/css2?family=Comfortaa&display=swap" rel="stylesheet" />
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa&display=swap" rel="stylesheet" />
 
-<style>
-/* ---------- Reset & Base ---------- */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-body {
-  font-family: 'Comfortaa', cursive;
-  background: linear-gradient(135deg, #0b1220, #1a1f3d);
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
-  padding: 20px;
-}
-h1 { font-size: 4rem; text-align: center; margin-bottom: 10px; }
-.subtitle { font-size: 1.8rem; text-align: center; margin-bottom: 25px; color: #ddd; }
+  <style>
+    /* ---------- Reset & Base ---------- */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Comfortaa', cursive;
+      background: linear-gradient(135deg, #0b1220, #1a1f3d);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 { font-size: 4rem; text-align: center; margin-bottom: 10px; }
+    .subtitle { font-size: 1.8rem; text-align: center; margin-bottom: 25px; color: #ddd; }
 
-/* ---------- Buttons ---------- */
-.btn {
-  background-color: #4b6cb7;
-  color: #fff;
-  border: none;
-  border-radius: 16px;
-  padding: 18px 36px;
-  margin: 10px;
-  cursor: pointer;
-  font-size: 1.5rem;
-  transition: 0.3s all ease;
-  box-shadow: 0 6px 25px rgba(0,0,0,0.5);
-}
-.btn:hover { background-color: #182848; transform: translateY(-2px); }
-.btn:disabled { background-color: #555; cursor: not-allowed; }
+    /* ---------- Buttons ---------- */
+    .btn {
+      background-color: #4b6cb7;
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      padding: 18px 36px;
+      margin: 10px;
+      cursor: pointer;
+      font-size: 1.5rem;
+      transition: 0.3s all ease;
+      box-shadow: 0 6px 25px rgba(0,0,0,0.5);
+    }
+    .btn:hover { background-color: #182848; transform: translateY(-2px); }
+    .btn:disabled { background-color: #555; cursor: not-allowed; }
 
-/* ---------- Container ---------- */
-#container { width: 100%; max-width: 1200px; text-align: center; }
+    /* ---------- Container ---------- */
+    #container { width: 100%; max-width: 1200px; text-align: center; }
 
-/* ---------- Inputs ---------- */
-input[type="text"] {
-  padding: 18px;
-  font-size: 1.5rem;
-  border-radius: 14px;
-  border: none;
-  margin: 12px 0;
-  width: 300px;
-  text-align: center;
-}
+    /* ---------- Inputs ---------- */
+    input[type="text"] {
+      padding: 18px;
+      font-size: 1.5rem;
+      border-radius: 14px;
+      border: none;
+      margin: 12px 0;
+      width: 300px;
+      text-align: center;
+    }
 
-/* ---------- Player Area ---------- */
-.player-area {
-  display: flex;
-  justify-content: center;
-  gap: 120px;
-  margin: 40px 0;
-  flex-wrap: wrap;
-}
+    /* ---------- Player Area ---------- */
+    .player-area {
+      display: flex;
+      justify-content: center;
+      gap: 120px;
+      margin: 40px 0;
+      flex-wrap: wrap;
+    }
 
-/* ---------- Player Cards ---------- */
-.player-card { perspective: 1200px; display: flex; flex-direction: column; align-items: center; }
-.card-inner {
-  width: 240px;
-  height: 340px;
-  position: relative;
-  transform-style: preserve-3d;
-  transition: transform 0.6s;
-  cursor: pointer;
-}
-.card-inner.flipped { transform: rotateY(180deg); }
-.card-front, .card-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 18px;
-  backface-visibility: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 6rem;
-}
-.card-front { background-color: #2c3e50; color: #fff; }
-.card-back { background-color: #2980b9; color: #fff; transform: rotateY(180deg); }
+    /* ---------- Player Cards ---------- */
+    .player-card { perspective: 1200px; display: flex; flex-direction: column; align-items: center; }
+    .card-inner {
+      width: 240px;
+      height: 340px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+      cursor: pointer;
+    }
+    .card-inner.flipped { transform: rotateY(180deg); }
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 18px;
+      backface-visibility: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 6rem;
+    }
+    .card-front { background-color: #2c3e50; color: #fff; }
+    .card-back { background-color: #2980b9; color: #fff; transform: rotateY(180deg); }
 
-/* ---------- Player Names & Scores ---------- */
-.player-name { margin-top: 16px; font-weight: bold; font-size: 2rem; }
-.player-score { font-size: 1.8rem; color: #ffd700; margin-top: 6px; }
+    /* ---------- Player Names & Scores ---------- */
+    .player-name { margin-top: 16px; font-weight: bold; font-size: 2rem; }
+    .player-score { font-size: 1.8rem; color: #ffd700; margin-top: 6px; }
 
-/* ---------- Choices ---------- */
-#choices {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 30px;
-  margin-top: 30px;
-}
-.choice {
-  width: 140px;
-  height: 140px;
-  font-size: 3.5rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  border-radius: 18px;
-  background: #34495e;
-  transition: 0.3s;
-  position: relative;
-}
-.choice-label { font-size: 1.5rem; margin-top: 10px; color: #fff; }
-.choice:hover { transform: scale(1.2); background: #1abc9c; }
+    /* ---------- Choices ---------- */
+    #choices {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 30px;
+      margin-top: 30px;
+    }
+    .choice {
+      width: 140px;
+      height: 140px;
+      font-size: 3.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      border-radius: 18px;
+      background: #34495e;
+      transition: 0.3s;
+      position: relative;
+    }
+    .choice-label { font-size: 1.5rem; margin-top: 10px; color: #fff; }
+    .choice:hover { transform: scale(1.2); background: #1abc9c; }
 
-/* ---------- Status Text ---------- */
-#status-text { margin-top: 30px; font-size: 2rem; min-height: 40px; }
-.win-text { color: #00ff00; font-weight: bold; }
-.lose-text { color: #ff4c4c; font-weight: bold; }
-.tie-text { color: #ffd700; font-weight: bold; }
+    /* ---------- Status Text ---------- */
+    #status-text { margin-top: 30px; font-size: 2rem; min-height: 40px; }
+    .win-text { color: #00ff00; font-weight: bold; }
+    .lose-text { color: #ff4c4c; font-weight: bold; }
+    .tie-text { color: #ffd700; font-weight: bold; }
 
-/* ---------- Loading Spinner ---------- */
-#loading-spinner {
-  border: 10px solid #f3f3f3;
-  border-top: 10px solid #3498db;
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  animation: spin 1s linear infinite;
-  margin: 30px auto;
-  display: none;
-}
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    /* ---------- Loading Spinner ---------- */
+    #loading-spinner {
+      border: 10px solid #f3f3f3;
+      border-top: 10px solid #3498db;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin: 30px auto;
+      display: none;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 700px) {
-  .player-area { gap: 60px; }
-  .card-inner { width: 180px; height: 260px; font-size: 5rem; }
-  .choice { width: 100px; height: 100px; font-size: 2.5rem; }
-  input[type="text"] { width: 220px; }
-}
-.card-inner {
-  width: 220px;
-  height: 300px;
-}
-.choice {
-  width: 140px;
-  height: 140px;
-  font-size: 3rem;
-}
-input[type="text"] {
-  width: 300px;
-  font-size: 1.5rem;
-  padding: 20px;
-}
-.btn {
-  font-size: 1.5rem;
-  padding: 20px 40px;
-}
-
-</style>
+    /* ---------- Responsive ---------- */
+    @media (max-width: 700px) {
+      .player-area { gap: 60px; }
+      .card-inner { width: 180px; height: 260px; font-size: 5rem; }
+      .choice { width: 100px; height: 100px; font-size: 2.5rem; }
+      input[type="text"] { width: 220px; }
+    }
+  </style>
 </head>
 
 <body>
-  <section id="match-section" hidden>
-  <button id="btnCreateMatch">Create Match</button>
-  <p id="generated-match-id"></p>
+  <div id="container" role="main">
+    <h1>Ultimate RPS Flip</h1>
+    <p class="subtitle">Play against friends or bots with dramatic card flips!</p>
 
-  <input id="match-id-input" type="text" placeholder="Enter Match ID">
-  <button id="btnJoinMatch">Join Match</button>
+    <button id="btnBackToBot" class="btn">← Back to Bot Mode</button>
 
-  <p id="match-status"></p>
-</section>
-<div id="container" role="main" aria-label="Ultimate Rock Paper Scissors Flip Online Game">
-  <h1>Ultimate RPS Flip</h1>
-  <p class="subtitle">Play against friends or bots with dramatic card flips!</p>
-
-  <button id="btnBackToBot" class="btn" aria-label="Back to Bot Mode">← Back to Bot Mode</button>
-
-  <!-- Login -->
-  <div id="login-section" aria-live="polite">
-    <button id="btnGoogleLogin" class="btn">Sign in with Google</button>
-    <p id="login-status"></p>
-  </div>
-
-  <!-- Match Creation / Join -->
-  <div id="match-section" hidden>
-    <button id="btnCreateMatch" class="btn">Create New Match</button><br/><br/>
-    <label for="match-id-input">Enter Match ID to Join:</label><br/>
-    <input type="text" id="match-id-input" maxlength="10" placeholder="e.g. ABC123" autocomplete="off" aria-label="Match ID input" />
-    <button id="btnJoinMatch" class="btn">Join Match</button>
-    <p id="match-status"></p>
-    <p id="generated-match-id"></p>
-  </div>
-
-  <!-- Game Area -->
-  <div id="game-section" hidden aria-live="polite" aria-atomic="true">
-    <div class="player-area" aria-label="Players area">
-      <div class="player-card" aria-label="Your card">
-        <div class="card-inner" id="player-card-inner">
-          <div class="card-front">?</div>
-          <div class="card-back" id="player-card-back"></div>
-        </div>
-        <div class="player-name" id="player-name-label"></div>
-        <div class="player-score" id="player-score">0</div>
-      </div>
-
-      <div class="player-card" aria-label="Opponent card">
-        <div class="card-inner" id="opponent-card-inner">
-          <div class="card-front">?</div>
-          <div class="card-back" id="opponent-card-back"></div>
-        </div>
-        <div class="player-name" id="opponent-name-label">Waiting for opponent...</div>
-        <div class="player-score" id="opponent-score">0</div>
-      </div>
+    <!-- Login Section -->
+    <div id="login-section">
+      <button id="btnGoogleLogin" class="btn">Sign in with Google</button>
+      <p id="login-status"></p>
     </div>
 
-    <div id="choices" role="list" aria-label="Choose your item to play"></div>
-    <div id="status-text" role="status">Make your choice!</div>
-    <div id="loading-spinner" aria-hidden="true" role="img" aria-label="Loading spinner"></div>
+    <!-- Match Section -->
+    <section id="match-section" hidden>
+      <button id="btnCreateMatch" class="btn">Create New Match</button><br/><br/>
+      <input id="match-id-input" type="text" maxlength="10" placeholder="Enter Match ID"/>
+      <button id="btnJoinMatch" class="btn">Join Match</button>
+      <p id="generated-match-id"></p>
+      <p id="match-status"></p>
+    </section>
+
+    <!-- Game Section -->
+    <div id="game-section" hidden>
+      <div class="player-area">
+        <div class="player-card">
+          <div class="card-inner" id="player-card-inner">
+            <div class="card-front">?</div>
+            <div class="card-back" id="player-card-back"></div>
+          </div>
+          <div class="player-name" id="player-name-label"></div>
+          <div class="player-score" id="player-score">0</div>
+        </div>
+        <div class="player-card">
+          <div class="card-inner" id="opponent-card-inner">
+            <div class="card-front">?</div>
+            <div class="card-back" id="opponent-card-back"></div>
+          </div>
+          <div class="player-name" id="opponent-name-label">Waiting...</div>
+          <div class="player-score" id="opponent-score">0</div>
+        </div>
+      </div>
+      <div id="choices"></div>
+      <div id="status-text">Make your choice!</div>
+      <div id="loading-spinner"></div>
+    </div>
+    
+    <!-- Shop Section -->
+    <section id="shop-section" hidden>
+      <h3>Shop</h3>
+      <p>Coins: <span id="coin-balance">0</span></p>
+      <button id="btnClaimDaily" class="btn">Claim Daily +50</button>
+      <h4>Items</h4>
+      <div id="shop-items"></div>
+      <h4>Your Inventory</h4>
+      <div id="inventory-items"></div>
+    </section>
   </div>
-</div>
 
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-<!-- External Items & Animations -->
-<script type="module" src="items.js"></script>
-<script type="module" src="online-game.js"></script>
-
-
-<!-- Online Game Logic -->
-<script src="online-game.js"></script>
+  <!-- External Modules & Game Logic -->
+  <script type="module" src="items.js"></script>
+  <script type="module" src="online-game.js"></script>
 </body>
 </html>
