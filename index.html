@@ -14,521 +14,461 @@
 </head>
 <body>
 
-  <nav class="main-nav" role="navigation" aria-label="Main navigation">
-    <ul>
-      <li><a href="index.html" aria-current="page">Home</a></li>
-      <li><a href="matchchart.html">Matchup Chart</a></li>
-      <li><a href="online.html">Online Mode</a></li>
-    </ul>
-  </nav>
+<nav class="main-nav" role="navigation" aria-label="Main navigation">
+  <ul>
+    <li><a href="index.html" aria-current="page">Home</a></li>
+    <li><a href="matchchart.html">Matchup Chart</a></li>
+    <li><a href="online.html">Online Mode</a></li>
+  </ul>
+</nav>
 
-  <div class="app" role="application" aria-label="Ultimate Rock Paper Scissors Flip Game">
-    <aside class="sidebar" aria-label="Game controls and shop">
-      <div class="brand">
-        <div class="logo">RΨS</div>
-        <div>
-          <h1>Ultimate RPS Flip</h1>
-          <p class="small">Deluxe edition — curated items, bot AI, and big animations.</p>
+<div class="app" role="application" aria-label="Ultimate Rock Paper Scissors Flip Game">
+  <aside class="sidebar" aria-label="Game controls and shop">
+    <div class="brand">
+      <div class="logo">RΨS</div>
+      <div>
+        <h1>Ultimate RPS Flip</h1>
+        <p class="small">Deluxe edition — curated items, bot AI, and big animations.</p>
+      </div>
+    </div>
+
+    <div class="panel coins-panel" role="status" aria-live="polite">
+      <div class="coins-row">
+        <div class="coin-display">
+          <div class="coin-icon">🪙</div>
+          <div>
+            <div class="small muted">Your Balance</div>
+            <div class="coin-text" id="coins-display">0</div>
+          </div>
+        </div>
+        <div class="kv">
+          <div class="small muted">Bot Coins</div>
+          <div class="value-pill mono" id="bot-coins-display">0</div>
         </div>
       </div>
 
-      <div class="panel coins-panel" role="status" aria-live="polite">
-        <div class="coins-row">
-          <div class="coin-display">
-            <div class="coin-icon">🪙</div>
-            <div>
-              <div class="small muted">Your Balance</div>
-              <div class="coin-text" id="coins-display">0</div>
-            </div>
-          </div>
-          <div class="kv">
-            <div class="small muted">Bot Coins</div>
-            <div class="value-pill mono" id="bot-coins-display">0</div>
-          </div>
+      <div class="control">
+        <div class="muted">Bot Difficulty</div>
+        <div class="range-wrap">
+          <input id="bot-difficulty-slider" type="range" min="0" max="100" value="50" aria-label="Bot difficulty slider" />
+          <div class="value-pill" id="bot-difficulty-label">50%</div>
+        </div>
+        <div class="small-muted">Higher difficulty increases bot counter tendency.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="small muted">Shop</div>
+        <div class="small muted">Items available</div>
+      </div>
+
+      <div class="shop-list" id="shop-items" aria-live="polite" aria-atomic="true">
+        <!-- populated by JS -->
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center;justify-content:space-between">
+        <div class="small-muted">Tip: buy uncommon items to diversify strategy</div>
+        <button id="reset-btn" title="Reset progress">Reset</button>
+      </div>
+    </div>
+
+    <div class="panel small" id="log-panel" style="flex:1;overflow:auto">
+      <div class="small muted">Activity</div>
+      <div id="log-items" style="margin-top:8px;font-size:0.92rem;color:var(--text-muted);line-height:1.4"></div>
+    </div>
+
+    <div class="footer" style="padding-top:8px">
+      <div>© 2025</div>
+      <div class="links"><a href="#" id="help-link">Help</a></div>
+    </div>
+  </aside>
+
+  <main class="game-area" aria-live="polite">
+    <div class="top-row">
+      <div class="status-panel">
+        <div class="label small-muted">Round</div>
+        <div class="value big mono" id="round-counter">0</div>
+      </div>
+      <div class="status-panel">
+        <div class="label small-muted">Streak</div>
+        <div class="value big mono" id="streak-counter">0</div>
+      </div>
+    </div>
+
+    <div class="battle-stage" id="battle-stage" role="region" aria-label="Battle stage">
+      <div class="arena" role="group" aria-label="Arena">
+        <div class="card" id="player-card" aria-live="polite">
+          <div class="label mono">You</div>
+          <div class="icon" id="player-icon">🤔</div>
+          <div class="small muted" id="player-item-name">No item</div>
         </div>
 
-        <div class="control">
-          <div class="muted">Bot Difficulty</div>
-          <div class="range-wrap">
-            <input id="bot-difficulty-slider" type="range" min="0" max="100" value="50" aria-label="Bot difficulty slider" />
-            <div class="value-pill" id="bot-difficulty-label">50%</div>
+        <div class="vs-area">
+          <div class="vs-bubble" id="vs-bubble" aria-hidden="true">
+            <div class="mini">VS</div>
           </div>
-          <div class="small-muted">Higher difficulty increases bot counter tendency.</div>
+          <div class="small muted">First to win gets bonus</div>
+        </div>
+
+        <div class="card" id="bot-card" aria-live="polite">
+          <div class="label mono">Bot</div>
+          <div class="icon" id="bot-icon">🤖</div>
+          <div class="small muted" id="bot-item-name">No item</div>
         </div>
       </div>
 
-      <div class="panel">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div class="small muted">Shop</div>
-          <div class="small muted">Items available</div>
-        </div>
-
-        <div class="shop-list" id="shop-items" aria-live="polite" aria-atomic="true">
-          <!-- populated by JS -->
-        </div>
-
-        <div style="display:flex;gap:8px;margin-top:8px;align-items:center;justify-content:space-between">
-          <div class="small-muted">Tip: buy uncommon items to diversify strategy</div>
-          <button id="reset-btn" title="Reset progress">Reset</button>
-        </div>
+      <div class="choices" id="battle-choices" role="group" aria-label="Choose your item">
+        <!-- choice buttons -->
       </div>
 
-      <div class="panel small" id="log-panel" style="flex:1;overflow:auto">
-        <div class="small muted">Activity</div>
-        <div id="log-items" style="margin-top:8px;font-size:0.92rem;color:var(--text-muted);line-height:1.4"></div>
-      </div>
+      <div class="result-banner" id="battle-status" role="status" aria-live="polite"></div>
 
-      <div class="footer" style="padding-top:8px">
-        <div>© 2025</div>
-        <div class="links"><a href="#" id="help-link">Help</a></div>
-      </div>
-    </aside>
+      <div class="confetti-wrap" id="confetti-wrap"></div>
+      <div class="coin-burst" id="coin-wrap"></div>
+    </div>
 
-    <main class="game-area" aria-live="polite">
-      <div class="top-row">
-        <div class="status-panel">
-          <div class="label small-muted">Round</div>
-          <div class="value big mono" id="round-counter">0</div>
-        </div>
-        <div class="status-panel">
-          <div class="label small-muted">Streak</div>
-          <div class="value big mono" id="streak-counter">0</div>
-        </div>
-      </div>
+    <div class="panel" style="margin-top:10px">
+      <div class="small-muted">Bot Inventory</div>
+      <div class="bot-inventory" id="bot-inventory-items" aria-live="polite" style="margin-top:10px"></div>
+    </div>
 
-      <div class="battle-stage" id="battle-stage" role="region" aria-label="Battle stage">
-        <div class="arena" role="group" aria-label="Arena">
-          <div class="card" id="player-card" aria-live="polite">
-            <div class="label mono">You</div>
-            <div class="icon" id="player-icon">🤔</div>
-            <div class="small muted" id="player-item-name">No item</div>
-          </div>
-
-          <div class="vs-area">
-            <div class="vs-bubble" id="vs-bubble" aria-hidden="true">
-              <div class="mini">VS</div>
-            </div>
-            <div class="small muted">First to win gets bonus</div>
-          </div>
-
-          <div class="card" id="bot-card" aria-live="polite">
-            <div class="label mono">Bot</div>
-            <div class="icon" id="bot-icon">🤖</div>
-            <div class="small muted" id="bot-item-name">No item</div>
-          </div>
-        </div>
-
-        <div class="choices" id="battle-choices" role="group" aria-label="Choose your item">
-          <!-- choice buttons -->
-        </div>
-
-        <div class="result-banner" id="battle-status" role="status" aria-live="polite"></div>
-
-        <div class="confetti-wrap" id="confetti-wrap"></div>
-        <div class="coin-burst" id="coin-wrap"></div>
-      </div>
-
-          <div class="panel" style="margin-top:10px">
-            <div class="small-muted">Bot Inventory</div>
-            <div class="bot-inventory" id="bot-inventory-items" aria-live="polite" style="margin-top:10px"></div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="small-muted">Debug & Controls</div>
-          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-            <button id="auto-bot-buy">Toggle Bot Auto-Buy (On)</button>
+    <div class="panel">
+      <div class="small-muted">Debug & Controls</div>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+        <button id="auto-bot-buy">Toggle Bot Auto-Buy (On)</button>
         <button id="reset-game">Reset Game</button>
-            <div class="small muted">LocalStorage: <span id="storage-indicator">enabled</span></div>
-            <div class="small muted">FPS / Perf: <span id="perf-ind">—</span></div>
-          </div>
-        </div>
+        <div class="small muted">LocalStorage: <span id="storage-indicator">enabled</span></div>
+        <div class="small muted">FPS / Perf: <span id="perf-ind">—</span></div>
       </div>
-    </main>
-  </div>
+    </div>
+  </main>
+</div>
 
 <script type="module">
-  import { items, itemKeys } from './items.js';
+import { items, itemKeys } from './items.js';
 
-  const $ = (sel, root = document) => root.querySelector(sel);
-  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const $ = (sel, root = document) => root.querySelector(sel);
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-  // DOM refs
-  const coinsDisplay = $('#coins-display');
-  const botCoinsDisplay = $('#bot-coins-display');
-  const botDifficultySlider = $('#bot-difficulty-slider');
-  const botDifficultyLabel = $('#bot-difficulty-label');
-  const shopItemsDiv = $('#shop-items');
-  const battleChoicesDiv = $('#battle-choices');
-  const battleStatus = $('#battle-status');
-  const playerIcon = $('#player-icon');
-  const botIcon = $('#bot-icon');
-  const playerItemName = $('#player-item-name');
-  const botItemName = $('#bot-item-name');
-  const logItems = $('#log-items');
-  const roundCounter = $('#round-counter');
-  const streakCounter = $('#streak-counter');
-  const resetBtn = $('#reset-btn');
-  const autoBotBuyBtn = $('#auto-bot-buy');
-  const shuffleShopBtn = $('#shuffle-shop');
-  const confettiWrap = $('#confetti-wrap');
+// DOM refs
+const coinsDisplay = $('#coins-display');
+const botCoinsDisplay = $('#bot-coins-display');
+const botDifficultySlider = $('#bot-difficulty-slider');
+const botDifficultyLabel = $('#bot-difficulty-label');
+const shopItemsDiv = $('#shop-items');
+const battleChoicesDiv = $('#battle-choices');
+const battleStatus = $('#battle-status');
+const playerIcon = $('#player-icon');
+const botIcon = $('#bot-icon');
+const playerItemName = $('#player-item-name');
+const botItemName = $('#bot-item-name');
+const logItems = $('#log-items');
+const roundCounter = $('#round-counter');
+const streakCounter = $('#streak-counter');
+const resetBtn = $('#reset-btn');
+const autoBotBuyBtn = $('#auto-bot-buy');
+const resetGameBtn = $('#reset-game');
+const confettiWrap = $('#confetti-wrap');
 
-  // Rarity values for coin calculation
-  const rarityValues = {
-    'Common': 1,
-    'Uncommon': 2,
-    'Rare': 3,
-    'Epic': 4,
-    'Legendary': 5
-  };
+// Coin base values
+const baseWinCoins = 5;
+const baseLoseCoins = 2;
 
-  // Game state
-  let state = {
-    coins: 0,
-    botCoins: 0,
-    playerInventory: new Set(['rock', 'paper', 'scissors']),
-    botInventory: new Set(['rock', 'paper', 'scissors']),
-    round: 0,
-    streak: 0,
-    botDifficulty: Number(botDifficultySlider.value),
-    autoBotBuy: true,
-    shopOrder: [...itemKeys],
-    coinGoal: 200, // Winning coin goal for celebration
-  };
+// Rarity values for coin multiplier
+const rarityValues = {
+  'Common': 1,
+  'Uncommon': 2,
+  'Rare': 3,
+  'Epic': 4,
+  'Legendary': 5
+};
 
-  // Save/load state
-  function saveState() {
-    try {
-      localStorage.setItem('rpsflip:v3', JSON.stringify({
-        coins: state.coins,
-        botCoins: state.botCoins,
-        playerInventory: [...state.playerInventory],
-        botInventory: [...state.botInventory],
-        round: state.round,
-        streak: state.streak,
-        botDifficulty: state.botDifficulty,
-      }));
-      $('#storage-indicator').textContent = 'enabled';
-    } catch {
-      $('#storage-indicator').textContent = 'unavailable';
-    }
+// Game state
+let state = {
+  coins: 0,
+  botCoins: 0,
+  playerInventory: new Set(['rock', 'paper', 'scissors']),
+  botInventory: new Set(['rock', 'paper', 'scissors']),
+  round: 0,
+  streak: 0,
+  botDifficulty: Number(botDifficultySlider.value),
+  autoBotBuy: true,
+  shopOrder: [...itemKeys],
+  coinGoal: 200, // Celebration goal
+};
+
+// Save/load
+function saveState() {
+  try {
+    localStorage.setItem('rpsflip:v3', JSON.stringify({
+      coins: state.coins,
+      botCoins: state.botCoins,
+      playerInventory: [...state.playerInventory],
+      botInventory: [...state.botInventory],
+      round: state.round,
+      streak: state.streak,
+      botDifficulty: state.botDifficulty
+    }));
+    $('#storage-indicator').textContent = 'enabled';
+  } catch {
+    $('#storage-indicator').textContent = 'unavailable';
   }
+}
 
-  function loadState() {
-    try {
-      const raw = localStorage.getItem('rpsflip:v3');
-      if (!raw) return;
-      const saved = JSON.parse(raw);
-      state.coins = saved.coins ?? state.coins;
-      state.botCoins = saved.botCoins ?? state.botCoins;
-      state.playerInventory = new Set(saved.playerInventory ?? [...state.playerInventory]);
-      state.botInventory = new Set(saved.botInventory ?? [...state.botInventory]);
-      state.round = saved.round ?? state.round;
-      state.streak = saved.streak ?? state.streak;
-      state.botDifficulty = saved.botDifficulty ?? state.botDifficulty;
-    } catch {
-      // ignore
-    }
-  }
+function loadState() {
+  try {
+    const raw = localStorage.getItem('rpsflip:v3');
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    state.coins = saved.coins ?? state.coins;
+    state.botCoins = saved.botCoins ?? state.botCoins;
+    state.playerInventory = new Set(saved.playerInventory ?? [...state.playerInventory]);
+    state.botInventory = new Set(saved.botInventory ?? [...state.botInventory]);
+    state.round = saved.round ?? state.round;
+    state.streak = saved.streak ?? state.streak;
+    state.botDifficulty = saved.botDifficulty ?? state.botDifficulty;
+  } catch {}
+}
 
-  // Render functions
-  function renderCoins() {
-    coinsDisplay.textContent = state.coins;
-    botCoinsDisplay.textContent = state.botCoins;
-  }
+// Render functions
+function renderCoins() {
+  coinsDisplay.textContent = state.coins;
+  botCoinsDisplay.textContent = state.botCoins;
+}
 
-  function renderShop() {
-    shopItemsDiv.innerHTML = '';
-    state.shopOrder.forEach(key => {
-      const item = items[key];
-      if (!item) return;
+function renderShop() {
+  shopItemsDiv.innerHTML = '';
+  state.shopOrder.forEach(key => {
+    const item = items[key];
+    if (!item) return;
     const owned = state.playerInventory.has(key);
-const affordable = state.coins >= item.cost;
-const div = document.createElement('div');
-// Add the new rarity class to the div
-div.className = `shop-item rarity-${item.rarity}${owned ? ' owned' : ''}`;
-div.innerHTML = `
-  <div class="icon">${item.icon}</div>
-  <div class="info">
-    <div class="name">${item.name}</div>
-    <div class="rarity">Cost: ${item.cost} 🪙</div>
-  </div>
-  <button ${owned ? 'disabled' : ''} tabindex="0">${owned ? 'Owned' : 'Buy'}</button>
-`;
-      const btn = div.querySelector('button');
-      btn.onclick = () => {
-        if (state.coins < item.cost) return;
-        state.coins -= item.cost;
-        state.playerInventory.add(key);
-        log(`Bought ${item.name} for ${item.cost} coins.`);
-        renderCoins();
-        renderShop();
-        renderBattleChoices();
-        saveState();
-      };
-      shopItemsDiv.appendChild(div);
-    });
-  }
-
-  function renderBattleChoices() {
-    battleChoicesDiv.innerHTML = '';
-    Array.from(state.playerInventory).forEach(key => {
-      const item = items[key];
-      if (!item) return;
-      const btn = document.createElement('button');
-      btn.className = 'choice-btn';
-      btn.textContent = `${item.icon} ${item.name}`;
-      btn.setAttribute('tabindex', '0');
-      btn.onclick = () => playerChoose(key);
-      battleChoicesDiv.appendChild(btn);
-    });
-  }
-
-  function renderBotInventory() {
-    const botInventoryDiv = $('#bot-inventory-items');
-    botInventoryDiv.innerHTML = '';
-    Array.from(state.botInventory).forEach(key => {
-      const item = items[key];
-      if (!item) return;
-      const div = document.createElement('div');
-      div.className = 'bot-inv-item';
-      div.textContent = `${item.icon} ${item.name}`;
-      botInventoryDiv.appendChild(div);
-    });
-  }
-
-  // Game logic
-  function getResult(playerKey, botKey) {
-    if (playerKey === botKey) return 'tie';
-    const player = items[playerKey];
-    if (player.beats.includes(botKey)) return 'win';
-    return 'lose';
-  }
-
-  function botChoose(playerKey) {
-    const difficulty = state.botDifficulty;
-    const available = [...state.botInventory];
-    if (available.length === 0) return pick(itemKeys);
-    const counters = available.filter(k => items[k].beats.includes(playerKey));
-    if (Math.random() * 100 < difficulty && counters.length > 0) {
-      return pick(counters);
-    }
-    return pick(available);
-  }
-
-  // Animate card flip
-  async function animateFlip(cardEl, newIcon, newName) {
-    await cardEl.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(90deg)' }], { duration: 200 }).finished;
-    cardEl.querySelector('.icon').textContent = newIcon;
-    cardEl.querySelector('.small.muted').textContent = newName;
-    await cardEl.animate([{ transform: 'rotateY(90deg)' }, { transform: 'rotateY(0deg)' }], { duration: 200 }).finished;
-  }
-
-  // Confetti effect (basic simple version)
-  function confettiBurst() {
-    // Clear previous confetti
-    confettiWrap.innerHTML = '';
-    // Create some confetti dots
-    for (let i = 0; i < 100; i++) {
-      const dot = document.createElement('div');
-      dot.className = 'confetti-dot';
-      dot.style.left = Math.random() * 100 + '%';
-      dot.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
-      dot.style.animationDelay = (Math.random() * 2) + 's';
-      confettiWrap.appendChild(dot);
-    }
-    setTimeout(() => confettiWrap.innerHTML = '', 3000);
-  }
-
-  async function playerChoose(playerKey) {
-    disableChoices(true);
-
-    const botKey = botChoose(playerKey);
-    const playerCard = $('#player-card');
-    const botCard = $('#bot-card');
-
-    await Promise.all([
-      animateFlip(playerCard, items[playerKey].icon, items[playerKey].name),
-      animateFlip(botCard, items[botKey].icon, items[botKey].name),
-    ]);
-
-    const result = getResult(playerKey, botKey);
-    const playerRarityVal = rarityValues[items[playerKey].rarity] || 1;
-    const botRarityVal = rarityValues[items[botKey].rarity] || 1;
-
-  const itemRarity = selectedItem.rarity; // e.g., "epic"
-const multiplier = rarityCoinMultipliers[itemRarity];
-
-// Win case
-if (winner === "player") {
-  const coinsEarned = Math.round(baseWinCoins * multiplier.win);
-  playerCoins += coinsEarned;
-}
-
-// Lose case
-if (winner === "bot") {
-  const coinsLost = Math.round(baseLoseCoins * multiplier.lose);
-  playerCoins -= coinsLost;
-}
-
-
-    if (result === 'win') {
-      // Player wins
-      const winCoins = baseWinCoins * playerRarityVal;
-      state.coins += winCoins;
-
-      // Bot loses coins scaled by rarity, at least 1 coin
-      const botLoseCoins = Math.max(1, baseLoseCoins * botRarityVal);
-      state.botCoins = Math.max(0, state.botCoins - botLoseCoins);
-
-      state.streak++;
-      battleStatus.textContent = `You Win! +${winCoins} coins`;
-      log(`You won round ${state.round + 1}, gained ${winCoins} coins!`);
-      
-      // Bonus for streak 5
-      if (state.streak > 0 && state.streak % 5 === 0) {
-        const streakBonus = 25;
-        state.coins += streakBonus;
-        battleStatus.textContent += ` + Streak Bonus ${streakBonus} coins!`;
-        log(`Streak bonus! +${streakBonus} coins for winning ${state.streak} in a row.`);
-      }
-
-    } else if (result === 'lose') {
-      // Bot wins
-      const winCoins = baseWinCoins * botRarityVal;
-      state.botCoins += winCoins;
-
-      // Player loses coins scaled by rarity, at least 1 coin
-      const playerLoseCoins = Math.max(1, baseLoseCoins * playerRarityVal);
-      state.coins = Math.max(0, state.coins - playerLoseCoins);
-
-      state.streak = 0;
-      battleStatus.textContent = `You Lose! -${playerLoseCoins} coins`;
-      log(`You lost round ${state.round + 1}, lost ${playerLoseCoins} coins.`);
-    } else {
-      battleStatus.textContent = 'Tie!';
-      log(`Round ${state.round + 1} was a tie.`);
-      // No coin changes for tie
-    }
-
-    state.round++;
-    roundCounter.textContent = state.round;
-    streakCounter.textContent = state.streak;
-
-    renderCoins();
-    renderBotInventory();
-
-    saveState();
-
-    // Check coin goal for confetti celebration
-    if (state.coins >= state.coinGoal) {
-      log(`🎉 Congratulations! You reached ${state.coinGoal} coins!`);
-      confettiBurst();
-    }
-
-    disableChoices(false);
-
-    setTimeout(() => {
-      battleStatus.textContent = '';
-      playerIcon.textContent = '🤔';
-      playerItemName.textContent = 'No item';
-      botIcon.textContent = '🤖';
-      botItemName.textContent = 'No item';
-    }, 2500);
-  }
-
-  function disableChoices(disabled) {
-    Array.from(battleChoicesDiv.children).forEach(btn => {
-      btn.disabled = disabled;
-    });
-  }
-
-  // Bot auto-buy logic
-  function botAutoBuy() {
-    if (!state.autoBotBuy) return;
-
-    const affordableItems = itemKeys.filter(key => {
-      const item = items[key];
-      return !state.botInventory.has(key) && item.cost <= state.botCoins;
-    });
-
-    if (affordableItems.length > 0) {
-      const toBuyKey = pick(affordableItems);
-      const item = items[toBuyKey];
-      state.botCoins -= item.cost;
-      state.botInventory.add(toBuyKey);
-      log(`Bot bought ${item.name} for ${item.cost} coins.`);
+    const div = document.createElement('div');
+    div.className = `shop-item rarity-${item.rarity}${owned ? ' owned' : ''}`;
+    div.innerHTML = `
+      <div class="icon">${item.icon}</div>
+      <div class="info">
+        <div class="name">${item.name}</div>
+        <div class="rarity">Cost: ${item.cost} 🪙</div>
+      </div>
+      <button ${owned ? 'disabled' : ''}>${owned ? 'Owned' : 'Buy'}</button>
+    `;
+    const btn = div.querySelector('button');
+    btn.onclick = () => {
+      if (state.coins < item.cost) return;
+      state.coins -= item.cost;
+      state.playerInventory.add(key);
+      log(`Bought ${item.name} for ${item.cost} coins.`);
       renderCoins();
-      renderBotInventory();
-      saveState();
-    }
-  }
-
-  // Reset shop now costs 10 coins
-  resetBtn.onclick = () => {
-    if (state.coins < 10) {
-      alert('You need at least 10 coins to reset the shop.');
-      return;
-    }
-    if (confirm('Reset shop for 10 coins?')) {
-      state.coins -= 10;
-      state.shopOrder = state.shopOrder.sort(() => Math.random() - 0.5);
       renderShop();
-      renderCoins();
-      log('Shop reset for 10 coins.');
+      renderBattleChoices();
       saveState();
+    };
+    shopItemsDiv.appendChild(div);
+  });
+}
+
+function renderBattleChoices() {
+  battleChoicesDiv.innerHTML = '';
+  Array.from(state.playerInventory).forEach(key => {
+    const item = items[key];
+    if (!item) return;
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = `${item.icon} ${item.name}`;
+    btn.setAttribute('tabindex', '0');
+    btn.onclick = () => playerChoose(key);
+    battleChoicesDiv.appendChild(btn);
+  });
+}
+
+function renderBotInventory() {
+  const botInventoryDiv = $('#bot-inventory-items');
+  botInventoryDiv.innerHTML = '';
+  Array.from(state.botInventory).forEach(key => {
+    const item = items[key];
+    if (!item) return;
+    const div = document.createElement('div');
+    div.className = 'bot-inv-item';
+    div.textContent = `${item.icon} ${item.name}`;
+    botInventoryDiv.appendChild(div);
+  });
+}
+
+// Game logic
+function getResult(playerKey, botKey) {
+  if (playerKey === botKey) return 'tie';
+  const player = items[playerKey];
+  if (player.beats.includes(botKey)) return 'win';
+  return 'lose';
+}
+
+function botChoose(playerKey) {
+  const difficulty = state.botDifficulty;
+  const available = [...state.botInventory];
+  if (!available.length) return pick(itemKeys);
+  const counters = available.filter(k => items[k].beats.includes(playerKey));
+  if (Math.random() * 100 < difficulty && counters.length) return pick(counters);
+  return pick(available);
+}
+
+// Animate card flip
+async function animateFlip(cardEl, newIcon, newName) {
+  await cardEl.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(90deg)' }], { duration: 200 }).finished;
+  cardEl.querySelector('.icon').textContent = newIcon;
+  cardEl.querySelector('.small.muted').textContent = newName;
+  await cardEl.animate([{ transform: 'rotateY(90deg)' }, { transform: 'rotateY(0deg)' }], { duration: 200 }).finished;
+}
+
+// Confetti
+function confettiBurst() {
+  confettiWrap.innerHTML = '';
+  for (let i = 0; i < 100; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'confetti-dot';
+    dot.style.left = Math.random() * 100 + '%';
+    dot.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
+    dot.style.animationDelay = (Math.random() * 2) + 's';
+    confettiWrap.appendChild(dot);
+  }
+  setTimeout(() => confettiWrap.innerHTML = '', 3000);
+}
+
+async function playerChoose(playerKey) {
+  disableChoices(true);
+
+  const botKey = botChoose(playerKey);
+  const playerCard = $('#player-card');
+  const botCard = $('#bot-card');
+
+  await Promise.all([
+    animateFlip(playerCard, items[playerKey].icon, items[playerKey].name),
+    animateFlip(botCard, items[botKey].icon, items[botKey].name),
+  ]);
+
+  const result = getResult(playerKey, botKey);
+  const playerRarityVal = rarityValues[items[playerKey].rarity] || 1;
+  const botRarityVal = rarityValues[items[botKey].rarity] || 1;
+
+  if (result === 'win') {
+    const winCoins = baseWinCoins * playerRarityVal;
+    state.coins += winCoins;
+    const botLoseCoins = Math.max(1, baseLoseCoins * botRarityVal);
+    state.botCoins = Math.max(0, state.botCoins - botLoseCoins);
+    state.streak++;
+    battleStatus.textContent = `You Win! +${winCoins} coins`;
+    log(`You won round ${state.round + 1}, gained ${winCoins} coins!`);
+    if (state.streak > 0 && state.streak % 5 === 0) {
+      const streakBonus = 25;
+      state.coins += streakBonus;
+      battleStatus.textContent += ` + Streak Bonus ${streakBonus} coins!`;
+      log(`Streak bonus! +${streakBonus} coins for ${state.streak} wins in a row.`);
     }
-  };
+  } else if (result === 'lose') {
+    const winCoins = baseWinCoins * botRarityVal;
+    state.botCoins += winCoins;
+    const playerLoseCoins = Math.max(1, baseLoseCoins * playerRarityVal);
+    state.coins = Math.max(0, state.coins - playerLoseCoins);
+    state.streak = 0;
+    battleStatus.textContent = `You Lose! -${playerLoseCoins} coins`;
+    log(`You lost round ${state.round + 1}, lost ${playerLoseCoins} coins.`);
+  } else {
+    battleStatus.textContent = 'Tie!';
+    log(`Round ${state.round + 1} was a tie.`);
+  }
 
-  // Initialization
-  function init() {
-    loadState();
+  state.round++;
+  roundCounter.textContent = state.round;
+  streakCounter.textContent = state.streak;
+  renderCoins();
+  renderBotInventory();
+  saveState();
 
-    renderCoins();
+  if (state.coins >= state.coinGoal) {
+    log(`🎉 Congratulations! You reached ${state.coinGoal} coins!`);
+    confettiBurst();
+  }
+
+  disableChoices(false);
+
+  setTimeout(() => {
+    battleStatus.textContent = '';
+    playerIcon.textContent = '🤔';
+    playerItemName.textContent = 'No item';
+    botIcon.textContent = '🤖';
+    botItemName.textContent = 'No item';
+  }, 2500);
+}
+
+function disableChoices(disabled) {
+  Array.from(battleChoicesDiv.children).forEach(btn => {
+    btn.disabled = disabled;
+    btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+  });
+}
+
+// Bot auto-buy
+function botAutoBuy() {
+  if (!state.autoBotBuy) return;
+  const affordable = itemKeys.filter(k => !state.botInventory.has(k) && items[k].cost <= state.botCoins);
+  if (!affordable.length) return;
+  const key = pick(affordable);
+  state.botCoins -= items[key].cost;
+  state.botInventory.add(key);
+  log(`Bot bought ${items[key].name} for ${items[key].cost} coins.`);
+  renderCoins();
+  renderBotInventory();
+  saveState();
+}
+
+// Shop reset
+resetBtn.onclick = () => {
+  if (state.coins < 10) return alert('You need at least 10 coins to reset the shop.');
+  if (confirm('Reset shop for 10 coins?')) {
+    state.coins -= 10;
+    state.shopOrder.sort(() => Math.random() - 0.5);
     renderShop();
-    renderBattleChoices();
-    renderBotInventory();
-
-    roundCounter.textContent = state.round;
-    streakCounter.textContent = state.streak;
-    botDifficultySlider.value = state.botDifficulty;
-    botDifficultyLabel.textContent = `${state.botDifficulty}%`;
-
-    botDifficultySlider.oninput = () => {
-      state.botDifficulty = Number(botDifficultySlider.value);
-      botDifficultyLabel.textContent = `${state.botDifficulty}%`;
-      saveState();
-    };
-
-    autoBotBuyBtn.onclick = () => {
-      state.autoBotBuy = !state.autoBotBuy;
-      autoBotBuyBtn.textContent = `Toggle Bot Auto-Buy (${state.autoBotBuy ? 'On' : 'Off'})`;
-    };
-
- const resetGameBtn = $('#reset-game');
-
-resetGameBtn.onclick = () => {
-  if (confirm('Are you sure you want to reset your game progress? This cannot be undone.')) {
-    localStorage.removeItem('rpsflip:v3'); // remove saved progress
-    location.reload(); // reload the page to reset state
+    renderCoins();
+    log('Shop reset for 10 coins.');
+    saveState();
   }
 };
 
-
-    setInterval(botAutoBuy, 5000);
+// Game reset
+resetGameBtn.onclick = () => {
+  if (confirm('Are you sure you want to reset your game progress? This cannot be undone.')) {
+    localStorage.removeItem('rpsflip:v3');
+    location.reload();
   }
+};
 
-  function log(text) {
-    const el = document.createElement('div');
-    el.textContent = text;
-    logItems.appendChild(el);
-    logItems.scrollTop = logItems.scrollHeight;
-  }
+// Init
+function init() {
+  loadState();
+  renderCoins();
+  renderShop();
+  renderBattleChoices();
+  renderBotInventory();
+  botDifficultySlider.oninput = () => {
+    state.botDifficulty = Number(botDifficultySlider.value);
+    botDifficultyLabel.textContent = `${state.botDifficulty}%`;
+    saveState();
+  };
+  autoBotBuyBtn.onclick = () => {
+    state.autoBotBuy = !state.autoBotBuy;
+    autoBotBuyBtn.textContent = `Toggle Bot Auto-Buy (${state.autoBotBuy ? 'On' : 'Off'})`;
+  };
+  setInterval(botAutoBuy, 3000);
+}
 
-  init();
+// Logging
+function log(msg) {
+  const div = document.createElement('div');
+  div.textContent = msg;
+  logItems.prepend(div);
+}
 
+init();
 </script>
-
-
 </body>
 </html>
