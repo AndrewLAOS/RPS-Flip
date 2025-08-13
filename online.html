@@ -4,144 +4,170 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Ultimate RPS Flip - Online Mode</title>
-
-<!-- Google Font -->
 <link href="https://fonts.googleapis.com/css2?family=Comfortaa&display=swap" rel="stylesheet" />
 
 <style>
 /* ---------- Reset & Base ---------- */
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Comfortaa', cursive; background: linear-gradient(135deg, #0b1220, #1a1f3d); color: #fff; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 20px; }
-h1 { font-size: 4rem; text-align: center; margin-bottom: 10px; }
-.subtitle { font-size: 1.8rem; text-align: center; margin-bottom: 25px; color: #ddd; }
+* { box-sizing: border-box; margin:0; padding:0; }
+body {
+  font-family:'Comfortaa', cursive;
+  background: linear-gradient(135deg,#0b1220,#1a1f3d);
+  color:#fff;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  min-height:100vh;
+  padding:20px;
+}
+.main-nav ul {
+  list-style:none;
+  display:flex;
+  gap:20px;
+  margin-bottom:20px;
+}
+.main-nav a {
+  color:#fff;
+  text-decoration:none;
+  font-weight:bold;
+}
+.main-nav a[aria-current="page"] { text-decoration:underline; }
 
-/* ---------- Buttons ---------- */
-.btn { background-color: #4b6cb7; color: #fff; border: none; border-radius: 16px; padding: 18px 36px; margin: 10px; cursor: pointer; font-size: 1.5rem; transition: 0.3s all ease; box-shadow: 0 6px 25px rgba(0,0,0,0.5); }
-.btn:hover { background-color: #182848; transform: translateY(-2px); }
-.btn:disabled { background-color: #555; cursor: not-allowed; }
-
-/* ---------- Container ---------- */
-#container { width: 100%; max-width: 1200px; text-align: center; }
-
-/* ---------- Inputs ---------- */
-input[type="text"] { padding: 18px; font-size: 1.5rem; border-radius: 14px; border: none; margin: 12px 0; width: 300px; text-align: center; }
-
-/* ---------- Player Area ---------- */
-.player-area { display: flex; justify-content: center; gap: 120px; margin: 40px 0; flex-wrap: wrap; }
-
-/* ---------- Player Cards ---------- */
-.player-card { perspective: 1200px; display: flex; flex-direction: column; align-items: center; }
-.card-inner { width: 240px; height: 340px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; cursor: pointer; }
-.card-inner.flipped { transform: rotateY(180deg); }
-.card-front, .card-back { position: absolute; width: 100%; height: 100%; border-radius: 18px; backface-visibility: hidden; display: flex; justify-content: center; align-items: center; font-size: 6rem; }
-.card-front { background-color: #2c3e50; color: #fff; }
-.card-back { background-color: #2980b9; color: #fff; transform: rotateY(180deg); }
-
-/* ---------- Player Names & Scores ---------- */
-.player-name { margin-top: 16px; font-weight: bold; font-size: 2rem; }
-.player-score { font-size: 1.8rem; color: #ffd700; margin-top: 6px; }
-
-/* ---------- Choices ---------- */
-#choices { display: flex; justify-content: center; flex-wrap: wrap; gap: 30px; margin-top: 30px; }
-.choice { width: 140px; height: 140px; font-size: 3.5rem; display: flex; justify-content: center; align-items: center; flex-direction: column; border-radius: 18px; background: #34495e; transition: 0.3s; position: relative; }
-.choice-label { font-size: 1.5rem; margin-top: 10px; color: #fff; }
-.choice:hover { transform: scale(1.2); background: #1abc9c; }
-
-/* ---------- Status Text ---------- */
-#status-text { margin-top: 30px; font-size: 2rem; min-height: 40px; }
-.win-text { color: #00ff00; font-weight: bold; }
-.lose-text { color: #ff4c4c; font-weight: bold; }
-.tie-text { color: #ffd700; font-weight: bold; }
-
-/* ---------- Loading Spinner ---------- */
-#loading-spinner { border: 10px solid #f3f3f3; border-top: 10px solid #3498db; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin: 30px auto; display: none; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-/* ---------- Responsive ---------- */
-@media (max-width: 700px) { .player-area { gap: 60px; } .card-inner { width: 180px; height: 260px; font-size: 5rem; } .choice { width: 100px; height: 100px; font-size: 2.5rem; } input[type="text"] { width: 220px; } }
-.card-inner { width: 220px; height: 300px; }
-.choice { width: 140px; height: 140px; font-size: 3rem; }
-input[type="text"] { width: 300px; font-size: 1.5rem; padding: 20px; }
-.btn { font-size: 1.5rem; padding: 20px 40px; }
-.leave-match { background-color: #c0392b; margin-top: 15px; }
-.leave-match:hover { background-color: #e74c3c; }
+.app { display:flex; width:100%; max-width:1400px; gap:20px; }
+.sidebar {
+  width:300px;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+.brand { text-align:center; margin-bottom:20px; }
+.logo { font-size:2.5rem; font-weight:bold; margin-bottom:5px; }
+.panel { background:#1c1f3b; border-radius:14px; padding:15px; display:flex; flex-direction:column; gap:10px; }
+.small-muted, .small { font-size:0.85rem; color:#aaa; }
+.coins-row { display:flex; justify-content:space-between; align-items:center; }
+.coin-display { display:flex; gap:5px; align-items:center; }
+.value-pill { background:#34495e; padding:4px 8px; border-radius:12px; }
+.shop-list, .bot-inventory { display:flex; flex-direction:column; gap:5px; }
+.shop-item { display:flex; justify-content:space-between; background:#2c3e50; padding:8px; border-radius:12px; }
+.shop-item button { background:#4b6cb7; border:none; border-radius:10px; padding:5px 10px; color:#fff; cursor:pointer; }
+.shop-item button:disabled { background:#555; cursor:not-allowed; }
+.game-area { flex:1; display:flex; flex-direction:column; gap:15px; }
+.top-row { display:flex; gap:15px; }
+.status-panel { background:#1c1f3b; border-radius:12px; padding:10px; text-align:center; flex:1; }
+.battle-stage { background:#2c3e50; border-radius:14px; padding:20px; display:flex; flex-direction:column; gap:15px; }
+.arena { display:flex; justify-content:space-around; align-items:center; gap:15px; flex-wrap:wrap; }
+.card { background:#34495e; border-radius:14px; padding:15px; text-align:center; width:120px; }
+.icon { font-size:3rem; margin-bottom:5px; }
+.choices { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+.choice-btn { background:#4b6cb7; border:none; border-radius:12px; padding:10px 15px; cursor:pointer; font-size:1rem; }
+.choice-btn:hover { background:#1abc9c; transform:scale(1.05); transition:0.2s; }
+.result-banner { text-align:center; font-size:1.2rem; font-weight:bold; min-height:24px; margin-top:10px; }
+.confetti-wrap { position:relative; height:0; }
+.leave-match { background:#c0392b; margin-top:10px; }
+.leave-match:hover { background:#e74c3c; }
+input[type="text"] { border-radius:12px; padding:8px; font-size:1rem; border:none; width:150px; }
+button { font-family:'Comfortaa', cursive; }
+@media(max-width:800px) { .app { flex-direction:column; } .sidebar { width:100%; } .arena { flex-direction:column; } }
 </style>
 </head>
 
 <body>
-<div id="container" role="main" aria-label="Ultimate Rock Paper Scissors Flip Online Game">
-  <h1>Ultimate RPS Flip</h1>
-  <p class="subtitle">Play against friends or bots with dramatic card flips!</p>
+<nav class="main-nav">
+  <ul>
+    <li><a href="index.html">Home</a></li>
+    <li><a href="matchchart.html">Matchup Chart</a></li>
+    <li><a href="online.html" aria-current="page">Online Mode</a></li>
+  </ul>
+</nav>
 
-  <!-- Back to Bot Mode -->
-  <button id="btnBackToBot" class="btn" aria-label="Back to Bot Mode">← Back to Bot Mode</button>
-
-  <!-- Login -->
-  <div id="login-section" aria-live="polite">
-    <button id="btnGoogleLogin" class="btn">Sign in with Google</button>
-    <p id="login-status"></p>
-  </div>
-
-  <!-- Match Section -->
-  <div id="match-section" hidden>
-    <button id="btnCreateMatch" class="btn">Create New Match</button>
-    <p id="generated-match-id"></p>
-    <br/>
-    <label for="match-id-input">Enter Match ID to Join:</label><br/>
-    <input type="text" id="match-id-input" maxlength="10" placeholder="e.g. ABC123" autocomplete="off" aria-label="Match ID input" />
-    <button id="btnJoinMatch" class="btn">Join Match</button>
-    <p id="match-status"></p>
-  </div>
-
-  <!-- Game Section -->
-  <div id="game-section" hidden aria-live="polite" aria-atomic="true">
-    <div class="player-area" aria-label="Players area">
-      <div class="player-card" aria-label="Your card">
-        <div class="card-inner" id="player-card-inner">
-          <div class="card-front">?</div>
-          <div class="card-back" id="player-card-back"></div>
-        </div>
-        <div class="player-name" id="player-name-label"></div>
-        <div class="player-score" id="player-score">0</div>
-      </div>
-
-      <div class="player-card" aria-label="Opponent card">
-        <div class="card-inner" id="opponent-card-inner">
-          <div class="card-front">?</div>
-          <div class="card-back" id="opponent-card-back"></div>
-        </div>
-        <div class="player-name" id="opponent-name-label">Waiting for opponent...</div>
-        <div class="player-score" id="opponent-score">0</div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">RΨS</div>
+      <div>
+        <h1>Ultimate RPS Flip</h1>
+        <p class="small">Online — battle friends with epic items!</p>
       </div>
     </div>
 
-    <div id="choices" role="list" aria-label="Choose your item to play"></div>
-    <div id="status-text" role="status">Make your choice!</div>
-    <div id="loading-spinner" aria-hidden="true" role="img" aria-label="Loading spinner"></div>
+    <div class="panel coins-panel">
+      <div class="coins-row">
+        <div class="coin-display">
+          <div class="coin-icon">🪙</div>
+          <div>
+            <div class="small-muted">Your Balance</div>
+            <div class="coin-text" id="coins-display">0</div>
+          </div>
+        </div>
+        <div class="kv">
+          <div class="small-muted">Opponent Coins</div>
+          <div class="value-pill mono" id="opponent-coins-display">0</div>
+        </div>
+      </div>
+    </div>
 
-    <!-- Leave Match -->
-    <button id="btnLeaveMatch" class="btn leave-match">Leave Match</button>
-  </div>
+    <div class="panel">
+      <div class="small-muted">Shop & Inventory</div>
+      <div class="shop-list" id="shop-items"></div>
+      <div class="bot-inventory" id="player-inventory-items"></div>
+    </div>
+  </aside>
 
-  <!-- Shop Section -->
-  <section id="shop-section" hidden>
-    <h3>Shop</h3>
-    <p>Coins: <span id="coin-balance">0</span></p>
-    <button id="btnClaimDaily" class="btn">Claim Daily +50</button>
-    <h4>Items</h4>
-    <div id="shop-items"></div>
-    <h4>Your Inventory</h4>
-    <div id="inventory-items"></div>
-  </section>
+  <main class="game-area">
+    <div class="top-row">
+      <div class="status-panel">
+        <div class="label small-muted">Round</div>
+        <div class="value big mono" id="round-counter">0</div>
+      </div>
+      <div class="status-panel">
+        <div class="label small-muted">Streak</div>
+        <div class="value big mono" id="streak-counter">0</div>
+      </div>
+    </div>
+
+    <div class="battle-stage" id="battle-stage">
+      <div class="arena">
+        <div class="card" id="player-card">
+          <div class="label mono">You</div>
+          <div class="icon" id="player-icon">🤔</div>
+          <div class="small-muted" id="player-item-name">No item</div>
+        </div>
+
+        <div class="vs-area">
+          <div class="vs-bubble" id="vs-bubble">
+            <div class="mini">VS</div>
+          </div>
+        </div>
+
+        <div class="card" id="opponent-card">
+          <div class="label mono">Opponent</div>
+          <div class="icon" id="opponent-icon">🤔</div>
+          <div class="small-muted" id="opponent-item-name">No item</div>
+        </div>
+      </div>
+
+      <div class="choices" id="battle-choices"></div>
+
+      <div class="result-banner" id="battle-status"></div>
+      <div class="confetti-wrap" id="confetti-wrap"></div>
+    </div>
+
+    <div class="panel">
+      <button id="btnCreateMatch">Create Match</button>
+      <input type="text" id="match-id-input" placeholder="Enter Match ID" />
+      <button id="btnJoinMatch">Join Match</button>
+      <p id="match-id-display"></p>
+      <p id="match-status"></p>
+      <button id="btnLeaveMatch" class="leave-match">Leave Match</button>
+    </div>
+  </main>
 </div>
 
-<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-<!-- Online Game Logic -->
-<script src="online-game.js"></script>
+<script type="module" src="items.js"></script>
+<script type="module" src="online-game.js"></script>
 
 </body>
 </html>

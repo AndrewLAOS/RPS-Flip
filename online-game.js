@@ -1,307 +1,245 @@
-/* online-game.js */
+// online-game.js
+import { items, itemKeys } from './items.js';
 
-// -------------------- Firebase Config --------------------
+const $ = (sel, root = document) => root.querySelector(sel);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+// DOM references
+const loginSection = $('#login-section');
+const matchSection = $('#match-section');
+const gameSection = $('#game-section');
+const btnGoogleLogin = $('#btnGoogleLogin');
+const loginStatus = $('#login-status');
+
+const btnCreateMatch = $('#btnCreateMatch');
+const btnJoinMatch = $('#btnJoinMatch');
+const matchIdInput = $('#match-id-input');
+const matchStatus = $('#match-status');
+const generatedMatchId = $('#generated-match-id');
+
+const playerCardInner = $('#player-card-inner');
+const playerCardBack = $('#player-card-back');
+const opponentCardInner = $('#opponent-card-inner');
+const opponentCardBack = $('#opponent-card-back');
+const playerNameLabel = $('#player-name-label');
+const opponentNameLabel = $('#opponent-name-label');
+const playerScoreEl = $('#player-score');
+const opponentScoreEl = $('#opponent-score');
+
+const choicesDiv = $('#choices');
+const statusText = $('#status-text');
+const loadingSpinner = $('#loading-spinner');
+
+const btnLeaveMatch = $('#btnLeaveMatch');
+
+// Game state
+let state = {
+  playerId: null,
+  playerName: '',
+  matchId: null,
+  choices: new Set(itemKeys),
+  playerChoice: null,
+  opponentChoice: null,
+  playerScore: 0,
+  opponentScore: 0,
+  matchRef: null,
+};
+
+// ---------------------- Firebase Setup ----------------------
 const firebaseConfig = {
-  apiKey: "AIzaSyAqmG4OxLp7f1kktoLwicGR4O2SLwqNBk0",
-  authDomain: "rps-flip.firebaseapp.com",
-  databaseURL: "https://rps-flip-default-rtdb.firebaseio.com",
-  projectId: "rps-flip",
-  storageBucket: "rps-flip.appspot.com",
-  messagingSenderId: "1044307931173",
-  appId: "1:1044307931173:web:efa8c8bcf4cd82c1e14fcc",
-  measurementId: "G-57Z3NG9FJN"
+  apiKey: "<YOUR_FIREBASE_APIKEY>",
+  authDomain: "<YOUR_PROJECT_ID>.firebaseapp.com",
+  databaseURL: "https://<YOUR_PROJECT_ID>.firebaseio.com",
+  projectId: "<YOUR_PROJECT_ID>",
+  storageBucket: "<YOUR_PROJECT_ID>.appspot.com",
+  messagingSenderId: "<SENDER_ID>",
+  appId: "<APP_ID>"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
-// -------------------- DOM Elements --------------------
-const loginSection = document.getElementById('login-section');
-const btnGoogleLogin = document.getElementById('btnGoogleLogin');
-const loginStatus = document.getElementById('login-status');
-
-const matchSection = document.getElementById('match-section');
-const btnCreateMatch = document.getElementById('btnCreateMatch');
-const matchIdInput = document.getElementById('match-id-input');
-const btnJoinMatch = document.getElementById('btnJoinMatch');
-const matchStatus = document.getElementById('match-status');
-const generatedMatchIdDisplay = document.getElementById('generated-match-id');
-
-
-const gameSection = document.getElementById('game-section');
-const btnLeaveMatch = document.getElementById('btnLeaveMatch');
-
-const playerCardInner = document.getElementById('player-card-inner');
-const playerCardBack = document.getElementById('player-card-back');
-const opponentCardInner = document.getElementById('opponent-card-inner');
-const opponentCardBack = document.getElementById('opponent-card-back');
-const playerNameLabel = document.getElementById('player-name-label');
-const opponentNameLabel = document.getElementById('opponent-name-label');
-const playerScoreLabel = document.getElementById('player-score');
-const opponentScoreLabel = document.getElementById('opponent-score');
-const choicesDiv = document.getElementById('choices');
-const statusText = document.getElementById('status-text');
-const loadingSpinner = document.getElementById('loading-spinner');
-
-const shopSection = document.getElementById('shop-section');
-const coinBalanceEl = document.getElementById('coin-balance');
-const shopItemsEl = document.getElementById('shop-items');
-const inventoryItemsEl = document.getElementById('inventory-items');
-const btnClaimDaily = document.getElementById('btnClaimDaily');
-
-// -------------------- State --------------------
-let currentUser = null;
-let matchId = localStorage.getItem('currentMatch') || null;
-let playerNumber = null;
-let opponentId = null;
-let gameRef = null;
-
-// -------------------- Items & Shop --------------------
-const ITEMS = {
-  rock: { name: 'Rock', icon: '🪨', beats: ['scissors'] },
-  paper: { name: 'Paper', icon: '📄', beats: ['rock'] },
-  scissors: { name: 'Scissors', icon: '✂️', beats: ['paper'] }
+// ---------------------- Authentication ----------------------
+btnGoogleLogin.onclick = async () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try {
+    const result = await auth.signInWithPopup(provider);
+    const user = result.user;
+    state.playerId = user.uid;
+    state.playerName = user.displayName || 'Player';
+    loginSection.hidden = true;
+    matchSection.hidden = false;
+    loginStatus.textContent = `Logged in as ${state.playerName}`;
+  } catch (err) {
+    alert('Login failed: ' + err.message);
+  }
 };
 
-const SHOP_ITEMS = [
-  { id: 'hat_top',   name: 'Top Hat',     price: 120, icon: '🎩' },
-  { id: 'shades',    name: 'Cool Shades',price: 100, icon: '😎' },
-  { id: 'sparkles',  name: 'Sparkles',   price: 80,  icon: '✨' },
-  { id: 'fire_trail',name: 'Fire Trail', price: 150, icon: '🔥' },
-];
-
-// -------------------- Utils --------------------
-function showLoading(show){ loadingSpinner.style.display = show ? 'block':'none'; }
-function generateMatchId(){
-  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let id='';
-  for(let i=0;i<6;i++) id+=chars.charAt(Math.floor(Math.random()*chars.length));
-  return id;
-}
-function flipCard(inner, back, icon){ if(back) back.textContent=icon; if(inner) inner.classList.add('flipped'); }
-function resetCard(inner, back){ if(back) back.textContent='?'; if(inner) inner.classList.remove('flipped'); }
-function resetCards(){ resetCard(playerCardInner, playerCardBack); resetCard(opponentCardInner, opponentCardBack); }
-function showConfetti(){ if(window.confetti) confetti({particleCount:50,spread:70,origin:{y:0.6}}); }
-
-// -------------------- Auth --------------------
-btnGoogleLogin?.addEventListener('click', ()=>{
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(err=>loginStatus.textContent='Login failed: '+err.message);
-});
-
-auth.onAuthStateChanged(async user=>{
-  if(user){
-    currentUser=user;
-    loginStatus.textContent=`Hello, ${user.displayName}!`;
-    loginSection.hidden=true;
-    matchSection.hidden=false;
-    gameSection.hidden=true;
-    shopSection.hidden=false;
-
-    await ensureUserDoc(user);
-    startUserListeners(user);
-
-    if(matchId) startMatch(matchId);
-  }else{
-    currentUser=null;
-    loginStatus.textContent='';
-    loginSection.hidden=false;
-    matchSection.hidden=true;
-    gameSection.hidden=true;
-    shopSection.hidden=true;
-    stopUserListeners();
-  }
-});
-
-// -------------------- User Profile & Shop --------------------
-const userRefs={ profile:null, coins:null, inventory:null };
-const userUnsubs=[];
-
-async function ensureUserDoc(user){
-  const baseRef=db.ref(`users/${user.uid}`);
-  const snap=await baseRef.once('value');
-  if(!snap.exists()){
-    await baseRef.set({ name:user.displayName||'Player', coins:200, inventory:{}, equipped:null, createdAt:firebase.database.ServerValue.TIMESTAMP, lastDaily:0 });
-  }
+// ---------------------- Match Management ----------------------
+function generateMatchId(length = 6) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let str = '';
+  for (let i = 0; i < length; i++) str += chars[Math.floor(Math.random() * chars.length)];
+  return str;
 }
 
-function startUserListeners(user){
-  userRefs.profile=db.ref(`users/${user.uid}`);
-  userRefs.coins=userRefs.profile.child('coins');
-  userRefs.inventory=userRefs.profile.child('inventory');
+btnCreateMatch.onclick = async () => {
+  const id = generateMatchId();
+  state.matchId = id;
+  generatedMatchId.textContent = `Match ID: ${id}`;
+  matchStatus.textContent = 'Waiting for opponent...';
+  gameSection.hidden = false;
+  matchSection.hidden = true;
 
-  const coinsCb=userRefs.coins.on('value', s=>{
-    const coins=s.val()||0;
-    if(coinBalanceEl) coinBalanceEl.textContent=coins;
-    renderShop(coins);
+  const matchRef = db.ref('matches/' + id);
+  state.matchRef = matchRef;
+
+  await matchRef.set({
+    players: { [state.playerId]: { name: state.playerName, score: 0, choice: null } },
+    createdAt: Date.now()
   });
-  userUnsubs.push(()=>userRefs.coins.off('value', coinsCb));
 
-  const invCb=userRefs.inventory.on('value', s=>{
-    const inv=s.val()||{};
-    renderInventory(inv);
-    userRefs.coins.once('value').then(c=>renderShop(c.val()||0, inv));
+  // Listen for opponent
+  matchRef.on('value', snapshot => {
+    const data = snapshot.val();
+    if (!data) return;
+    const players = data.players || {};
+    for (let pid in players) {
+      if (pid !== state.playerId) {
+        opponentNameLabel.textContent = players[pid].name;
+        state.opponentScore = players[pid].score || 0;
+        opponentScoreEl.textContent = state.opponentScore;
+        matchStatus.textContent = 'Opponent joined! Make your choice!';
+      }
+    }
   });
-  userUnsubs.push(()=>userRefs.inventory.off('value', invCb));
-}
 
-function stopUserListeners(){ userUnsubs.splice(0).forEach(f=>f()); }
+  renderChoices();
+};
 
-function renderShop(coins, inventory=null){
-  if(!shopItemsEl) return;
-  const inv=inventory||{};
-  shopItemsEl.innerHTML='';
-  SHOP_ITEMS.forEach(item=>{
-    const owned=!!inv[item.id];
-    const li=document.createElement('div');
-    li.className='shop-item';
-    li.innerHTML=`<span class="shop-icon">${item.icon}</span><span class="shop-name">${item.name}</span><span class="shop-price">🪙 ${item.price}</span>`;
-    const btn=document.createElement('button');
-    btn.className='btn'; btn.textContent=owned?'Owned':'Buy';
-    btn.disabled=owned||(coins<item.price);
-    btn.addEventListener('click', ()=>buyItem(item));
-    li.appendChild(btn);
-    shopItemsEl.appendChild(li);
+btnJoinMatch.onclick = async () => {
+  const id = matchIdInput.value.trim().toUpperCase();
+  if (!id) return alert('Enter a valid Match ID');
+  state.matchId = id;
+  const matchRef = db.ref('matches/' + id);
+  const snapshot = await matchRef.get();
+  if (!snapshot.exists()) return alert('Match not found');
+
+  state.matchRef = matchRef;
+  matchSection.hidden = true;
+  gameSection.hidden = false;
+
+  // Add player
+  await matchRef.child('players/' + state.playerId).set({ name: state.playerName, score: 0, choice: null });
+
+  // Listen to changes
+  matchRef.on('value', snapshot => {
+    const data = snapshot.val();
+    if (!data) return;
+    const players = data.players || {};
+    let opponentId = Object.keys(players).find(pid => pid !== state.playerId);
+    if (opponentId) {
+      opponentNameLabel.textContent = players[opponentId].name;
+      state.opponentScore = players[opponentId].score || 0;
+      opponentScoreEl.textContent = state.opponentScore;
+    }
+    const playerData = players[state.playerId];
+    const opponentData = opponentId ? players[opponentId] : null;
+    if (playerData && opponentData) {
+      if (playerData.choice && opponentData.choice) resolveRound(playerData.choice, opponentData.choice);
+    }
   });
-}
 
-function renderInventory(inventory){
-  if(!inventoryItemsEl) return;
-  inventoryItemsEl.innerHTML='';
-  const ids=Object.keys(inventory||{});
-  if(ids.length===0){ inventoryItemsEl.textContent='You have no cosmetics yet.'; return; }
-  ids.forEach(id=>{
-    const def=SHOP_ITEMS.find(i=>i.id===id);
-    const div=document.createElement('div'); div.className='inv-item';
-    div.textContent=def?`${def.icon} ${def.name}`:id;
-    inventoryItemsEl.appendChild(div);
-  });
-}
+  renderChoices();
+};
 
-async function buyItem(item){
-  if(!currentUser) return;
-  const coinsRef=db.ref(`users/${currentUser.uid}/coins`);
-  const invRef=db.ref(`users/${currentUser.uid}/inventory/${item.id}`);
-  const result=await coinsRef.transaction(c=>{ c=c||0; if(c<item.price) return; return c-item.price; });
-  if(!result.committed){ alert('Not enough coins.'); return; }
-  await invRef.set(true);
-}
-
-btnClaimDaily?.addEventListener('click', async()=>{
-  if(!currentUser) return;
-  const profileRef=db.ref(`users/${currentUser.uid}`);
-  await profileRef.transaction(data=>{
-    if(!data) return data;
-    const now=Date.now(); const gap=20*60*60*1000;
-    if(!data.lastDaily||(now-data.lastDaily)>=gap){ data.lastDaily=now; data.coins=(data.coins||0)+50; }
-    return data;
-  });
-});
-
-// -------------------- Match Creation / Join --------------------
-btnCreateMatch?.addEventListener('click', async()=>{
-  if(!currentUser) return;
-  matchId=generateMatchId(); localStorage.setItem('currentMatch', matchId);
-  const matchRef=db.ref(`matches/${matchId}`);
-  await matchRef.set({ players:{ [currentUser.uid]:{ name:currentUser.displayName, score:0, choice:null } }, createdAt:firebase.database.ServerValue.TIMESTAMP });
-  playerNumber=1; startMatch(matchId);
-});
-
-generatedMatchIdDisplay.textContent = "Match ID: " + matchId;
-
-
-btnJoinMatch?.addEventListener('click', async()=>{
-  if(!currentUser) return;
-  const input=matchIdInput.value.trim().toUpperCase(); if(!input) return;
-  const matchRef=db.ref(`matches/${input}`);
-  const snap=await matchRef.once('value');
-  if(!snap.exists()){ matchStatus.textContent='Match not found!'; return; }
-  matchId=input; localStorage.setItem('currentMatch', matchId);
-  const players=snap.val().players||{};
-  if(Object.keys(players).length>=2){ matchStatus.textContent='Match full!'; return; }
-  playerNumber=2; await matchRef.child('players/'+currentUser.uid).set({ name:currentUser.displayName, score:0, choice:null });
-  startMatch(matchId);
-});
-
-// -------------------- Match Logic --------------------
-function startMatch(id){
-  if(!id) return;
-  matchSection.hidden=true; gameSection.hidden=false;
-  gameRef=db.ref(`matches/${id}/players`);
-  gameRef.on('value', snap=>{
-    const players=snap.val()||{};
-    const ids=Object.keys(players);
-    const opponentKey=ids.find(i=>i!==currentUser.uid);
-    opponentId=opponentKey||null;
-
-    playerNameLabel.textContent=players[currentUser.uid]?.name||'You';
-    playerScoreLabel.textContent=players[currentUser.uid]?.score||0;
-
-    if(opponentId){
-      opponentNameLabel.textContent=players[opponentId]?.name||'Opponent';
-      opponentScoreLabel.textContent=players[opponentId]?.score||0;
-    }else opponentNameLabel.textContent='Waiting for opponent...';
-
-    resetCards();
-    renderChoices();
-    statusText.textContent='Make your choice!';
-  });
-}
-
-btnLeaveMatch?.addEventListener('click', async()=>{
-  if(!currentUser||!matchId) return;
-  await db.ref(`matches/${matchId}/players/${currentUser.uid}`).remove();
-  matchId=null; localStorage.removeItem('currentMatch');
-  gameSection.hidden=true; matchSection.hidden=false;
-  if(gameRef) gameRef.off();
-});
-
-// -------------------- Choices --------------------
-function renderChoices(){
-  if(!choicesDiv) return;
-  choicesDiv.innerHTML='';
-  Object.keys(ITEMS).forEach(key=>{
-    const itm=ITEMS[key];
-    const btn=document.createElement('button');
-    btn.className='choice btn';
-    btn.innerHTML=`<div>${itm.icon}</div><div class="choice-label">${itm.name}</div>`;
-    btn.addEventListener('click', ()=>makeChoice(key));
+// ---------------------- Choices Rendering ----------------------
+function renderChoices() {
+  choicesDiv.innerHTML = '';
+  state.choices.forEach(key => {
+    const item = items[key];
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.textContent = item.icon;
+    const label = document.createElement('div');
+    label.className = 'choice-label';
+    label.textContent = item.name;
+    btn.appendChild(label);
+    btn.onclick = () => makeChoice(key);
     choicesDiv.appendChild(btn);
   });
 }
 
-async function makeChoice(choiceKey){
-  if(!currentUser||!gameRef) return;
-  showLoading(true);
-  await gameRef.child(currentUser.uid).update({ choice: choiceKey });
-  checkResult();
-  showLoading(false);
+function makeChoice(key) {
+  if (!state.matchRef) return;
+  state.playerChoice = key;
+  disableChoices(true);
+  state.matchRef.child('players/' + state.playerId + '/choice').set(key);
+  statusText.textContent = 'Choice made! Waiting for opponent...';
 }
 
-function checkResult(){
-  if(!gameRef||!opponentId) return;
-  gameRef.once('value').then(snap=>{
-    const players=snap.val()||{};
-    const me=players[currentUser.uid];
-    const op=players[opponentId];
-    if(!me.choice || !op?.choice) return;
+// ---------------------- Battle Logic ----------------------
+function getResult(p1, p2) {
+  if (p1 === p2) return 'tie';
+  return items[p1].beats.includes(p2) ? 'win' : 'lose';
+}
 
-    flipCard(playerCardInner, playerCardBack, ITEMS[me.choice].icon);
-    flipCard(opponentCardInner, opponentCardBack, ITEMS[op.choice].icon);
+function resolveRound(playerKey, opponentKey) {
+  const result = getResult(playerKey, opponentKey);
 
-    const meChoice=ITEMS[me.choice];
-    const opChoice=ITEMS[op.choice];
+  const playerCardFront = playerCardInner.querySelector('.card-front');
+  const opponentCardFront = opponentCardInner.querySelector('.card-front');
 
-    if(meChoice.beats.includes(op.choice)){
-      statusText.textContent='You Win!'; statusText.className='win-text';
-      gameRef.child(currentUser.uid+'/score').transaction(c=>c?c+1:1); showConfetti();
-    }else if(opChoice.beats.includes(me.choice)){
-      statusText.textContent='You Lose!'; statusText.className='lose-text';
-      gameRef.child(opponentId+'/score').transaction(c=>c?c+1:1);
-    }else{
-      statusText.textContent='Tie!'; statusText.className='tie-text';
+  playerCardFront.textContent = items[playerKey].icon;
+  opponentCardFront.textContent = items[opponentKey].icon;
+
+  if (result === 'win') {
+    statusText.textContent = 'You Win!';
+    state.playerScore++;
+    playerScoreEl.textContent = state.playerScore;
+  } else if (result === 'lose') {
+    statusText.textContent = 'You Lose!';
+    state.opponentScore++;
+    opponentScoreEl.textContent = state.opponentScore;
+  } else {
+    statusText.textContent = 'Tie!';
+  }
+
+  // Reset choices
+  state.playerChoice = null;
+  state.opponentChoice = null;
+  setTimeout(() => {
+    state.matchRef.child('players/' + state.playerId + '/choice').set(null);
+    if (state.matchRef) {
+      const opponentId = Object.keys(state.matchRef._delegate._path.pieces_).find(pid => pid !== state.playerId);
+      if (opponentId) state.matchRef.child('players/' + opponentId + '/choice').set(null);
     }
-
-    // Reset choices after 1.5s
-    setTimeout(()=>{ gameRef.child(currentUser.uid+'/choice').set(null); if(opponentId) gameRef.child(opponentId+'/choice').set(null); resetCards(); statusText.textContent='Make your choice!'; statusText.className=''; }, 1500);
-  });
+    disableChoices(false);
+    statusText.textContent = 'Make your choice!';
+    playerCardFront.textContent = '?';
+    opponentCardFront.textContent = '?';
+  }, 2000);
 }
+
+// ---------------------- Helpers ----------------------
+function disableChoices(disabled) {
+  Array.from(choicesDiv.children).forEach(btn => btn.disabled = disabled);
+}
+
+// ---------------------- Leave Match ----------------------
+btnLeaveMatch.onclick = () => {
+  if (!state.matchRef) return;
+  state.matchRef.child('players/' + state.playerId).remove();
+  state.matchRef = null;
+  state.matchId = null;
+  gameSection.hidden = true;
+  matchSection.hidden = false;
+  matchStatus.textContent = '';
+  playerCardInner.querySelector('.card-front').textContent = '?';
+  opponentCardInner.querySelector('.card-front').textContent = '?';
+  playerScoreEl.textContent = '0';
+  opponentScoreEl.textContent = '0';
+};
+
+// ---------------------- Initialize ----------------------
+statusText.textContent = 'Sign in to start playing!';
