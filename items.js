@@ -1,7 +1,7 @@
 // --- items.js ---
 
 // Icons mapped by key:
-const icons = {
+export const icons = {
   rock: "🪨",
   paper: "📄",
   scissors: "✂️",
