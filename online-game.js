@@ -1,13 +1,5 @@
 /* online-game.js
-   Requirements in your HTML:
-   - Login:    #login-section, #btnGoogleLogin, #login-status
-   - Match:    #match-section, #btnCreateMatch, #generated-match-id, #match-id-input, #btnJoinMatch, #match-status
-   - Game:     #game-section, #player-card-inner, #player-card-back, #opponent-card-inner, #opponent-card-back,
-                #player-name-label, #opponent-name-label, #player-score, #opponent-score, #choices, #status-text,
-                #loading-spinner, #btnBackToBot
-   - Shop:     #shop-section, #coin-balance, #shop-items, #inventory-items, #btnClaimDaily
-   - Confetti: include canvas-confetti if you want confetti
-   - ITEMS:    optional global. If not present, we’ll fall back to classic R/P/S.
+   Updated: match ID display fixed
 */
 
 // -------------------- Firebase Config --------------------
@@ -36,6 +28,7 @@ const matchIdInput = document.getElementById('match-id-input');
 const btnJoinMatch = document.getElementById('btnJoinMatch');
 const matchStatus = document.getElementById('match-status');
 const generatedMatchIdDisplay = document.getElementById('generated-match-id');
+const matchIdDisplay = document.getElementById('matchIdDisplay'); // display span for Match ID
 
 const gameSection = document.getElementById('game-section');
 const playerCardInner = document.getElementById('player-card-inner');
@@ -81,22 +74,16 @@ const SHOP_ITEMS = [
 
 // -------------------- Utils --------------------
 function showLoading(show) { if (loadingSpinner) loadingSpinner.style.display = show ? 'block' : 'none'; }
-
 function generateMatchId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let id = '';
   for (let i = 0; i < 6; i++) id += chars.charAt(Math.floor(Math.random() * chars.length));
   return id;
 }
-
 function flipCard(cardInner, cardBack, icon) { if (cardBack) cardBack.textContent = icon; if (cardInner) cardInner.classList.add('flipped'); }
 function resetCard(cardInner, cardBack) { if (cardBack) cardBack.textContent = '?'; if (cardInner) cardInner.classList.remove('flipped'); }
 function resetCards() { resetCard(playerCardInner, playerCardBack); resetCard(opponentCardInner, opponentCardBack); }
-
-function showConfetti() {
-  if (!window.confetti) return;
-  confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
-}
+function showConfetti() { if (!window.confetti) return; confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } }); }
 
 // -------------------- Auth --------------------
 btnGoogleLogin?.addEventListener('click', () => {
@@ -129,11 +116,7 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // -------------------- User Profile & Shop --------------------
-const userRefs = {
-  profile: null,
-  coins: null,
-  inventory: null,
-};
+const userRefs = { profile: null, coins: null, inventory: null };
 const userUnsubs = [];
 
 async function ensureUserDoc(user) {
@@ -142,9 +125,9 @@ async function ensureUserDoc(user) {
   if (!snap.exists()) {
     await baseRef.set({
       name: user.displayName || 'Player',
-      coins: 200,              // starter coins
-      inventory: {},           // owned cosmetics
-      equipped: null,          // optional cosmetic
+      coins: 200,
+      inventory: {},
+      equipped: null,
       createdAt: firebase.database.ServerValue.TIMESTAMP,
       lastDaily: 0
     });
@@ -156,7 +139,6 @@ function startUserListeners(user) {
   userRefs.coins = userRefs.profile.child('coins');
   userRefs.inventory = userRefs.profile.child('inventory');
 
-  // Coins listener
   const coinsCb = userRefs.coins.on('value', s => {
     const coins = s.val() || 0;
     if (coinBalanceEl) coinBalanceEl.textContent = coins;
@@ -164,19 +146,15 @@ function startUserListeners(user) {
   });
   userUnsubs.push(() => userRefs.coins.off('value', coinsCb));
 
-  // Inventory listener
   const invCb = userRefs.inventory.on('value', s => {
     const inv = s.val() || {};
     renderInventory(inv);
-    // Update shop buttons enabled/disabled based on ownership
     userRefs.coins.once('value').then(c => renderShop(c.val() || 0, inv));
   });
   userUnsubs.push(() => userRefs.inventory.off('value', invCb));
 }
 
-function stopUserListeners() {
-  userUnsubs.splice(0).forEach(unsub => unsub());
-}
+function stopUserListeners() { userUnsubs.splice(0).forEach(unsub => unsub()); }
 
 function renderShop(coins, inventory = null) {
   if (!shopItemsEl) return;
@@ -186,11 +164,7 @@ function renderShop(coins, inventory = null) {
     const owned = !!inv[item.id];
     const li = document.createElement('div');
     li.className = 'shop-item';
-    li.innerHTML = `
-      <span class="shop-icon">${item.icon}</span>
-      <span class="shop-name">${item.name}</span>
-      <span class="shop-price">🪙 ${item.price}</span>
-    `;
+    li.innerHTML = `<span class="shop-icon">${item.icon}</span><span class="shop-name">${item.name}</span><span class="shop-price">🪙 ${item.price}</span>`;
     const btn = document.createElement('button');
     btn.className = 'btn';
     btn.textContent = owned ? 'Owned' : 'Buy';
@@ -222,18 +196,8 @@ async function buyItem(item) {
   if (!currentUser) return;
   const coinsRef = db.ref(`users/${currentUser.uid}/coins`);
   const invRef = db.ref(`users/${currentUser.uid}/inventory/${item.id}`);
-
-  // Atomically deduct coins
-  const result = await coinsRef.transaction(c => {
-    c = c || 0;
-    if (c < item.price) return; // abort
-    return c - item.price;
-  });
-
-  if (!result.committed) {
-    alert('Not enough coins.');
-    return;
-  }
+  const result = await coinsRef.transaction(c => { c = c || 0; if (c < item.price) return; return c - item.price; });
+  if (!result.committed) { alert('Not enough coins.'); return; }
   await invRef.set(true);
 }
 
@@ -243,11 +207,8 @@ btnClaimDaily?.addEventListener('click', async () => {
   await profileRef.transaction(data => {
     if (!data) return data;
     const now = Date.now();
-    const gap = 20 * 60 * 60 * 1000; // 20 hours
-    if (!data.lastDaily || (now - data.lastDaily) >= gap) {
-      data.lastDaily = now;
-      data.coins = (data.coins || 0) + 50;
-    }
+    const gap = 20 * 60 * 60 * 1000;
+    if (!data.lastDaily || (now - data.lastDaily) >= gap) { data.lastDaily = now; data.coins = (data.coins || 0) + 50; }
     return data;
   });
 });
@@ -259,7 +220,6 @@ btnCreateMatch?.addEventListener('click', async () => {
     btnCreateMatch.disabled = true; btnJoinMatch.disabled = true; matchIdInput.disabled = true;
     showLoading(true);
 
-    // Generate a unique ID
     let newMatchId = generateMatchId();
     let newMatchRef = db.ref(`matches/${newMatchId}`);
     let tries = 0;
@@ -270,7 +230,6 @@ btnCreateMatch?.addEventListener('click', async () => {
     }
     if (tries >= 5) throw new Error('Failed to generate unique match ID');
 
-    // Create match
     await newMatchRef.set({
       player1: { uid: currentUser.uid, name: currentUser.displayName, choice: null, score: 0 },
       player2: null,
@@ -284,7 +243,9 @@ btnCreateMatch?.addEventListener('click', async () => {
     playerNumber = 'player1';
     opponentId = 'player2';
 
-    generatedMatchIdDisplay.textContent = `Match created! Share this code: ${newMatchId}`;
+    // Display match ID
+    if (matchIdDisplay) matchIdDisplay.textContent = `Match ID: ${matchId}`;
+    generatedMatchIdDisplay.textContent = `Share this code with your friend!`;
     matchStatus.textContent = '';
     matchSection.hidden = true;
     gameSection.hidden = false;
@@ -317,14 +278,11 @@ async function startMatch(id) {
     const data = snap.val();
 
     if (data.player2 && ![data.player1?.uid, data.player2?.uid].includes(currentUser.uid)) {
-      matchStatus.textContent = 'Match already has two players.';
-      return;
+      matchStatus.textContent = 'Match already has two players.'; return;
     }
 
     if (!data.player2) {
-      await gameRef.child('player2').set({
-        uid: currentUser.uid, name: currentUser.displayName, choice: null, score: 0
-      });
+      await gameRef.child('player2').set({ uid: currentUser.uid, name: currentUser.displayName, choice: null, score: 0 });
       await gameRef.child('started').set(true);
       playerNumber = 'player2';
       opponentId = 'player1';
@@ -336,6 +294,7 @@ async function startMatch(id) {
 
     matchId = id;
     localStorage.setItem('currentMatch', matchId);
+    if (matchIdDisplay) matchIdDisplay.textContent = `Match ID: ${matchId}`;
     generatedMatchIdDisplay.textContent = '';
     matchStatus.textContent = '';
     matchSection.hidden = true;
@@ -349,7 +308,7 @@ async function startMatch(id) {
   } finally { showLoading(false); }
 }
 
-// -------------------- Game UI & Choices --------------------
+// -------------------- Game UI --------------------
 function setupGameUI() {
   playerNameLabel.textContent = currentUser?.displayName || 'You';
   opponentNameLabel.textContent = 'Waiting for opponent...';
@@ -410,7 +369,6 @@ function listenForGameUpdates() {
       return;
     }
 
-    // Update names and scores
     if (data[playerNumber]) { playerNameLabel.textContent = data[playerNumber].name; playerScoreLabel.textContent = data[playerNumber].score || 0; }
     if (data[opponentId]) { opponentNameLabel.textContent = data[opponentId].name; opponentScoreLabel.textContent = data[opponentId].score || 0; }
     else { opponentNameLabel.textContent = 'Waiting for opponent...'; opponentScoreLabel.textContent = '0'; }
@@ -423,23 +381,17 @@ function listenForGameUpdates() {
     if (opponentChoice) flipCard(opponentCardInner, opponentCardBack, ITEM_MAP[opponentChoice].icon);
     else resetCard(opponentCardInner, opponentCardBack);
 
-    // Round resolution
     if (playerChoice && opponentChoice) {
       const result = determineResult(playerChoice, opponentChoice);
       if (result === 'win') { statusText.innerHTML = `<span class="win-text">You Win! 🎉</span>`; showConfetti(); }
       else if (result === 'lose') statusText.innerHTML = `<span class="lose-text">You Lose. 😞</span>`;
       else statusText.innerHTML = `<span class="tie-text">It's a Tie! 🤝</span>`;
 
-      // Update scores (transaction prevents race)
       if (result === 'win') gameRef.child(`${playerNumber}/score`).transaction(s => (s || 0) + 1);
       if (result === 'lose') gameRef.child(`${opponentId}/score`).transaction(s => (s || 0) + 1);
 
-      // Give tiny coin reward on win (shop currency)
-      if (result === 'win' && currentUser) {
-        db.ref(`users/${currentUser.uid}/coins`).transaction(c => (c || 0) + 5);
-      }
+      if (result === 'win' && currentUser) db.ref(`users/${currentUser.uid}/coins`).transaction(c => (c || 0) + 5);
 
-      // Reset for next round
       setTimeout(() => {
         gameRef.child(`${playerNumber}/choice`).set(null);
         gameRef.child(`${opponentId}/choice`).set(null);
@@ -453,7 +405,7 @@ function listenForGameUpdates() {
     }
   });
 
-  // Auto-cleanup matches inactive > 2 hours (client-side hint; real cleanup should be via Cloud Functions / TTL)
+  // Auto-cleanup inactive matches (>2 hours)
   setTimeout(async () => {
     try {
       const snap = await db.ref(`matches/${matchId}`).once('value');
