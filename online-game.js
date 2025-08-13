@@ -1,6 +1,6 @@
 /* online-game.js */
 
-import { ITEMS } from './items.js'; // optional, fallback handled
+import { ITEMS } from './items.js'; // optional fallback handled
 
 // -------------------- Firebase Config --------------------
 const firebaseConfig = {
