@@ -25,7 +25,8 @@ const btnCreateMatch = document.getElementById('btnCreateMatch');
 const matchIdInput = document.getElementById('match-id-input');
 const btnJoinMatch = document.getElementById('btnJoinMatch');
 const matchStatus = document.getElementById('match-status');
-const generatedMatchIdDisplay = document.querySelectorAll('#generated-match-id');
+const generatedMatchIdDisplay = document.getElementById('generated-match-id');
+
 
 const gameSection = document.getElementById('game-section');
 const btnLeaveMatch = document.getElementById('btnLeaveMatch');
@@ -204,6 +205,9 @@ btnCreateMatch?.addEventListener('click', async()=>{
   await matchRef.set({ players:{ [currentUser.uid]:{ name:currentUser.displayName, score:0, choice:null } }, createdAt:firebase.database.ServerValue.TIMESTAMP });
   playerNumber=1; startMatch(matchId);
 });
+
+generatedMatchIdDisplay.textContent = "Match ID: " + matchId;
+
 
 btnJoinMatch?.addEventListener('click', async()=>{
   if(!currentUser) return;
