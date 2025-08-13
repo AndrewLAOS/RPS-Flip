@@ -138,7 +138,7 @@
           <div class="small-muted">Debug & Controls</div>
           <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
             <button id="auto-bot-buy">Toggle Bot Auto-Buy (On)</button>
-            <button id="shuffle-shop">Shuffle Shop</button>
+        <button id="reset-game">Reset Game</button>
             <div class="small muted">LocalStorage: <span id="storage-indicator">enabled</span></div>
             <div class="small muted">FPS / Perf: <span id="perf-ind">—</span></div>
           </div>
@@ -355,9 +355,21 @@
     const playerRarityVal = rarityValues[items[playerKey].rarity] || 1;
     const botRarityVal = rarityValues[items[botKey].rarity] || 1;
 
-    // Base coins values
-    const baseWinCoins = 5;
-    const baseLoseCoins = 3;
+  const itemRarity = selectedItem.rarity; // e.g., "epic"
+const multiplier = rarityCoinMultipliers[itemRarity];
+
+// Win case
+if (winner === "player") {
+  const coinsEarned = Math.round(baseWinCoins * multiplier.win);
+  playerCoins += coinsEarned;
+}
+
+// Lose case
+if (winner === "bot") {
+  const coinsLost = Math.round(baseLoseCoins * multiplier.lose);
+  playerCoins -= coinsLost;
+}
+
 
     if (result === 'win') {
       // Player wins
@@ -492,10 +504,15 @@
       autoBotBuyBtn.textContent = `Toggle Bot Auto-Buy (${state.autoBotBuy ? 'On' : 'Off'})`;
     };
 
-    shuffleShopBtn.onclick = () => {
-      state.shopOrder = state.shopOrder.sort(() => Math.random() - 0.5);
-      renderShop();
-    };
+ const resetGameBtn = $('#reset-game');
+
+resetGameBtn.onclick = () => {
+  if (confirm('Are you sure you want to reset your game progress? This cannot be undone.')) {
+    localStorage.removeItem('rpsflip:v3'); // remove saved progress
+    location.reload(); // reload the page to reset state
+  }
+};
+
 
     setInterval(botAutoBuy, 5000);
   }
