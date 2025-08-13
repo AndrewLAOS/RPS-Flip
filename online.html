@@ -169,6 +169,15 @@ input[type="text"] {
 </head>
 
 <body>
+  <section id="match-section" hidden>
+  <button id="btnCreateMatch">Create Match</button>
+  <p id="generated-match-id"></p>
+
+  <input id="match-id-input" type="text" placeholder="Enter Match ID">
+  <button id="btnJoinMatch">Join Match</button>
+
+  <p id="match-status"></p>
+</section>
 <div id="container" role="main" aria-label="Ultimate Rock Paper Scissors Flip Online Game">
   <h1>Ultimate RPS Flip</h1>
   <p class="subtitle">Play against friends or bots with dramatic card flips!</p>
@@ -225,8 +234,8 @@ input[type="text"] {
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <!-- External Items & Animations -->
-<script src="items.js"></script>
-<script type="module" src="animations.js"></script>
+<script type="module" src="items.js"></script>
+<script type="module" src="online-game.js"></script>
 
 
 <!-- Online Game Logic -->

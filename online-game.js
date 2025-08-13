@@ -100,6 +100,7 @@ btnCreateMatch.addEventListener('click', async () => {
 
   try {
     btnCreateMatch.disabled = true; btnJoinMatch.disabled = true; matchIdInput.disabled = true;
+
     showLoading(true);
 
     let newMatchId = generateMatchId();
