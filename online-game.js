@@ -220,6 +220,24 @@ btnCreateMatch?.addEventListener('click', async () => {
     btnCreateMatch.disabled = true; btnJoinMatch.disabled = true; matchIdInput.disabled = true;
     showLoading(true);
 
+// After successfully creating the match
+matchId = newMatchId;
+localStorage.setItem('currentMatch', matchId);
+playerNumber = 'player1';
+opponentId = 'player2';
+
+// ✅ Display the match ID immediately
+if (generatedMatchIdDisplay) generatedMatchIdDisplay.textContent = `Match ID: ${newMatchId}`;
+if (document.getElementById('matchIdDisplay')) document.getElementById('matchIdDisplay').textContent = `Share this code: ${newMatchId}`;
+
+matchStatus.textContent = '';
+matchSection.hidden = true;
+gameSection.hidden = false;
+
+setupGameUI();
+listenForGameUpdates();
+
+
     let newMatchId = generateMatchId();
     let newMatchRef = db.ref(`matches/${newMatchId}`);
     let tries = 0;
