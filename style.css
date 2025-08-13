@@ -109,11 +109,11 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .small {
-  font-size: 1.1em; /* Increased for better readability */
+  font-size: 1.2em;
 }
 
 .small-muted {
-  font-size: 1em; /* Increased for better readability */
+  font-size: 1.1em;
   color: var(--text-muted);
 }
 
@@ -218,7 +218,7 @@ input[type="range"]::-webkit-slider-thumb {
 
 .kv {
   text-align: right;
-  font-size: 1.1em; /* Increased for readability */
+  font-size: 1.2em;
 }
 
 .value-pill {
@@ -227,7 +227,7 @@ input[type="range"]::-webkit-slider-thumb {
   padding: 6px 12px;
   border-radius: var(--border-radius);
   font-weight: 700;
-  font-size: 1.1em; /* Increased for readability */
+  font-size: 1.2em;
 }
 
 .range-wrap {
@@ -324,33 +324,6 @@ input[type="range"]::-webkit-slider-thumb {
 }
 .shop-item.rarity-Legendary .rarity {
   color: var(--rarity-legendary);
-}
-
-
-.bot-inventory {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: var(--spacing);
-  max-height: 200px; /* New fixed height for scrollable area */
-  overflow-y: auto; /* Enables vertical scrolling */
-}
-
-/* Added a custom scrollbar for this section */
-.bot-inventory::-webkit-scrollbar {
-  width: 10px;
-}
-
-.bot-inventory::-webkit-scrollbar-thumb {
-  background-color: var(--border-color);
-  border-radius: 5px;
-}
-
-.bot-inv-item {
-  background-color: var(--bg-primary);
-  padding: 6px 12px;
-  border-radius: var(--border-radius);
-  font-size: 1.1em; /* Increased for readability */
 }
 
 .footer {
