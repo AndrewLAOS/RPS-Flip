@@ -46,20 +46,27 @@ let state = {
 };
 
 // ---------------------- Firebase Setup ----------------------
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "<YOUR_FIREBASE_APIKEY>",
-  authDomain: "<YOUR_PROJECT_ID>.firebaseapp.com",
-  databaseURL: "https://<YOUR_PROJECT_ID>.firebaseio.com",
-  projectId: "<YOUR_PROJECT_ID>",
-  storageBucket: "<YOUR_PROJECT_ID>.appspot.com",
-  messagingSenderId: "<SENDER_ID>",
-  appId: "<APP_ID>"
+  apiKey: "AIzaSyAqmG4OxLp7f1kktoLwicGR4O2SLwqNBk0",
+  authDomain: "rps-flip.firebaseapp.com",
+  projectId: "rps-flip",
+  storageBucket: "rps-flip.firebasestorage.app",
+  messagingSenderId: "1044307931173",
+  appId: "1:1044307931173:web:efa8c8bcf4cd82c1e14fcc",
+  measurementId: "G-57Z3NG9FJN"
 };
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
-
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 // ---------------------- Authentication ----------------------
 btnGoogleLogin.onclick = async () => {
   const provider = new firebase.auth.GoogleAuthProvider();
