@@ -5,12 +5,13 @@
   <title>Ultimate Rock, Paper, Scissors Flip — Deluxe</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
+
   <!-- Cronitor RUM -->
-<script async src="https://rum.cronitor.io/script.js"></script>
-<script>
-    window.cronitor = window.cronitor || function() { (window.cronitor.q = window.cronitor.q || []).push(arguments); };
-    cronitor('config', { clientKey: 'd086b8ed0db3d70befbdfbceb369a4a5' });
-</script>
+  <script async src="https://rum.cronitor.io/script.js"></script>
+  <script>
+      window.cronitor = window.cronitor || function() { (window.cronitor.q = window.cronitor.q || []).push(arguments); };
+      cronitor('config', { clientKey: 'd086b8ed0db3d70befbdfbceb369a4a5' });
+  </script>
 </head>
 <body>
 
@@ -28,7 +29,7 @@
       <div class="logo">RΨS</div>
       <div>
         <h1>Ultimate RPS Flip</h1>
-        <p class="small">Deluxe edition — curated items, bot AI, and big animations.</p>
+        <p class="small">Deluxe edition — curated items, bot AI, and epic animations.</p>
       </div>
     </div>
 
@@ -72,7 +73,6 @@
         <button id="reset-btn" title="Reset progress">Reset</button>
       </div>
     </div>
-
 
     <div class="footer" style="padding-top:8px">
       <div>© 2025</div>
@@ -143,11 +143,12 @@
 
 <script type="module">
 import { items, itemKeys } from './items.js';
+import { animateBattle } from './animations.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-// DOM refs
+// DOM references
 const coinsDisplay = $('#coins-display');
 const botCoinsDisplay = $('#bot-coins-display');
 const botDifficultySlider = $('#bot-difficulty-slider');
@@ -159,26 +160,12 @@ const playerIcon = $('#player-icon');
 const botIcon = $('#bot-icon');
 const playerItemName = $('#player-item-name');
 const botItemName = $('#bot-item-name');
-const logItems = $('#log-items');
 const roundCounter = $('#round-counter');
 const streakCounter = $('#streak-counter');
 const resetBtn = $('#reset-btn');
 const autoBotBuyBtn = $('#auto-bot-buy');
 const resetGameBtn = $('#reset-game');
 const confettiWrap = $('#confetti-wrap');
-
-// Coin base values
-const baseWinCoins = 5;
-const baseLoseCoins = 2;
-
-// Rarity values for coin multiplier
-const rarityValues = {
-  'Common': 1,
-  'Uncommon': 2,
-  'Rare': 3,
-  'Epic': 4,
-  'Legendary': 5
-};
 
 // Game state
 let state = {
@@ -191,10 +178,9 @@ let state = {
   botDifficulty: Number(botDifficultySlider.value),
   autoBotBuy: true,
   shopOrder: [...itemKeys],
-  coinGoal: 200, // Celebration goal
+  coinGoal: 200,
 };
 
-// Save/load
 function saveState() {
   try {
     localStorage.setItem('rpsflip:v3', JSON.stringify({
@@ -254,7 +240,6 @@ function renderShop() {
       if (state.coins < item.cost) return;
       state.coins -= item.cost;
       state.playerInventory.add(key);
-      log(`Bought ${item.name} for ${item.cost} coins.`);
       renderCoins();
       renderShop();
       renderBattleChoices();
@@ -272,7 +257,6 @@ function renderBattleChoices() {
     const btn = document.createElement('button');
     btn.className = 'choice-btn';
     btn.textContent = `${item.icon} ${item.name}`;
-    btn.setAttribute('tabindex', '0');
     btn.onclick = () => playerChoose(key);
     battleChoicesDiv.appendChild(btn);
   });
@@ -291,12 +275,14 @@ function renderBotInventory() {
   });
 }
 
-// Game logic
+// Battle logic
+const rarityValues = { Common:1, Uncommon:2, Rare:3, Epic:4, Legendary:5 };
+const baseWinCoins = 5;
+const baseLoseCoins = 2;
+
 function getResult(playerKey, botKey) {
   if (playerKey === botKey) return 'tie';
-  const player = items[playerKey];
-  if (player.beats.includes(botKey)) return 'win';
-  return 'lose';
+  return items[playerKey].beats.includes(botKey) ? 'win' : 'lose';
 }
 
 function botChoose(playerKey) {
@@ -308,12 +294,73 @@ function botChoose(playerKey) {
   return pick(available);
 }
 
-// Animate card flip
 async function animateFlip(cardEl, newIcon, newName) {
   await cardEl.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(90deg)' }], { duration: 200 }).finished;
   cardEl.querySelector('.icon').textContent = newIcon;
   cardEl.querySelector('.small.muted').textContent = newName;
   await cardEl.animate([{ transform: 'rotateY(90deg)' }, { transform: 'rotateY(0deg)' }], { duration: 200 }).finished;
+}
+
+async function playerChoose(playerKey) {
+  disableChoices(true);
+
+  const botKey = botChoose(playerKey);
+  const playerCard = $('#player-card');
+  const botCard = $('#bot-card');
+
+  await Promise.all([
+    animateFlip(playerCard, items[playerKey].icon, items[playerKey].name),
+    animateFlip(botCard, items[botKey].icon, items[botKey].name),
+  ]);
+
+  // Run epic interactions
+  await animateBattle(playerCard, playerKey, botCard, botKey);
+
+  const result = getResult(playerKey, botKey);
+  const playerRarityVal = rarityValues[items[playerKey].rarity] || 1;
+  const botRarityVal = rarityValues[items[botKey].rarity] || 1;
+
+  if (result === 'win') {
+    const winCoins = baseWinCoins * playerRarityVal;
+    state.coins += winCoins;
+    state.botCoins = Math.max(0, state.botCoins - Math.max(1, baseLoseCoins * botRarityVal));
+    state.streak++;
+    battleStatus.textContent = `You Win! +${winCoins} coins`;
+  } else if (result === 'lose') {
+    const winCoins = baseWinCoins * botRarityVal;
+    state.botCoins += winCoins;
+    state.coins = Math.max(0, state.coins - Math.max(1, baseLoseCoins * playerRarityVal));
+    state.streak = 0;
+    battleStatus.textContent = `You Lose!`;
+  } else {
+    battleStatus.textContent = 'Tie!';
+  }
+
+  state.round++;
+  roundCounter.textContent = state.round;
+  streakCounter.textContent = state.streak;
+  renderCoins();
+  renderBotInventory();
+  saveState();
+
+  if (state.coins >= state.coinGoal) confettiBurst();
+
+  setTimeout(resetBattleStage, 2000);
+}
+
+function resetBattleStage() {
+  playerIcon.textContent = '🤔';
+  playerItemName.textContent = 'No item';
+  botIcon.textContent = '🤖';
+  botItemName.textContent = 'No item';
+  battleStatus.textContent = '';
+  disableChoices(false);
+}
+
+function disableChoices(disabled) {
+  Array.from(battleChoicesDiv.children).forEach(btn => {
+    btn.disabled = disabled;
+  });
 }
 
 // Confetti
@@ -330,115 +377,6 @@ function confettiBurst() {
   setTimeout(() => confettiWrap.innerHTML = '', 3000);
 }
 
-async function playerChoose(playerKey) {
-  disableChoices(true);
-
-  const botKey = botChoose(playerKey);
-  const playerCard = $('#player-card');
-  const botCard = $('#bot-card');
-
-  await Promise.all([
-    animateFlip(playerCard, items[playerKey].icon, items[playerKey].name),
-    animateFlip(botCard, items[botKey].icon, items[botKey].name),
-  ]);
-
-  const result = getResult(playerKey, botKey);
-  const playerRarityVal = rarityValues[items[playerKey].rarity] || 1;
-  const botRarityVal = rarityValues[items[botKey].rarity] || 1;
-
-  if (result === 'win') {
-    const winCoins = baseWinCoins * playerRarityVal;
-    state.coins += winCoins;
-    const botLoseCoins = Math.max(1, baseLoseCoins * botRarityVal);
-    state.botCoins = Math.max(0, state.botCoins - botLoseCoins);
-    state.streak++;
-    battleStatus.textContent = `You Win! +${winCoins} coins`;
-    if (state.streak % 5 === 0) {
-      const streakBonus = 25;
-      state.coins += streakBonus;
-      battleStatus.textContent += ` + Streak Bonus ${streakBonus} coins!`;
-    }
-  } else if (result === 'lose') {
-    const winCoins = baseWinCoins * botRarityVal;
-    state.botCoins += winCoins;
-    const playerLoseCoins = Math.max(1, baseLoseCoins * playerRarityVal);
-    state.coins = Math.max(0, state.coins - playerLoseCoins);
-    state.streak = 0;
-    battleStatus.textContent = `You Lose! -${playerLoseCoins} coins`;
-  } else {
-    battleStatus.textContent = 'Tie!';
-  }
-
-  state.round++;
-  roundCounter.textContent = state.round;
-  streakCounter.textContent = state.streak;
-  renderCoins();
-  renderBotInventory();
-  saveState();
-
-  if (state.coins >= state.coinGoal) {
-    confettiBurst();
-  }
-
-  // Reset battle stage after short delay
-  setTimeout(() => {
-    resetBattleStage();
-  }, 2000);
-}
-
-function resetBattleStage() {
-  playerIcon.textContent = '🤔';
-  playerItemName.textContent = 'No item';
-  botIcon.textContent = '🤖';
-  botItemName.textContent = 'No item';
-  battleStatus.textContent = '';
-  disableChoices(false);
-}
-
-  disableChoices(true);
-
-function disableChoices(disabled) {
-  Array.from(battleChoicesDiv.children).forEach(btn => {
-    btn.disabled = disabled;
-    btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
-  });
-}
-
-// Bot auto-buy
-function botAutoBuy() {
-  if (!state.autoBotBuy) return;
-  const affordable = itemKeys.filter(k => !state.botInventory.has(k) && items[k].cost <= state.botCoins);
-  if (!affordable.length) return;
-  const key = pick(affordable);
-  state.botCoins -= items[key].cost;
-  state.botInventory.add(key);
-  log(`Bot bought ${items[key].name} for ${items[key].cost} coins.`);
-  renderCoins();
-  renderBotInventory();
-  saveState();
-}
-
-// Shop reset
-resetBtn.onclick = () => {
-  if (state.coins < 10) return alert('You need at least 10 coins to reset the shop.');
-  if (confirm('Reset shop for 10 coins?')) {
-    state.coins -= 10;
-    state.shopOrder.sort(() => Math.random() - 0.5);
-    renderShop();
-    renderCoins();
-    log('Shop reset for 10 coins.');
-    saveState();
-  }
-};
-
-// Game reset
-resetGameBtn.onclick = () => {
-  if (confirm('Are you sure you want to reset your game progress? This cannot be undone.')) {
-    localStorage.removeItem('rpsflip:v3');
-    location.reload();
-  }
-};
-
 // Init
 function init() {
   loadState();
@@ -446,23 +384,35 @@ function init() {
   renderShop();
   renderBattleChoices();
   renderBotInventory();
+
   botDifficultySlider.oninput = () => {
     state.botDifficulty = Number(botDifficultySlider.value);
     botDifficultyLabel.textContent = `${state.botDifficulty}%`;
     saveState();
   };
+
   autoBotBuyBtn.onclick = () => {
     state.autoBotBuy = !state.autoBotBuy;
     autoBotBuyBtn.textContent = `Toggle Bot Auto-Buy (${state.autoBotBuy ? 'On' : 'Off'})`;
   };
-  setInterval(botAutoBuy, 3000);
-}
 
-// Logging
-function log(msg) {
-  const div = document.createElement('div');
-  div.textContent = msg;
-  logItems.prepend(div);
+  resetBtn.onclick = () => {
+    if (state.coins < 10) return alert('You need at least 10 coins to reset the shop.');
+    if (confirm('Reset shop for 10 coins?')) {
+      state.coins -= 10;
+      state.shopOrder.sort(() => Math.random() - 0.5);
+      renderShop();
+      renderCoins();
+      saveState();
+    }
+  };
+
+  resetGameBtn.onclick = () => {
+    if (confirm('Are you sure you want to reset your game progress?')) {
+      localStorage.removeItem('rpsflip:v3');
+      location.reload();
+    }
+  };
 }
 
 init();
