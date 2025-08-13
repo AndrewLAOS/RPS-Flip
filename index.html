@@ -353,12 +353,10 @@ async function playerChoose(playerKey) {
     state.botCoins = Math.max(0, state.botCoins - botLoseCoins);
     state.streak++;
     battleStatus.textContent = `You Win! +${winCoins} coins`;
-    log(`You won round ${state.round + 1}, gained ${winCoins} coins!`);
-    if (state.streak > 0 && state.streak % 5 === 0) {
+    if (state.streak % 5 === 0) {
       const streakBonus = 25;
       state.coins += streakBonus;
       battleStatus.textContent += ` + Streak Bonus ${streakBonus} coins!`;
-      log(`Streak bonus! +${streakBonus} coins for ${state.streak} wins in a row.`);
     }
   } else if (result === 'lose') {
     const winCoins = baseWinCoins * botRarityVal;
@@ -367,10 +365,8 @@ async function playerChoose(playerKey) {
     state.coins = Math.max(0, state.coins - playerLoseCoins);
     state.streak = 0;
     battleStatus.textContent = `You Lose! -${playerLoseCoins} coins`;
-    log(`You lost round ${state.round + 1}, lost ${playerLoseCoins} coins.`);
   } else {
     battleStatus.textContent = 'Tie!';
-    log(`Round ${state.round + 1} was a tie.`);
   }
 
   state.round++;
@@ -381,20 +377,25 @@ async function playerChoose(playerKey) {
   saveState();
 
   if (state.coins >= state.coinGoal) {
-    log(`🎉 Congratulations! You reached ${state.coinGoal} coins!`);
     confettiBurst();
   }
 
-  disableChoices(false);
-
+  // Reset battle stage after short delay
   setTimeout(() => {
-    battleStatus.textContent = '';
-    playerIcon.textContent = '🤔';
-    playerItemName.textContent = 'No item';
-    botIcon.textContent = '🤖';
-    botItemName.textContent = 'No item';
-  }, 2500);
+    resetBattleStage();
+  }, 2000);
 }
+
+function resetBattleStage() {
+  playerIcon.textContent = '🤔';
+  playerItemName.textContent = 'No item';
+  botIcon.textContent = '🤖';
+  botItemName.textContent = 'No item';
+  battleStatus.textContent = '';
+  disableChoices(false);
+}
+
+  disableChoices(true);
 
 function disableChoices(disabled) {
   Array.from(battleChoicesDiv.children).forEach(btn => {
