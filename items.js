@@ -1,28 +1,46 @@
-export const items = {
-  amber: { key:"amber", name:"Amber", icon:"🟠", rarity:"Rare", cost:36, beats:["beam","bomb","catalyst","clock","comet","dagger","echo","earth","eclipse","fire","glacier","magnet","mirror","mirrorball","net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Ancient resin with stabilizing power.", flavor:"Solid and steady." },
-  beam: { key:"beam", name:"Beam", icon:"🔆", rarity:"Epic", cost:78, beats:["bomb","catalyst","clock","comet","dagger","echo","earth","eclipse","fire","glacier","magnet","mirror","mirrorball","net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Focused energy blast.", flavor:"One precise strike." },
-  bomb: { key:"bomb", name:"Bomb", icon:"💣", rarity:"Rare", cost:48, beats:["catalyst","clock","comet","dagger","echo","earth","eclipse","fire","glacier","magnet","mirror","mirrorball","net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Causes the next opponent move to be random.", flavor:"Kaboom." },
-  catalyst: { key:"catalyst", name:"Catalyst", icon:"⚗️", rarity:"Epic", cost:84, beats:["clock","comet","dagger","echo","earth","eclipse","fire","glacier","magnet","mirror","mirrorball","net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Speeds up reactions in play.", flavor:"Accelerate." },
-  clock: { key:"clock", name:"Clock", icon:"⏳", rarity:"Epic", cost:92, beats:["comet","dagger","echo","earth","eclipse","fire","glacier","magnet","mirror","mirrorball","net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Manipulates the tempo of matches.", flavor:"Time is a weapon." },
-  comet: { key:"comet", name:"Comet", icon:"☄️", rarity:"Legendary", cost:140, beats:["dagger","echo","earth","eclipse","fire","glacier","magnet","mirror","mirrorball","net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Cosmic and unstoppable.", flavor:"Make a crater." },
-  dagger: { key:"dagger", name:"Dagger", icon:"🗡️", rarity:"Uncommon", cost:20, beats:["echo","earth","eclipse","fire","glacier","magnet","mirror","mirrorball","net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"A quick, targeted strike great vs. paper-type items.", flavor:"Stab first, ask questions later." },
-  echo: { key:"echo", name:"Echo", icon:"📣", rarity:"Uncommon", cost:24, beats:["earth","eclipse","fire","glacier","magnet","mirror","mirrorball","net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Repeats the opponent's choice audibly, causing mistakes.", flavor:"Echoes of strategy." },
-  earth: { key:"earth", name:"Earth", icon:"🌎", rarity:"Rare", cost:38, beats:["eclipse","fire","glacier","magnet","mirror","mirrorball","net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Grounded and massive; resists tech.", flavor:"The ground never betrays." },
-  eclipse: { key:"eclipse", name:"Eclipse", icon:"🌑", rarity:"Legendary", cost:150, beats:["fire","glacier","magnet","mirror","mirrorball","net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Shadows the sun, changing everything.", flavor:"Darkened fate." },
-  fire: { key:"fire", name:"Fire", icon:"🔥", rarity:"Uncommon", cost:22, beats:["glacier","magnet","mirror","mirrorball","net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Hot and fast; burns through flimsy strategies.", flavor:"Blaze through." },
-  glacier: { key:"glacier", name:"Glacier", icon:"🧊", rarity:"Epic", cost:68, beats:["magnet","mirror","mirrorball","net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Slow but inescapable.", flavor:"Cold patience." },
-  magnet: { key:"magnet", name:"Magnet", icon:"🧲", rarity:"Uncommon", cost:25, beats:["mirror","mirrorball","net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Pulls metallic things in — useful vs. rock/scissors.", flavor:"Attraction wins." },
-  mirror: { key:"mirror", name:"Mirror", icon:"🪞", rarity:"Uncommon", cost:28, beats:["mirrorball","net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Reflects certain moves back at the opponent.", flavor:"Reflect, deflect, redirect." },
-  mirrorball: { key:"mirrorball", name:"Mirrorball", icon:"💿", rarity:"Rare", cost:44, beats:["net","phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Disorients with reflection.", flavor:"Disco mayhem." },
-  net: { key:"net", name:"Net", icon:"🕸️", rarity:"Uncommon", cost:16, beats:["phoenix","potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Entangles advanced tech.", flavor:"Sticky situation." },
-  phoenix: { key:"phoenix", name:"Phoenix", icon:"� Phoenix", rarity:"Legendary", cost:120, beats:["potion","prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Rebirth and fury — game-changing.", flavor:"Rise from ashes." },
-  potion: { key:"potion", name:"Potion", icon:"🧪", rarity:"Uncommon", cost:12, beats:["prism","prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Grants a small coin bonus on next win.", flavor:"Tastes like victory." },
-  prism: { key:"prism", name:"Prism", icon:"🔮", rarity:"Epic", cost:82, beats:["prismcore","robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Refracts opponent's strategy.", flavor:"Bend the light to your will." },
-  prismcore: { key:"prismcore", name:"Prism Core", icon:"🟣", rarity:"Legendary", cost:132, beats:["robot","rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Condenses refractive power.", flavor:"Core of light." },
-  robot: { key:"robot", name:"Robot", icon:"🤖", rarity:"Rare", cost:45, beats:["rock","rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Predictive algorithms give this an advantage.", flavor:"Cold logic." },
-  rock: { key:"rock", name:"Rock", icon:"🪨", rarity:"Common", cost:0, beats:["rune","shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"A hefty, reliable rock — slow but strong.", flavor:"Solid and unshakeable." },
-  rune: { key:"rune", name:"Rune", icon:"🪄", rarity:"Rare", cost:46, beats:["shield","scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Old magic leaves marks on outcomes.", flavor:"Inscribed fate." },
-  shield: { key:"shield", name:"Shield", icon:"🛡️", rarity:"Rare", cost:42, beats:["scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Blocks one counter — active for a single round.", flavor:"Hold the line." },
-  scissors: { key:"scissors", name:"Scissors", icon:"✂️", rarity:"Common", cost:0, beats:["smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Sharp and precise, good for quick wins.", flavor:"Snip snip!" }
-};
-export const itemKeys = Object.keys(items);
+const itemList = [
+  "rock", "paper", "scissors", "thorn", "tide", "vine", "spock",
+  "dagger", "magnet", "mirror",
+  "bomb", "earth", "robot",  "shield", "prism",
+  "ice_beam","clock", "storm", "thunder", "comet",
+  "phoenix", "eclipse", "storm_king",
+  "thunder_god", "void"
+];
+
+// Assign rarities arbitrarily or by grouping by index
+const rarities = [
+  "Common","Common","Common","Common","Common","Common","Common","Common",
+  "Uncommon","Uncommon","Uncommon","Uncommon","Uncommon","Uncommon","Uncommon","Uncommon",
+  "Rare","Rare","Rare","Rare","Rare","Rare","Rare","Rare",
+  "Epic","Epic","Epic","Epic","Epic","Epic","Epic","Epic",
+  "Legendary","Legendary","Legendary","Legendary","Legendary","Legendary","Legendary","Legendary"
+];
+
+// Sample base data with icons, costs, etc. could be filled as needed.
+
+function generateItems(itemKeys, rarities) {
+  const n = itemKeys.length;
+  let items = {};
+  for(let i=0; i<n; i++) {
+    const key = itemKeys[i];
+    // Compute beats: next half of items cyclically (n/2 = 20 here)
+    let beats = [];
+    for(let j=1; j<=n/2; j++) {
+      beats.push(itemKeys[(i+j) % n]);
+    }
+    items[key] = {
+      key,
+      name: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " "),
+      icon: "❓", // placeholder
+      rarity: rarities[i],
+      cost: (i+1)*5, // just an example cost
+      beats,
+      description: `This is the ${key} item.`,
+      flavor: "Balanced for perfect interaction."
+    };
+  }
+  return items;
+}
+
+export const items = generateItems(itemList, rarities);
+export const itemKeys = itemList;
