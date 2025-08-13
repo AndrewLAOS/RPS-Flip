@@ -122,18 +122,6 @@
         <div class="coin-burst" id="coin-wrap"></div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start">
-        <div>
-          <div class="panel" style="margin-bottom:12px">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div class="small-muted">Matchup Graph</div>
-              <div class="small-muted">Visual relationships</div>
-            </div>
-            <div class="matchup" id="matchup-graph" role="img" aria-label="Matchup graph">
-              <!-- svg rendered here -->
-            </div>
-          </div>
-
           <div class="panel" style="margin-top:10px">
             <div class="small-muted">Bot Inventory</div>
             <div class="bot-inventory" id="bot-inventory-items" aria-live="polite" style="margin-top:10px"></div>
@@ -153,305 +141,370 @@
     </main>
   </div>
 
-  <script type="module">
-    import { items, itemKeys } from './items.js';
+<script type="module">
+  import { items, itemKeys } from './items.js';
 
-    // Utility functions
-    const $ = (sel, root = document) => root.querySelector(sel);
-    const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
-    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-    // DOM refs
-    const coinsDisplay = $('#coins-display');
-    const botCoinsDisplay = $('#bot-coins-display');
-    const botDifficultySlider = $('#bot-difficulty-slider');
-    const botDifficultyLabel = $('#bot-difficulty-label');
-    const shopItemsDiv = $('#shop-items');
-    const battleChoicesDiv = $('#battle-choices');
-    const battleStatus = $('#battle-status');
-    const playerIcon = $('#player-icon');
-    const botIcon = $('#bot-icon');
-    const playerItemName = $('#player-item-name');
-    const botItemName = $('#bot-item-name');
-    const logItems = $('#log-items');
-    const roundCounter = $('#round-counter');
-    const streakCounter = $('#streak-counter');
-    const resetBtn = $('#reset-btn');
-    const autoBotBuyBtn = $('#auto-bot-buy');
-    const shuffleShopBtn = $('#shuffle-shop');
+  // DOM refs
+  const coinsDisplay = $('#coins-display');
+  const botCoinsDisplay = $('#bot-coins-display');
+  const botDifficultySlider = $('#bot-difficulty-slider');
+  const botDifficultyLabel = $('#bot-difficulty-label');
+  const shopItemsDiv = $('#shop-items');
+  const battleChoicesDiv = $('#battle-choices');
+  const battleStatus = $('#battle-status');
+  const playerIcon = $('#player-icon');
+  const botIcon = $('#bot-icon');
+  const playerItemName = $('#player-item-name');
+  const botItemName = $('#bot-item-name');
+  const logItems = $('#log-items');
+  const roundCounter = $('#round-counter');
+  const streakCounter = $('#streak-counter');
+  const resetBtn = $('#reset-btn');
+  const autoBotBuyBtn = $('#auto-bot-buy');
+  const shuffleShopBtn = $('#shuffle-shop');
+  const confettiWrap = $('#confetti-wrap');
 
-    // Game state
-   let state = {
-  coins: 0,             // player starts with 0 coins
-  botCoins: 0,          // bot starts with 0 coins
-  playerInventory: new Set(['rock', 'paper', 'scissors']),
-  botInventory: new Set(['rock', 'paper', 'scissors']),
-  round: 0,
-  streak: 0,
-  botDifficulty: Number(botDifficultySlider.value),
-  autoBotBuy: true,
-  shopOrder: [...itemKeys],
-};
+  // Rarity values for coin calculation
+  const rarityValues = {
+    'Common': 1,
+    'Uncommon': 2,
+    'Rare': 3,
+    'Epic': 4,
+    'Legendary': 5
+  };
 
+  // Game state
+  let state = {
+    coins: 0,
+    botCoins: 0,
+    playerInventory: new Set(['rock', 'paper', 'scissors']),
+    botInventory: new Set(['rock', 'paper', 'scissors']),
+    round: 0,
+    streak: 0,
+    botDifficulty: Number(botDifficultySlider.value),
+    autoBotBuy: true,
+    shopOrder: [...itemKeys],
+    coinGoal: 200, // Winning coin goal for celebration
+  };
 
-    // Save/load state to localStorage
-    function saveState() {
-      try {
-        localStorage.setItem('rpsflip:v3', JSON.stringify({
-          coins: state.coins,
-          botCoins: state.botCoins,
-          playerInventory: [...state.playerInventory],
-          botInventory: [...state.botInventory],
-          round: state.round,
-          streak: state.streak,
-          botDifficulty: state.botDifficulty,
-        }));
-        $('#storage-indicator').textContent = 'enabled';
-      } catch {
-        $('#storage-indicator').textContent = 'unavailable';
-      }
+  // Save/load state
+  function saveState() {
+    try {
+      localStorage.setItem('rpsflip:v3', JSON.stringify({
+        coins: state.coins,
+        botCoins: state.botCoins,
+        playerInventory: [...state.playerInventory],
+        botInventory: [...state.botInventory],
+        round: state.round,
+        streak: state.streak,
+        botDifficulty: state.botDifficulty,
+      }));
+      $('#storage-indicator').textContent = 'enabled';
+    } catch {
+      $('#storage-indicator').textContent = 'unavailable';
     }
+  }
 
-    function loadState() {
-      try {
-        const raw = localStorage.getItem('rpsflip:v3');
-        if (!raw) return;
-        const saved = JSON.parse(raw);
-        state.coins = saved.coins ?? state.coins;
-        state.botCoins = saved.botCoins ?? state.botCoins;
-        state.playerInventory = new Set(saved.playerInventory ?? [...state.playerInventory]);
-        state.botInventory = new Set(saved.botInventory ?? [...state.botInventory]);
-        state.round = saved.round ?? state.round;
-        state.streak = saved.streak ?? state.streak;
-        state.botDifficulty = saved.botDifficulty ?? state.botDifficulty;
-      } catch {
-        // ignore
-      }
+  function loadState() {
+    try {
+      const raw = localStorage.getItem('rpsflip:v3');
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      state.coins = saved.coins ?? state.coins;
+      state.botCoins = saved.botCoins ?? state.botCoins;
+      state.playerInventory = new Set(saved.playerInventory ?? [...state.playerInventory]);
+      state.botInventory = new Set(saved.botInventory ?? [...state.botInventory]);
+      state.round = saved.round ?? state.round;
+      state.streak = saved.streak ?? state.streak;
+      state.botDifficulty = saved.botDifficulty ?? state.botDifficulty;
+    } catch {
+      // ignore
     }
+  }
 
-    // Render functions
-    function renderCoins() {
-      coinsDisplay.textContent = state.coins;
-      botCoinsDisplay.textContent = state.botCoins;
-    }
+  // Render functions
+  function renderCoins() {
+    coinsDisplay.textContent = state.coins;
+    botCoinsDisplay.textContent = state.botCoins;
+  }
 
-    function renderShop() {
-      shopItemsDiv.innerHTML = '';
-      state.shopOrder.forEach(key => {
-        const item = items[key];
-        if (!item) return;
-        const owned = state.playerInventory.has(key);
-        const affordable = state.coins >= item.cost;
-        const div = document.createElement('div');
-        div.className = `shop-item${owned ? ' owned' : ''}`;
-        div.innerHTML = `
-          <div class="icon">${item.icon}</div>
-          <div class="info">
-            <div class="name">${item.name}</div>
-            <div class="rarity">Cost: ${item.cost} 🪙</div>
-          </div>
-          <button ${owned ? 'disabled' : ''} tabindex="0">${owned ? 'Owned' : 'Buy'}</button>
-        `;
-        const btn = div.querySelector('button');
-        btn.onclick = () => {
-          if (state.coins < item.cost) return;
-          state.coins -= item.cost;
-          state.playerInventory.add(key);
-          log(`Bought ${item.name} for ${item.cost} coins.`);
-          renderCoins();
-          renderShop();
-          renderBattleChoices();
-          saveState();
-        };
-        shopItemsDiv.appendChild(div);
-      });
-    }
-
-    function renderBattleChoices() {
-      battleChoicesDiv.innerHTML = '';
-      Array.from(state.playerInventory).forEach(key => {
-        const item = items[key];
-        if (!item) return;
-        const btn = document.createElement('button');
-        btn.className = 'choice-btn';
-        btn.textContent = `${item.icon} ${item.name}`;
-        btn.setAttribute('tabindex', '0');
-        btn.onclick = () => playerChoose(key);
-        battleChoicesDiv.appendChild(btn);
-      });
-    }
-
-    function renderBotInventory() {
-      const botInventoryDiv = $('#bot-inventory-items');
-      botInventoryDiv.innerHTML = '';
-      Array.from(state.botInventory).forEach(key => {
-        const item = items[key];
-        if (!item) return;
-        const div = document.createElement('div');
-        div.className = 'bot-inv-item';
-        div.textContent = `${item.icon} ${item.name}`;
-        botInventoryDiv.appendChild(div);
-      });
-    }
-
-    // Game logic
-    function getResult(playerKey, botKey) {
-      if (playerKey === botKey) return 'tie';
-      const player = items[playerKey];
-      if (player.beats.includes(botKey)) return 'win';
-      return 'lose';
-    }
-
-    function botChoose(playerKey) {
-      const difficulty = state.botDifficulty;
-      const available = [...state.botInventory];
-      if (available.length === 0) return pick(itemKeys);
-      const counters = available.filter(k => items[k].beats.includes(playerKey));
-      if (Math.random() * 100 < difficulty && counters.length > 0) {
-        return pick(counters);
-      }
-      return pick(available);
-    }
-
-    // Animate card flip
-    async function animateFlip(cardEl, newIcon, newName) {
-      await cardEl.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(90deg)' }], { duration: 200 }).finished;
-      cardEl.querySelector('.icon').textContent = newIcon;
-      cardEl.querySelector('.small.muted').textContent = newName;
-      await cardEl.animate([{ transform: 'rotateY(90deg)' }, { transform: 'rotateY(0deg)' }], { duration: 200 }).finished;
-    }
-
-    async function playerChoose(playerKey) {
-      disableChoices(true);
-
-      const botKey = botChoose(playerKey);
-      const playerCard = $('#player-card');
-      const botCard = $('#bot-card');
-
-      // Animate player and bot cards flipping to their chosen icons and names
-      await Promise.all([
-        animateFlip(playerCard, items[playerKey].icon, items[playerKey].name),
-        animateFlip(botCard, items[botKey].icon, items[botKey].name),
-      ]);
-
-      const result = getResult(playerKey, botKey);
-
-      // Update UI results
-      if (result === 'win') {
-        state.coins += 5;
-        state.streak++;
-        battleStatus.textContent = 'You Win!';
-        log(`You won round ${state.round + 1}!`);
-      } else if (result === 'lose') {
-        state.botCoins += 5;
-        state.streak = 0;
-        battleStatus.textContent = 'You Lose!';
-        log(`You lost round ${state.round + 1}.`);
-      } else {
-        battleStatus.textContent = 'Tie!';
-        log(`Round ${state.round + 1} was a tie.`);
-      }
-
-      state.round++;
-      roundCounter.textContent = state.round;
-      streakCounter.textContent = state.streak;
-
-      renderCoins();
-      renderBotInventory();
-
-      saveState();
-
-      disableChoices(false);
-
-      setTimeout(() => {
-        battleStatus.textContent = '';
-        // Reset cards to default after round
-        playerIcon.textContent = '🤔';
-        playerItemName.textContent = 'No item';
-        botIcon.textContent = '🤖';
-        botItemName.textContent = 'No item';
-      }, 2500);
-    }
-
-    function disableChoices(disabled) {
-      Array.from(battleChoicesDiv.children).forEach(btn => {
-        btn.disabled = disabled;
-      });
-    }
-
-    // Bot auto-buy logic
-    function botAutoBuy() {
-      if (!state.autoBotBuy) return;
-
-      const affordableItems = itemKeys.filter(key => {
-        const item = items[key];
-        return !state.botInventory.has(key) && item.cost <= state.botCoins;
-      });
-
-      if (affordableItems.length > 0) {
-        // Bot buys one random affordable item
-        const toBuyKey = pick(affordableItems);
-        const item = items[toBuyKey];
-        state.botCoins -= item.cost;
-        state.botInventory.add(toBuyKey);
-        log(`Bot bought ${item.name} for ${item.cost} coins.`);
+  function renderShop() {
+    shopItemsDiv.innerHTML = '';
+    state.shopOrder.forEach(key => {
+      const item = items[key];
+      if (!item) return;
+      const owned = state.playerInventory.has(key);
+      const affordable = state.coins >= item.cost;
+      const div = document.createElement('div');
+      div.className = `shop-item${owned ? ' owned' : ''}`;
+      div.innerHTML = `
+        <div class="icon">${item.icon}</div>
+        <div class="info">
+          <div class="name">${item.name}</div>
+          <div class="rarity">Cost: ${item.cost} 🪙</div>
+        </div>
+        <button ${owned ? 'disabled' : ''} tabindex="0">${owned ? 'Owned' : 'Buy'}</button>
+      `;
+      const btn = div.querySelector('button');
+      btn.onclick = () => {
+        if (state.coins < item.cost) return;
+        state.coins -= item.cost;
+        state.playerInventory.add(key);
+        log(`Bought ${item.name} for ${item.cost} coins.`);
         renderCoins();
-        renderBotInventory();
-        saveState();
-      }
-    }
-
-    // Init
-    function init() {
-      loadState();
-
-      renderCoins();
-      renderShop();
-      renderBattleChoices();
-      renderBotInventory();
-
-      roundCounter.textContent = state.round;
-      streakCounter.textContent = state.streak;
-      botDifficultySlider.value = state.botDifficulty;
-      botDifficultyLabel.textContent = `${state.botDifficulty}%`;
-
-      botDifficultySlider.oninput = () => {
-        state.botDifficulty = Number(botDifficultySlider.value);
-        botDifficultyLabel.textContent = `${state.botDifficulty}%`;
-        saveState();
-      };
-
-      resetBtn.onclick = () => {
-        if (confirm('Reset all progress?')) {
-          localStorage.removeItem('rpsflip:v3');
-          location.reload();
-        }
-      };
-
-      autoBotBuyBtn.onclick = () => {
-        state.autoBotBuy = !state.autoBotBuy;
-        autoBotBuyBtn.textContent = `Toggle Bot Auto-Buy (${state.autoBotBuy ? 'On' : 'Off'})`;
-      };
-
-      shuffleShopBtn.onclick = () => {
-        state.shopOrder = state.shopOrder.sort(() => Math.random() - 0.5);
         renderShop();
+        renderBattleChoices();
+        saveState();
       };
+      shopItemsDiv.appendChild(div);
+    });
+  }
 
-      // Bot auto-buy interval every 5 seconds
-      setInterval(botAutoBuy, 5000);
+  function renderBattleChoices() {
+    battleChoicesDiv.innerHTML = '';
+    Array.from(state.playerInventory).forEach(key => {
+      const item = items[key];
+      if (!item) return;
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = `${item.icon} ${item.name}`;
+      btn.setAttribute('tabindex', '0');
+      btn.onclick = () => playerChoose(key);
+      battleChoicesDiv.appendChild(btn);
+    });
+  }
+
+  function renderBotInventory() {
+    const botInventoryDiv = $('#bot-inventory-items');
+    botInventoryDiv.innerHTML = '';
+    Array.from(state.botInventory).forEach(key => {
+      const item = items[key];
+      if (!item) return;
+      const div = document.createElement('div');
+      div.className = 'bot-inv-item';
+      div.textContent = `${item.icon} ${item.name}`;
+      botInventoryDiv.appendChild(div);
+    });
+  }
+
+  // Game logic
+  function getResult(playerKey, botKey) {
+    if (playerKey === botKey) return 'tie';
+    const player = items[playerKey];
+    if (player.beats.includes(botKey)) return 'win';
+    return 'lose';
+  }
+
+  function botChoose(playerKey) {
+    const difficulty = state.botDifficulty;
+    const available = [...state.botInventory];
+    if (available.length === 0) return pick(itemKeys);
+    const counters = available.filter(k => items[k].beats.includes(playerKey));
+    if (Math.random() * 100 < difficulty && counters.length > 0) {
+      return pick(counters);
+    }
+    return pick(available);
+  }
+
+  // Animate card flip
+  async function animateFlip(cardEl, newIcon, newName) {
+    await cardEl.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(90deg)' }], { duration: 200 }).finished;
+    cardEl.querySelector('.icon').textContent = newIcon;
+    cardEl.querySelector('.small.muted').textContent = newName;
+    await cardEl.animate([{ transform: 'rotateY(90deg)' }, { transform: 'rotateY(0deg)' }], { duration: 200 }).finished;
+  }
+
+  // Confetti effect (basic simple version)
+  function confettiBurst() {
+    // Clear previous confetti
+    confettiWrap.innerHTML = '';
+    // Create some confetti dots
+    for (let i = 0; i < 100; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'confetti-dot';
+      dot.style.left = Math.random() * 100 + '%';
+      dot.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
+      dot.style.animationDelay = (Math.random() * 2) + 's';
+      confettiWrap.appendChild(dot);
+    }
+    setTimeout(() => confettiWrap.innerHTML = '', 3000);
+  }
+
+  async function playerChoose(playerKey) {
+    disableChoices(true);
+
+    const botKey = botChoose(playerKey);
+    const playerCard = $('#player-card');
+    const botCard = $('#bot-card');
+
+    await Promise.all([
+      animateFlip(playerCard, items[playerKey].icon, items[playerKey].name),
+      animateFlip(botCard, items[botKey].icon, items[botKey].name),
+    ]);
+
+    const result = getResult(playerKey, botKey);
+    const playerRarityVal = rarityValues[items[playerKey].rarity] || 1;
+    const botRarityVal = rarityValues[items[botKey].rarity] || 1;
+
+    // Base coins values
+    const baseWinCoins = 5;
+    const baseLoseCoins = 3;
+
+    if (result === 'win') {
+      // Player wins
+      const winCoins = baseWinCoins * playerRarityVal;
+      state.coins += winCoins;
+
+      // Bot loses coins scaled by rarity, at least 1 coin
+      const botLoseCoins = Math.max(1, baseLoseCoins * botRarityVal);
+      state.botCoins = Math.max(0, state.botCoins - botLoseCoins);
+
+      state.streak++;
+      battleStatus.textContent = `You Win! +${winCoins} coins`;
+      log(`You won round ${state.round + 1}, gained ${winCoins} coins!`);
+      
+      // Bonus for streak 5
+      if (state.streak > 0 && state.streak % 5 === 0) {
+        const streakBonus = 25;
+        state.coins += streakBonus;
+        battleStatus.textContent += ` + Streak Bonus ${streakBonus} coins!`;
+        log(`Streak bonus! +${streakBonus} coins for winning ${state.streak} in a row.`);
+      }
+
+    } else if (result === 'lose') {
+      // Bot wins
+      const winCoins = baseWinCoins * botRarityVal;
+      state.botCoins += winCoins;
+
+      // Player loses coins scaled by rarity, at least 1 coin
+      const playerLoseCoins = Math.max(1, baseLoseCoins * playerRarityVal);
+      state.coins = Math.max(0, state.coins - playerLoseCoins);
+
+      state.streak = 0;
+      battleStatus.textContent = `You Lose! -${playerLoseCoins} coins`;
+      log(`You lost round ${state.round + 1}, lost ${playerLoseCoins} coins.`);
+    } else {
+      battleStatus.textContent = 'Tie!';
+      log(`Round ${state.round + 1} was a tie.`);
+      // No coin changes for tie
     }
 
-    function log(text) {
-      const el = document.createElement('div');
-      el.textContent = text;
-      logItems.appendChild(el);
-      logItems.scrollTop = logItems.scrollHeight;
+    state.round++;
+    roundCounter.textContent = state.round;
+    streakCounter.textContent = state.streak;
+
+    renderCoins();
+    renderBotInventory();
+
+    saveState();
+
+    // Check coin goal for confetti celebration
+    if (state.coins >= state.coinGoal) {
+      log(`🎉 Congratulations! You reached ${state.coinGoal} coins!`);
+      confettiBurst();
     }
 
-    init();
+    disableChoices(false);
 
-  </script>
+    setTimeout(() => {
+      battleStatus.textContent = '';
+      playerIcon.textContent = '🤔';
+      playerItemName.textContent = 'No item';
+      botIcon.textContent = '🤖';
+      botItemName.textContent = 'No item';
+    }, 2500);
+  }
+
+  function disableChoices(disabled) {
+    Array.from(battleChoicesDiv.children).forEach(btn => {
+      btn.disabled = disabled;
+    });
+  }
+
+  // Bot auto-buy logic
+  function botAutoBuy() {
+    if (!state.autoBotBuy) return;
+
+    const affordableItems = itemKeys.filter(key => {
+      const item = items[key];
+      return !state.botInventory.has(key) && item.cost <= state.botCoins;
+    });
+
+    if (affordableItems.length > 0) {
+      const toBuyKey = pick(affordableItems);
+      const item = items[toBuyKey];
+      state.botCoins -= item.cost;
+      state.botInventory.add(toBuyKey);
+      log(`Bot bought ${item.name} for ${item.cost} coins.`);
+      renderCoins();
+      renderBotInventory();
+      saveState();
+    }
+  }
+
+  // Reset shop now costs 10 coins
+  resetBtn.onclick = () => {
+    if (state.coins < 10) {
+      alert('You need at least 10 coins to reset the shop.');
+      return;
+    }
+    if (confirm('Reset shop for 10 coins?')) {
+      state.coins -= 10;
+      state.shopOrder = state.shopOrder.sort(() => Math.random() - 0.5);
+      renderShop();
+      renderCoins();
+      log('Shop reset for 10 coins.');
+      saveState();
+    }
+  };
+
+  // Initialization
+  function init() {
+    loadState();
+
+    renderCoins();
+    renderShop();
+    renderBattleChoices();
+    renderBotInventory();
+
+    roundCounter.textContent = state.round;
+    streakCounter.textContent = state.streak;
+    botDifficultySlider.value = state.botDifficulty;
+    botDifficultyLabel.textContent = `${state.botDifficulty}%`;
+
+    botDifficultySlider.oninput = () => {
+      state.botDifficulty = Number(botDifficultySlider.value);
+      botDifficultyLabel.textContent = `${state.botDifficulty}%`;
+      saveState();
+    };
+
+    autoBotBuyBtn.onclick = () => {
+      state.autoBotBuy = !state.autoBotBuy;
+      autoBotBuyBtn.textContent = `Toggle Bot Auto-Buy (${state.autoBotBuy ? 'On' : 'Off'})`;
+    };
+
+    shuffleShopBtn.onclick = () => {
+      state.shopOrder = state.shopOrder.sort(() => Math.random() - 0.5);
+      renderShop();
+    };
+
+    setInterval(botAutoBuy, 5000);
+  }
+
+  function log(text) {
+    const el = document.createElement('div');
+    el.textContent = text;
+    logItems.appendChild(el);
+    logItems.scrollTop = logItems.scrollHeight;
+  }
+
+  init();
+
+</script>
+
 
 </body>
 </html>
