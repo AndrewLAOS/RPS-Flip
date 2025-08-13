@@ -38,7 +38,6 @@ const choicesDiv = document.getElementById('choices');
 const statusText = document.getElementById('status-text');
 const loadingSpinner = document.getElementById('loading-spinner');
 
-// -------------------- State Variables --------------------
 let currentUser = null;
 let matchId = localStorage.getItem('currentMatch') || null;
 let playerNumber = null;
@@ -46,17 +45,13 @@ let opponentId = null;
 let gameRef = null;
 let selectedChoice = null;
 
-// -------------------- Utility Functions --------------------
-function showLoading(show) {
-  loadingSpinner.style.display = show ? 'block' : 'none';
-}
+// -------------------- Utility --------------------
+function showLoading(show) { loadingSpinner.style.display = show ? 'block' : 'none'; }
 
 function generateMatchId() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let id = '';
-  for (let i = 0; i < 6; i++) {
-    id += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
+  for (let i = 0; i < 6; i++) id += chars.charAt(Math.floor(Math.random() * chars.length));
   return id;
 }
 
@@ -67,12 +62,10 @@ function resetCards() {
   opponentCardBack.textContent = '?';
 }
 
-// -------------------- Auth Logic --------------------
+// -------------------- Auth --------------------
 btnGoogleLogin.addEventListener('click', () => {
   const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(err => {
-    loginStatus.textContent = 'Login failed: ' + err.message;
-  });
+  auth.signInWithPopup(provider).catch(err => loginStatus.textContent = 'Login failed: ' + err.message);
 });
 
 auth.onAuthStateChanged(user => {
@@ -88,9 +81,7 @@ auth.onAuthStateChanged(user => {
     matchIdInput.disabled = false;
     gameSection.hidden = true;
 
-    // Resume existing match if stored
     if (matchId) startMatch(matchId);
-
   } else {
     currentUser = null;
     loginStatus.textContent = '';
@@ -100,17 +91,12 @@ auth.onAuthStateChanged(user => {
   }
 });
 
-// -------------------- Match Creation / Joining --------------------
+// -------------------- Match Creation / Join --------------------
 btnCreateMatch.addEventListener('click', async () => {
-  if (!currentUser) {
-    matchStatus.textContent = 'Please sign in first.';
-    return;
-  }
+  if (!currentUser) return matchStatus.textContent = 'Please sign in first.';
 
   try {
-    btnCreateMatch.disabled = true;
-    btnJoinMatch.disabled = true;
-    matchIdInput.disabled = true;
+    btnCreateMatch.disabled = true; btnJoinMatch.disabled = true; matchIdInput.disabled = true;
     showLoading(true);
 
     let newMatchId = generateMatchId();
@@ -159,35 +145,28 @@ btnCreateMatch.addEventListener('click', async () => {
 
 btnJoinMatch.addEventListener('click', () => {
   const enteredId = matchIdInput.value.trim().toUpperCase();
-  if (!enteredId) {
-    matchStatus.textContent = 'Please enter a Match ID to join.';
-    return;
-  }
+  if (!enteredId) return matchStatus.textContent = 'Please enter a Match ID to join.';
   startMatch(enteredId);
 });
 
 async function startMatch(id) {
   showLoading(true);
   matchStatus.textContent = `Joining match ${id}...`;
-  btnCreateMatch.disabled = true;
-  btnJoinMatch.disabled = true;
-  matchIdInput.disabled = true;
+  btnCreateMatch.disabled = true; btnJoinMatch.disabled = true; matchIdInput.disabled = true;
 
   gameRef = db.ref(`matches/${id}`);
   try {
     const snap = await gameRef.once('value');
     if (!snap.exists()) throw new Error('Match not found.');
-
     const data = snap.val();
+
     if (data.player2 && data.player2.uid !== currentUser.uid) {
       matchStatus.textContent = 'Match already has two players.';
       return;
     }
 
     if (!data.player2) {
-      await gameRef.child('player2').set({
-        uid: currentUser.uid, name: currentUser.displayName, choice: null, score: 0
-      });
+      await gameRef.child('player2').set({ uid: currentUser.uid, name: currentUser.displayName, choice: null, score: 0 });
       await gameRef.child('started').set(true);
       playerNumber = 'player2';
       opponentId = 'player1';
@@ -212,9 +191,7 @@ async function startMatch(id) {
     btnCreateMatch.disabled = false;
     btnJoinMatch.disabled = false;
     matchIdInput.disabled = false;
-  } finally {
-    showLoading(false);
-  }
+  } finally { showLoading(false); }
 }
 
 // -------------------- Game UI --------------------
@@ -247,20 +224,13 @@ function renderChoices() {
   });
 }
 
-// -------------------- Player Choice --------------------
 async function selectChoice(choiceKey) {
   if (!gameRef || !playerNumber) return;
   selectedChoice = choiceKey;
   statusText.textContent = `You selected ${ITEMS[choiceKey].name}. Waiting for opponent...`;
-
   Array.from(choicesDiv.children).forEach(btn => btn.disabled = true);
-
-  try {
-    await gameRef.child(`${playerNumber}/choice`).set(choiceKey);
-  } catch (e) {
-    statusText.textContent = 'Error sending choice: ' + e.message;
-    Array.from(choicesDiv.children).forEach(btn => btn.disabled = false);
-  }
+  try { await gameRef.child(`${playerNumber}/choice`).set(choiceKey); }
+  catch (e) { statusText.textContent = 'Error sending choice: ' + e.message; Array.from(choicesDiv.children).forEach(btn => btn.disabled = false); }
 }
 
 // -------------------- Listen for Game Updates --------------------
@@ -272,48 +242,25 @@ function listenForGameUpdates() {
   gameRef.on('value', snapshot => {
     const data = snapshot.val();
     if (!data) return statusText.textContent = 'Match data lost.';
-
-    if (!data.started) {
-      statusText.textContent = 'Waiting for opponent...';
-      opponentNameLabel.textContent = 'Waiting for opponent...';
-      resetCards();
-      Array.from(choicesDiv.children).forEach(btn => btn.disabled = true);
-      return;
-    }
+    if (!data.started) { statusText.textContent = 'Waiting for opponent...'; opponentNameLabel.textContent = 'Waiting for opponent...'; resetCards(); Array.from(choicesDiv.children).forEach(btn => btn.disabled = true); return; }
 
     // Update names and scores
-    if (data[playerNumber]) {
-      playerNameLabel.textContent = data[playerNumber].name;
-      playerScoreLabel.textContent = data[playerNumber].score;
-    }
-    if (data[opponentId]) {
-      opponentNameLabel.textContent = data[opponentId].name;
-      opponentScoreLabel.textContent = data[opponentId].score;
-    } else {
-      opponentNameLabel.textContent = 'Waiting for opponent...';
-      opponentScoreLabel.textContent = '0';
-    }
+    if (data[playerNumber]) { playerNameLabel.textContent = data[playerNumber].name; playerScoreLabel.textContent = data[playerNumber].score; }
+    if (data[opponentId]) { opponentNameLabel.textContent = data[opponentId].name; opponentScoreLabel.textContent = data[opponentId].score; } else { opponentNameLabel.textContent = 'Waiting for opponent...'; opponentScoreLabel.textContent = '0'; }
 
     const playerChoice = data[playerNumber]?.choice;
     const opponentChoice = data[opponentId]?.choice;
 
     // Animate cards
-    if (playerChoice) flipCard(playerCardInner, playerCardBack, ITEMS[playerChoice].icon);
-    else resetCard(playerCardInner, playerCardBack);
-    if (opponentChoice) flipCard(opponentCardInner, opponentCardBack, ITEMS[opponentChoice].icon);
-    else resetCard(opponentCardInner, opponentCardBack);
+    if (playerChoice) flipCard(playerCardInner, playerCardBack, ITEMS[playerChoice].icon); else resetCard(playerCardInner, playerCardBack);
+    if (opponentChoice) flipCard(opponentCardInner, opponentCardBack, ITEMS[opponentChoice].icon); else resetCard(opponentCardInner, opponentCardBack);
 
     // Determine round result
     if (playerChoice && opponentChoice) {
       const result = determineResult(playerChoice, opponentChoice);
-      if (result === 'win') {
-        statusText.innerHTML = `<span class="win-text">You Win! 🎉</span>`;
-        showConfetti();
-      } else if (result === 'lose') {
-        statusText.innerHTML = `<span class="lose-text">You Lose. 😞</span>`;
-      } else {
-        statusText.innerHTML = `<span class="tie-text">It's a Tie! 🤝</span>`;
-      }
+      if (result === 'win') { statusText.innerHTML = `<span class="win-text">You Win! 🎉</span>`; showConfetti(); }
+      else if (result === 'lose') statusText.innerHTML = `<span class="lose-text">You Lose. 😞</span>`;
+      else statusText.innerHTML = `<span class="tie-text">It's a Tie! 🤝</span>`;
 
       // Update scores
       if (result === 'win') gameRef.child(`${playerNumber}/score`).transaction(score => (score || 0) + 1);
@@ -328,15 +275,9 @@ function listenForGameUpdates() {
         Array.from(choicesDiv.children).forEach(btn => btn.disabled = false);
         resetCards();
       }, 3000);
-
     } else {
-      if (!playerChoice) {
-        statusText.textContent = 'Make your choice!';
-        Array.from(choicesDiv.children).forEach(btn => btn.disabled = false);
-      } else {
-        statusText.textContent = 'Waiting for opponent...';
-        Array.from(choicesDiv.children).forEach(btn => btn.disabled = true);
-      }
+      if (!playerChoice) { statusText.textContent = 'Make your choice!'; Array.from(choicesDiv.children).forEach(btn => btn.disabled = false); }
+      else { statusText.textContent = 'Waiting for opponent...'; Array.from(choicesDiv.children).forEach(btn => btn.disabled = true); }
     }
   });
 }
@@ -349,15 +290,14 @@ function determineResult(playerChoice, opponentChoice) {
   return 'tie';
 }
 
-// -------------------- Card Flip Animation Helpers --------------------
-function flipCard(cardInner, cardBack, icon) {
-  cardBack.textContent = icon;
-  cardInner.classList.add('flipped');
-}
+// -------------------- Card Flip Helpers --------------------
+function flipCard(cardInner, cardBack, icon) { cardBack.textContent = icon; cardInner.classList.add('flipped'); }
+function resetCard(cardInner, cardBack) { cardBack.textContent = '?'; cardInner.classList.remove('flipped'); }
 
-function resetCard(cardInner, cardBack) {
-  cardBack.textContent = '?';
-  cardInner.classList.remove('flipped');
+// -------------------- Confetti --------------------
+function showConfetti() {
+  if (!window.confetti) return;
+  confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
 }
 
 // -------------------- Back to Bot Mode --------------------
