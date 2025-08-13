@@ -24,6 +24,13 @@
   --font-mono: 'Roboto Mono', monospace;
   --border-radius: 8px;
   --spacing: 16px;
+
+  /* Rarity Colors */
+  --rarity-common: #b0b0b0; /* Grey */
+  --rarity-uncommon: #50fa7b; /* Green */
+  --rarity-rare: #8be9fd; /* Blue */
+  --rarity-epic: #bd93f9; /* Purple */
+  --rarity-legendary: #ffb86c; /* Orange */
 }
 
 /*
@@ -257,6 +264,7 @@ input[type="range"]::-webkit-slider-thumb {
   background-color: var(--bg-primary);
   border-radius: var(--border-radius);
   transition: background-color 0.2s;
+  border: 2px solid transparent; /* Added a transparent border */
 }
 
 .shop-item:hover {
@@ -279,6 +287,43 @@ input[type="range"]::-webkit-slider-thumb {
 .shop-item.owned {
   opacity: 0.6;
 }
+
+/* Rarity-specific styles for the shop items */
+.shop-item.rarity-Common {
+  border-color: var(--rarity-common);
+}
+.shop-item.rarity-Common .rarity {
+  color: var(--rarity-common);
+}
+
+.shop-item.rarity-Uncommon {
+  border-color: var(--rarity-uncommon);
+}
+.shop-item.rarity-Uncommon .rarity {
+  color: var(--rarity-uncommon);
+}
+
+.shop-item.rarity-Rare {
+  border-color: var(--rarity-rare);
+}
+.shop-item.rarity-Rare .rarity {
+  color: var(--rarity-rare);
+}
+
+.shop-item.rarity-Epic {
+  border-color: var(--rarity-epic);
+}
+.shop-item.rarity-Epic .rarity {
+  color: var(--rarity-epic);
+}
+
+.shop-item.rarity-Legendary {
+  border-color: var(--rarity-legendary);
+}
+.shop-item.rarity-Legendary .rarity {
+  color: var(--rarity-legendary);
+}
+
 
 .bot-inventory {
   display: flex;

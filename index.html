@@ -242,18 +242,19 @@
     state.shopOrder.forEach(key => {
       const item = items[key];
       if (!item) return;
-      const owned = state.playerInventory.has(key);
-      const affordable = state.coins >= item.cost;
-      const div = document.createElement('div');
-      div.className = `shop-item${owned ? ' owned' : ''}`;
-      div.innerHTML = `
-        <div class="icon">${item.icon}</div>
-        <div class="info">
-          <div class="name">${item.name}</div>
-          <div class="rarity">Cost: ${item.cost} 🪙</div>
-        </div>
-        <button ${owned ? 'disabled' : ''} tabindex="0">${owned ? 'Owned' : 'Buy'}</button>
-      `;
+    const owned = state.playerInventory.has(key);
+const affordable = state.coins >= item.cost;
+const div = document.createElement('div');
+// Add the new rarity class to the div
+div.className = `shop-item rarity-${item.rarity}${owned ? ' owned' : ''}`;
+div.innerHTML = `
+  <div class="icon">${item.icon}</div>
+  <div class="info">
+    <div class="name">${item.name}</div>
+    <div class="rarity">Cost: ${item.cost} 🪙</div>
+  </div>
+  <button ${owned ? 'disabled' : ''} tabindex="0">${owned ? 'Owned' : 'Buy'}</button>
+`;
       const btn = div.querySelector('button');
       btn.onclick = () => {
         if (state.coins < item.cost) return;
