@@ -450,4 +450,35 @@ function determineResult(playerChoice, opponentChoice) {
 document.getElementById('btnBackToBot')?.addEventListener('click', () => {
   localStorage.removeItem('currentMatch');
   window.location.href = 'index.html';
+  const btnLeaveMatch = document.getElementById('btnLeaveMatch');
+
+btnLeaveMatch?.addEventListener('click', async () => {
+  if (!matchId || !playerNumber) return;
+
+  // Remove this player from the match in Firebase
+  try {
+    await db.ref(`matches/${matchId}/${playerNumber}`).remove();
+
+    // If both players gone, delete the match
+    const snap = await db.ref(`matches/${matchId}`).once('value');
+    if (!snap.exists() || (!snap.val().player1 && !snap.val().player2)) {
+      await db.ref(`matches/${matchId}`).remove();
+    }
+  } catch (e) {
+    console.error('Error leaving match:', e);
+  }
+
+  // Reset local match state
+  localStorage.removeItem('currentMatch');
+  matchId = null;
+  playerNumber = null;
+  opponentId = null;
+
+  // Reset UI
+  gameSection.hidden = true;
+  matchSection.hidden = false;
+  resetCards();
+  statusText.textContent = '';
+  generatedMatchIdDisplay.textContent = '';
+});
 });
