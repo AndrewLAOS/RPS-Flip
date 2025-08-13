@@ -5,6 +5,12 @@
   <title>Ultimate Rock, Paper, Scissors Flip — Deluxe</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
+  <!-- Cronitor RUM -->
+<script async src="https://rum.cronitor.io/script.js"></script>
+<script>
+    window.cronitor = window.cronitor || function() { (window.cronitor.q = window.cronitor.q || []).push(arguments); };
+    cronitor('config', { clientKey: 'd086b8ed0db3d70befbdfbceb369a4a5' });
+</script>
 </head>
 <body>
 
@@ -485,7 +491,11 @@
       state.autoBotBuy = !state.autoBotBuy;
       autoBotBuyBtn.textContent = `Toggle Bot Auto-Buy (${state.autoBotBuy ? 'On' : 'Off'})`;
     };
-<Button onClick={resetGame}>Reset Game</Button>
+
+    shuffleShopBtn.onclick = () => {
+      state.shopOrder = state.shopOrder.sort(() => Math.random() - 0.5);
+      renderShop();
+    };
 
     setInterval(botAutoBuy, 5000);
   }
