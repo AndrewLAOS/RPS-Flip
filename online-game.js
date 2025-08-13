@@ -32,12 +32,15 @@ const opponentCardInner = document.getElementById('opponent-card-inner');
 const opponentCardBack = document.getElementById('opponent-card-back');
 const playerNameLabel = document.getElementById('player-name-label');
 const opponentNameLabel = document.getElementById('opponent-name-label');
-const playerScoreLabel = document.getElementById('player-score');
-const opponentScoreLabel = document.getElementById('opponent-score');
 const choicesDiv = document.getElementById('choices');
 const statusText = document.getElementById('status-text');
 const loadingSpinner = document.getElementById('loading-spinner');
 
+// NEW: Score labels (make sure these exist in HTML)
+let playerScoreLabel = document.getElementById('player-score');
+let opponentScoreLabel = document.getElementById('opponent-score');
+
+// -------------------- State Variables --------------------
 let currentUser = null;
 let matchId = localStorage.getItem('currentMatch') || null;
 let playerNumber = null;
@@ -45,7 +48,7 @@ let opponentId = null;
 let gameRef = null;
 let selectedChoice = null;
 
-// -------------------- Utility --------------------
+// -------------------- Utility Functions --------------------
 function showLoading(show) { loadingSpinner.style.display = show ? 'block' : 'none'; }
 
 function generateMatchId() {
@@ -126,7 +129,6 @@ btnCreateMatch.addEventListener('click', async () => {
     opponentId = 'player2';
 
     generatedMatchIdDisplay.textContent = `Match created! Share this code: ${newMatchId}`;
-    matchStatus.textContent = '';
     matchSection.hidden = true;
     gameSection.hidden = false;
 
@@ -179,7 +181,6 @@ async function startMatch(id) {
     matchId = id;
     localStorage.setItem('currentMatch', matchId);
     generatedMatchIdDisplay.textContent = '';
-    matchStatus.textContent = '';
     matchSection.hidden = true;
     gameSection.hidden = false;
 
@@ -224,13 +225,18 @@ function renderChoices() {
   });
 }
 
+// -------------------- Player Choice --------------------
 async function selectChoice(choiceKey) {
   if (!gameRef || !playerNumber) return;
   selectedChoice = choiceKey;
   statusText.textContent = `You selected ${ITEMS[choiceKey].name}. Waiting for opponent...`;
   Array.from(choicesDiv.children).forEach(btn => btn.disabled = true);
+
   try { await gameRef.child(`${playerNumber}/choice`).set(choiceKey); }
-  catch (e) { statusText.textContent = 'Error sending choice: ' + e.message; Array.from(choicesDiv.children).forEach(btn => btn.disabled = false); }
+  catch (e) { 
+    statusText.textContent = 'Error sending choice: ' + e.message;
+    Array.from(choicesDiv.children).forEach(btn => btn.disabled = false);
+  }
 }
 
 // -------------------- Listen for Game Updates --------------------
@@ -242,31 +248,36 @@ function listenForGameUpdates() {
   gameRef.on('value', snapshot => {
     const data = snapshot.val();
     if (!data) return statusText.textContent = 'Match data lost.';
-    if (!data.started) { statusText.textContent = 'Waiting for opponent...'; opponentNameLabel.textContent = 'Waiting for opponent...'; resetCards(); Array.from(choicesDiv.children).forEach(btn => btn.disabled = true); return; }
+    if (!data.started) { 
+      statusText.textContent = 'Waiting for opponent...';
+      opponentNameLabel.textContent = 'Waiting for opponent...';
+      resetCards();
+      Array.from(choicesDiv.children).forEach(btn => btn.disabled = true);
+      return;
+    }
 
     // Update names and scores
     if (data[playerNumber]) { playerNameLabel.textContent = data[playerNumber].name; playerScoreLabel.textContent = data[playerNumber].score; }
-    if (data[opponentId]) { opponentNameLabel.textContent = data[opponentId].name; opponentScoreLabel.textContent = data[opponentId].score; } else { opponentNameLabel.textContent = 'Waiting for opponent...'; opponentScoreLabel.textContent = '0'; }
+    if (data[opponentId]) { opponentNameLabel.textContent = data[opponentId].name; opponentScoreLabel.textContent = data[opponentId].score; } 
+    else { opponentNameLabel.textContent = 'Waiting for opponent...'; opponentScoreLabel.textContent = '0'; }
 
     const playerChoice = data[playerNumber]?.choice;
     const opponentChoice = data[opponentId]?.choice;
 
-    // Animate cards
-    if (playerChoice) flipCard(playerCardInner, playerCardBack, ITEMS[playerChoice].icon); else resetCard(playerCardInner, playerCardBack);
-    if (opponentChoice) flipCard(opponentCardInner, opponentCardBack, ITEMS[opponentChoice].icon); else resetCard(opponentCardInner, opponentCardBack);
+    if (playerChoice) flipCard(playerCardInner, playerCardBack, ITEMS[playerChoice].icon);
+    else resetCard(playerCardInner, playerCardBack);
+    if (opponentChoice) flipCard(opponentCardInner, opponentCardBack, ITEMS[opponentChoice].icon);
+    else resetCard(opponentCardInner, opponentCardBack);
 
-    // Determine round result
     if (playerChoice && opponentChoice) {
       const result = determineResult(playerChoice, opponentChoice);
       if (result === 'win') { statusText.innerHTML = `<span class="win-text">You Win! 🎉</span>`; showConfetti(); }
       else if (result === 'lose') statusText.innerHTML = `<span class="lose-text">You Lose. 😞</span>`;
       else statusText.innerHTML = `<span class="tie-text">It's a Tie! 🤝</span>`;
 
-      // Update scores
       if (result === 'win') gameRef.child(`${playerNumber}/score`).transaction(score => (score || 0) + 1);
       if (result === 'lose') gameRef.child(`${opponentId}/score`).transaction(score => (score || 0) + 1);
 
-      // Reset after 3 seconds
       setTimeout(() => {
         gameRef.child(`${playerNumber}/choice`).set(null);
         gameRef.child(`${opponentId}/choice`).set(null);
