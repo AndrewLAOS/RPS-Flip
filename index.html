@@ -485,11 +485,7 @@
       state.autoBotBuy = !state.autoBotBuy;
       autoBotBuyBtn.textContent = `Toggle Bot Auto-Buy (${state.autoBotBuy ? 'On' : 'Off'})`;
     };
-
-    shuffleShopBtn.onclick = () => {
-      state.shopOrder = state.shopOrder.sort(() => Math.random() - 0.5);
-      renderShop();
-    };
+<Button onClick={resetGame}>Reset Game</Button>
 
     setInterval(botAutoBuy, 5000);
   }
