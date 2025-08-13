@@ -181,17 +181,18 @@
     const shuffleShopBtn = $('#shuffle-shop');
 
     // Game state
-    let state = {
-      coins: 60,
-      botCoins: 40,
-      playerInventory: new Set(['rock', 'paper', 'scissors']),
-      botInventory: new Set(['rock', 'paper', 'scissors']),
-      round: 0,
-      streak: 0,
-      botDifficulty: Number(botDifficultySlider.value),
-      autoBotBuy: true,
-      shopOrder: [...itemKeys],
-    };
+   let state = {
+  coins: 0,             // player starts with 0 coins
+  botCoins: 0,          // bot starts with 0 coins
+  playerInventory: new Set(['rock', 'paper', 'scissors']),
+  botInventory: new Set(['rock', 'paper', 'scissors']),
+  round: 0,
+  streak: 0,
+  botDifficulty: Number(botDifficultySlider.value),
+  autoBotBuy: true,
+  shopOrder: [...itemKeys],
+};
+
 
     // Save/load state to localStorage
     function saveState() {
@@ -249,7 +250,7 @@
             <div class="name">${item.name}</div>
             <div class="rarity">Cost: ${item.cost} 🪙</div>
           </div>
-          <button ${owned ? 'disabled' : ''}>${owned ? 'Owned' : 'Buy'}</button>
+          <button ${owned ? 'disabled' : ''} tabindex="0">${owned ? 'Owned' : 'Buy'}</button>
         `;
         const btn = div.querySelector('button');
         btn.onclick = () => {
@@ -259,6 +260,7 @@
           log(`Bought ${item.name} for ${item.cost} coins.`);
           renderCoins();
           renderShop();
+          renderBattleChoices();
           saveState();
         };
         shopItemsDiv.appendChild(div);
@@ -273,8 +275,22 @@
         const btn = document.createElement('button');
         btn.className = 'choice-btn';
         btn.textContent = `${item.icon} ${item.name}`;
+        btn.setAttribute('tabindex', '0');
         btn.onclick = () => playerChoose(key);
         battleChoicesDiv.appendChild(btn);
+      });
+    }
+
+    function renderBotInventory() {
+      const botInventoryDiv = $('#bot-inventory-items');
+      botInventoryDiv.innerHTML = '';
+      Array.from(state.botInventory).forEach(key => {
+        const item = items[key];
+        if (!item) return;
+        const div = document.createElement('div');
+        div.className = 'bot-inv-item';
+        div.textContent = `${item.icon} ${item.name}`;
+        botInventoryDiv.appendChild(div);
       });
     }
 
@@ -297,11 +313,11 @@
       return pick(available);
     }
 
-    // Animate card flip (simplified)
+    // Animate card flip
     async function animateFlip(cardEl, newIcon, newName) {
       await cardEl.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(90deg)' }], { duration: 200 }).finished;
       cardEl.querySelector('.icon').textContent = newIcon;
-      cardEl.querySelector('.small').textContent = newName;
+      cardEl.querySelector('.small.muted').textContent = newName;
       await cardEl.animate([{ transform: 'rotateY(90deg)' }, { transform: 'rotateY(0deg)' }], { duration: 200 }).finished;
     }
 
@@ -341,6 +357,7 @@
       streakCounter.textContent = state.streak;
 
       renderCoins();
+      renderBotInventory();
 
       saveState();
 
@@ -362,6 +379,28 @@
       });
     }
 
+    // Bot auto-buy logic
+    function botAutoBuy() {
+      if (!state.autoBotBuy) return;
+
+      const affordableItems = itemKeys.filter(key => {
+        const item = items[key];
+        return !state.botInventory.has(key) && item.cost <= state.botCoins;
+      });
+
+      if (affordableItems.length > 0) {
+        // Bot buys one random affordable item
+        const toBuyKey = pick(affordableItems);
+        const item = items[toBuyKey];
+        state.botCoins -= item.cost;
+        state.botInventory.add(toBuyKey);
+        log(`Bot bought ${item.name} for ${item.cost} coins.`);
+        renderCoins();
+        renderBotInventory();
+        saveState();
+      }
+    }
+
     // Init
     function init() {
       loadState();
@@ -369,6 +408,7 @@
       renderCoins();
       renderShop();
       renderBattleChoices();
+      renderBotInventory();
 
       roundCounter.textContent = state.round;
       streakCounter.textContent = state.streak;
@@ -397,6 +437,9 @@
         state.shopOrder = state.shopOrder.sort(() => Math.random() - 0.5);
         renderShop();
       };
+
+      // Bot auto-buy interval every 5 seconds
+      setInterval(botAutoBuy, 5000);
     }
 
     function log(text) {
