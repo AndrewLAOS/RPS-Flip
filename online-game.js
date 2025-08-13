@@ -1,10 +1,11 @@
 // online-game.js
-import { items, itemKeys } from './items.js';
+// Uses Firebase compat API for direct browser usage
 
+// Import items (make sure items.js is included before this)
 const $ = (sel, root = document) => root.querySelector(sel);
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
-// DOM references
+// ---------------------- DOM References ----------------------
 const loginSection = $('#login-section');
 const matchSection = $('#match-section');
 const gameSection = $('#game-section');
@@ -18,9 +19,7 @@ const matchStatus = $('#match-status');
 const generatedMatchId = $('#generated-match-id');
 
 const playerCardInner = $('#player-card-inner');
-const playerCardBack = $('#player-card-back');
 const opponentCardInner = $('#opponent-card-inner');
-const opponentCardBack = $('#opponent-card-back');
 const playerNameLabel = $('#player-name-label');
 const opponentNameLabel = $('#opponent-name-label');
 const playerScoreEl = $('#player-score');
@@ -28,7 +27,6 @@ const opponentScoreEl = $('#opponent-score');
 
 const choicesDiv = $('#choices');
 const statusText = $('#status-text');
-const loadingSpinner = $('#loading-spinner');
 
 const btnLeaveMatch = $('#btnLeaveMatch');
 
@@ -46,20 +44,21 @@ let state = {
 };
 
 // ---------------------- Firebase Setup ----------------------
-
 const firebaseConfig = {
   apiKey: "AIzaSyAqmG4OxLp7f1kktoLwicGR4O2SLwqNBk0",
   authDomain: "rps-flip.firebaseapp.com",
+  databaseURL: "https://rps-flip-default-rtdb.firebaseio.com",
   projectId: "rps-flip",
-  storageBucket: "rps-flip.firebasestorage.app",
+  storageBucket: "rps-flip.appspot.com",
   messagingSenderId: "1044307931173",
-  appId: "1:1044307931173:web:efa8c8bcf4cd82c1e14fcc",
-  measurementId: "G-57Z3NG9FJN"
+  appId: "1:1044307931173:web:efa8c8bcf4cd82c1e14fcc"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+// Initialize Firebase (compat for browser)
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
 // ---------------------- Authentication ----------------------
 btnGoogleLogin.onclick = async () => {
   const provider = new firebase.auth.GoogleAuthProvider();
@@ -100,7 +99,6 @@ btnCreateMatch.onclick = async () => {
     createdAt: Date.now()
   });
 
-  // Listen for changes
   matchRef.on('value', snapshot => handleMatchUpdate(snapshot.val()));
   renderChoices();
 };
@@ -118,7 +116,6 @@ btnJoinMatch.onclick = async () => {
   gameSection.hidden = false;
 
   await matchRef.child('players/' + state.playerId).set({ name: state.playerName, score: 0, choice: null });
-
   matchRef.on('value', snapshot => handleMatchUpdate(snapshot.val()));
   renderChoices();
 };
@@ -152,7 +149,7 @@ function makeChoice(key) {
 function handleMatchUpdate(data) {
   if (!data) return;
   const players = data.players || {};
-  let opponentId = Object.keys(players).find(pid => pid !== state.playerId);
+  const opponentId = Object.keys(players).find(pid => pid !== state.playerId);
 
   if (opponentId) {
     opponentNameLabel.textContent = players[opponentId].name;
@@ -195,13 +192,8 @@ function resolveRound(playerKey, opponentKey) {
     statusText.textContent = 'Tie!';
   }
 
-  // Reset choices after 2s
   setTimeout(() => {
     state.matchRef.child('players/' + state.playerId + '/choice').set(null);
-    if (state.matchRef && Object.keys(state.matchRef._delegate._path.pieces_).length > 1) {
-      const opponentId = Object.keys(state.matchRef._delegate._path.pieces_).find(pid => pid !== state.playerId);
-      if (opponentId) state.matchRef.child('players/' + opponentId + '/choice').set(null);
-    }
     disableChoices(false);
     statusText.textContent = 'Make your choice!';
     playerCardFront.textContent = '?';
