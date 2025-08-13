@@ -25,3 +25,4 @@ export const items = {
   shield: { key:"shield", name:"Shield", icon:"🛡️", rarity:"Rare", cost:42, beats:["scissors","smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Blocks one counter — active for a single round.", flavor:"Hold the line." },
   scissors: { key:"scissors", name:"Scissors", icon:"✂️", rarity:"Common", cost:0, beats:["smoke","spock","storm","thunder","thorn","tide","vine","water","wind"], description:"Sharp and precise, good for quick wins.", flavor:"Snip snip!" }
 };
+export const itemKeys = Object.keys(items);
