@@ -32,7 +32,7 @@ const loadingSpinner = $('#loading-spinner');
 
 const btnLeaveMatch = $('#btnLeaveMatch');
 
-// Game state
+// ---------------------- Game State ----------------------
 let state = {
   playerId: null,
   playerName: '',
@@ -55,6 +55,7 @@ const firebaseConfig = {
   messagingSenderId: "<SENDER_ID>",
   appId: "<APP_ID>"
 };
+
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
@@ -99,21 +100,8 @@ btnCreateMatch.onclick = async () => {
     createdAt: Date.now()
   });
 
-  // Listen for opponent
-  matchRef.on('value', snapshot => {
-    const data = snapshot.val();
-    if (!data) return;
-    const players = data.players || {};
-    for (let pid in players) {
-      if (pid !== state.playerId) {
-        opponentNameLabel.textContent = players[pid].name;
-        state.opponentScore = players[pid].score || 0;
-        opponentScoreEl.textContent = state.opponentScore;
-        matchStatus.textContent = 'Opponent joined! Make your choice!';
-      }
-    }
-  });
-
+  // Listen for changes
+  matchRef.on('value', snapshot => handleMatchUpdate(snapshot.val()));
   renderChoices();
 };
 
@@ -129,27 +117,9 @@ btnJoinMatch.onclick = async () => {
   matchSection.hidden = true;
   gameSection.hidden = false;
 
-  // Add player
   await matchRef.child('players/' + state.playerId).set({ name: state.playerName, score: 0, choice: null });
 
-  // Listen to changes
-  matchRef.on('value', snapshot => {
-    const data = snapshot.val();
-    if (!data) return;
-    const players = data.players || {};
-    let opponentId = Object.keys(players).find(pid => pid !== state.playerId);
-    if (opponentId) {
-      opponentNameLabel.textContent = players[opponentId].name;
-      state.opponentScore = players[opponentId].score || 0;
-      opponentScoreEl.textContent = state.opponentScore;
-    }
-    const playerData = players[state.playerId];
-    const opponentData = opponentId ? players[opponentId] : null;
-    if (playerData && opponentData) {
-      if (playerData.choice && opponentData.choice) resolveRound(playerData.choice, opponentData.choice);
-    }
-  });
-
+  matchRef.on('value', snapshot => handleMatchUpdate(snapshot.val()));
   renderChoices();
 };
 
@@ -176,6 +146,26 @@ function makeChoice(key) {
   disableChoices(true);
   state.matchRef.child('players/' + state.playerId + '/choice').set(key);
   statusText.textContent = 'Choice made! Waiting for opponent...';
+}
+
+// ---------------------- Match Update ----------------------
+function handleMatchUpdate(data) {
+  if (!data) return;
+  const players = data.players || {};
+  let opponentId = Object.keys(players).find(pid => pid !== state.playerId);
+
+  if (opponentId) {
+    opponentNameLabel.textContent = players[opponentId].name;
+    state.opponentScore = players[opponentId].score || 0;
+    opponentScoreEl.textContent = state.opponentScore;
+  }
+
+  const playerData = players[state.playerId];
+  const opponentData = opponentId ? players[opponentId] : null;
+
+  if (playerData && opponentData) {
+    if (playerData.choice && opponentData.choice) resolveRound(playerData.choice, opponentData.choice);
+  }
 }
 
 // ---------------------- Battle Logic ----------------------
@@ -205,12 +195,10 @@ function resolveRound(playerKey, opponentKey) {
     statusText.textContent = 'Tie!';
   }
 
-  // Reset choices
-  state.playerChoice = null;
-  state.opponentChoice = null;
+  // Reset choices after 2s
   setTimeout(() => {
     state.matchRef.child('players/' + state.playerId + '/choice').set(null);
-    if (state.matchRef) {
+    if (state.matchRef && Object.keys(state.matchRef._delegate._path.pieces_).length > 1) {
       const opponentId = Object.keys(state.matchRef._delegate._path.pieces_).find(pid => pid !== state.playerId);
       if (opponentId) state.matchRef.child('players/' + opponentId + '/choice').set(null);
     }
@@ -241,5 +229,5 @@ btnLeaveMatch.onclick = () => {
   opponentScoreEl.textContent = '0';
 };
 
-// ---------------------- Initialize ----------------------
+// ---------------------- Init ----------------------
 statusText.textContent = 'Sign in to start playing!';
