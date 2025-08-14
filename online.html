@@ -48,16 +48,22 @@
             <div id="player-coins">0</div>
           </div>
         </div>
+
         <h2>Inventory</h2>
         <div id="inventory-list"></div>
       </div>
+
+      <!-- Shop Panel with Toggle -->
+      <div class="panel">
+        <button id="btnToggleShop">Toggle Shop</button>
+        <div id="shop-panel">
+          <h2>Shop</h2>
+          <div id="shop-list"></div>
+          <button id="btnShuffleShop">Shuffle Shop (10 coins)</button>
+        </div>
+      </div>
+
     </aside>
-<!-- Shop -->
-<div class="panel">
-  <h2>Shop</h2>
-  <div id="shop-list"></div>
-  <button id="btnShuffleShop">Shuffle Shop (10 coins)</button>
-</div>
 
     <!-- Main Game Area -->
     <main class="game-area">
@@ -134,14 +140,20 @@
     </div>
   </footer>
 
-  <!-- Top Buttons Listeners -->
+  <!-- Top Buttons & Toggle Logic -->
   <script>
+    // Navigation Buttons
     document.getElementById('btnBackToBot').addEventListener('click', () => {
-      window.location.href = 'index.html'; // Back to bot battles
+      window.location.href = 'index.html';
     });
-
     document.getElementById('btnMatchupChart').addEventListener('click', () => {
       window.open('matchchart.html', '_blank');
+    });
+
+    // Shop Toggle
+    const shopPanel = document.getElementById('shop-panel');
+    document.getElementById('btnToggleShop').addEventListener('click', () => {
+      if(shopPanel) shopPanel.hidden = !shopPanel.hidden;
     });
   </script>
 </body>
