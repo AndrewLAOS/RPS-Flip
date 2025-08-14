@@ -112,6 +112,18 @@
             <div class="player-name">Opponent</div>
           </div>
         </div>
+<div className="opponent-info">
+  <h3>Opponent</h3>
+  <div className="opponent-coins">💰 Coins: {opponent.coins}</div>
+  <div className="opponent-items">
+    {opponent.items.map((item) => (
+      <div key={item.name} className="opponent-item">
+        <span className="item-icon">{item.icon}</span>
+        <span className="item-name">{item.name}</span>
+      </div>
+    ))}
+  </div>
+</div>
 
         <!-- Choices -->
         <div id="choices"></div>

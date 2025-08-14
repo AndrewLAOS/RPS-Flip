@@ -1,5 +1,6 @@
 // online-game.js
 import { items, itemKeys } from './items.js';
+import { animateBattle } from './animations.js';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 
@@ -303,21 +304,24 @@ function getResult(p1,p2){
   return items[p1].beats.includes(p2)?'win':'lose';
 }
 
-async function resolveRound(playerKey, opponentKey, players, opponentId){
+async function resolveRound(playerKey, opponentKey, players, opponentId) {
   const playerCard = playerCardInner;
   const opponentCard = opponentCardInner;
 
+  // 1. Flip cards
   await Promise.all([
     animateFlip(playerCard, items[playerKey].icon, items[playerKey].name),
     animateFlip(opponentCard, items[opponentKey].icon, items[opponentKey].name),
   ]);
 
-  const result = getResult(playerKey, opponentKey);
+  // 2. Run cinematic battle animation on top
+  await animateBattle(playerCard, playerKey, opponentCard, opponentKey);
 
+  // 3. Calculate result & coins
+  const result = getResult(playerKey, opponentKey);
   const rarityValues = { Common:1, Uncommon:2, Rare:3, Epic:4, Legendary:5 };
   const baseWin = 5;
   const baseLose = 2;
-
   const playerRarity = rarityValues[items[playerKey].rarity] || 1;
   const opponentRarity = rarityValues[items[opponentKey].rarity] || 1;
 
@@ -352,6 +356,16 @@ async function resolveRound(playerKey, opponentKey, players, opponentId){
     resetBattleCards();
   },2000);
 }
+
+const [opponent, setOpponent] = useState({ coins: 0, items: [] });
+
+useEffect(() => {
+  const unsubscribe = onOpponentUpdate((data) => {
+    setOpponent(data);
+  });
+
+  return () => unsubscribe();
+}, []);
 
 // ---------------------- Card Flip Animation ----------------------
 async function animateFlip(cardEl, icon, name){
