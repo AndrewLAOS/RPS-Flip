@@ -29,10 +29,14 @@ const btnLeaveMatch = $('#btnLeaveMatch');
 const playerCoinsEl = $('#player-coins');
 const inventoryList = $('#inventory-list');
 const confettiWrap = $('#confetti-wrap');
+
 const btnBackToBot = $('#btnBackToBot');
 const btnMatchupChart = $('#btnMatchupChart');
-const btnToggleShop = $('#btnToggleShop');
-const shopSection = $('#shop-section');
+
+const shopList = $('#shop-list');
+const btnToggleShop = document.createElement('button');
+btnToggleShop.textContent = 'Toggle Shop';
+shopList.parentNode.insertBefore(btnToggleShop, shopList);
 
 // ---------------------- Game State ----------------------
 let state = {
@@ -44,7 +48,7 @@ let state = {
   opponentChoice: null,
   playerScore: 0,
   opponentScore: 0,
-  coins: 0, // start at 0
+  coins: 0, // Start with 0 coins
   inventory: { rock: { owned: true, level: 1 }, paper: { owned: true, level: 1 }, scissors: { owned: true, level: 1 } },
   choices: new Set(['rock','paper','scissors'])
 };
@@ -88,12 +92,15 @@ async function loadPlayerData() {
   const snapshot = await db.ref('players/' + state.playerId).get();
   if (snapshot.exists()) {
     const data = snapshot.val();
-    state.coins = data.coins ?? 0;
+    state.coins = data.coins || 0;
     state.inventory = { ...state.inventory, ...(data.inventory || {}) };
     Object.keys(state.inventory).forEach(key => state.choices.add(key));
+  } else {
+    state.coins = 0;
   }
   renderInventory();
   renderChoices();
+  renderShop();
   updateCoinsDisplay();
 }
 
@@ -104,7 +111,7 @@ function savePlayerData() {
   });
 }
 
-// ---------------------- Inventory & Shop ----------------------
+// ---------------------- Render & Inventory ----------------------
 function updateCoinsDisplay() {
   if (playerCoinsEl) playerCoinsEl.textContent = state.coins;
 }
@@ -114,16 +121,36 @@ function renderInventory() {
   inventoryList.innerHTML = '';
   Object.keys(items).forEach(key => {
     const invItem = state.inventory[key] || { owned: key==='rock'||key==='paper'||key==='scissors', level:1 };
-    if (!invItem.owned && key!=='rock' && key!=='paper' && key!=='scissors') return;
-
+    if (!invItem.owned) return;
     const item = items[key];
     const div = document.createElement('div');
-    div.className = `inventory-item rarity-${item.rarity} ${invItem.owned ? 'owned' : ''}`;
+    div.className = `inventory-item rarity-${item.rarity} owned`;
     div.innerHTML = `
       <div class="icon">${item.icon}</div>
       <div class="info">
         <div class="name">${item.name}</div>
         <div class="level">Lvl ${invItem.level}</div>
+      </div>
+    `;
+    inventoryList.appendChild(div);
+  });
+}
+
+// ---------------------- Render Shop ----------------------
+function renderShop() {
+  if (!shopList) return;
+  shopList.innerHTML = '';
+  Object.keys(items).forEach(key => {
+    const item = items[key];
+    const invItem = state.inventory[key] || { owned: false, level: 1 };
+    const div = document.createElement('div');
+    div.className = `shop-item rarity-${item.rarity} ${invItem.owned ? 'owned' : ''}`;
+    div.innerHTML = `
+      <div class="icon">${item.icon}</div>
+      <div class="info">
+        <div class="name">${item.name}</div>
+        <div class="level">Lvl ${invItem.level}</div>
+        <div class="cost">Cost: ${item.cost || 100} 🪙</div>
       </div>
       <button>${invItem.owned ? 'Upgrade' : 'Buy'}</button>
       <div class="purchased-text" style="color:green;font-size:0.8em;display:none;">Purchased</div>
@@ -131,47 +158,44 @@ function renderInventory() {
     const btn = div.querySelector('button');
     const purchasedText = div.querySelector('.purchased-text');
 
-    btn.onclick = () => handleInventoryClick(key, invItem, purchasedText);
-    inventoryList.appendChild(div);
+    btn.onclick = () => {
+      if (invItem.owned) {
+        const cost = 50 * (invItem.level + 1);
+        if (state.coins >= cost) {
+          state.coins -= cost;
+          invItem.level++;
+          state.inventory[key] = invItem;
+          updateCoinsDisplay();
+          savePlayerData();
+          renderShop();
+          renderChoices();
+        } else alert('Not enough coins to upgrade.');
+      } else {
+        const cost = item.cost || 100;
+        if (state.coins >= cost) {
+          state.coins -= cost;
+          invItem.owned = true;
+          invItem.level = 1;
+          state.inventory[key] = invItem;
+          state.choices.add(key);
+          if (purchasedText) purchasedText.style.display = 'block';
+          updateCoinsDisplay();
+          savePlayerData();
+          renderShop();
+          renderChoices();
+        } else alert('Not enough coins to buy.');
+      }
+    };
+    shopList.appendChild(div);
   });
 }
 
-function handleInventoryClick(key, invItem, purchasedText=null) {
-  const item = items[key];
-  if (invItem.owned) {
-    const cost = 50*(invItem.level+1);
-    if (state.coins>=cost) {
-      state.coins -= cost;
-      invItem.level++;
-      state.inventory[key] = invItem;
-      savePlayerData();
-      renderInventory();
-      updateCoinsDisplay();
-    } else alert('Not enough coins to upgrade.');
-  } else {
-    const cost = item.cost || 100;
-    if (state.coins>=cost) {
-      state.coins -= cost;
-      invItem.owned = true;
-      invItem.level = 1;
-      state.inventory[key] = invItem;
-      state.choices.add(key);
-      if (purchasedText) purchasedText.style.display='block';
-      savePlayerData();
-      renderInventory();
-      renderChoices();
-      updateCoinsDisplay();
-    } else alert('Not enough coins to buy.');
-  }
-}
-
-// Toggle shop
-if(btnToggleShop){
-  btnToggleShop.onclick = ()=>{
-    if(!shopSection) return;
-    shopSection.hidden = !shopSection.hidden;
-  };
-}
+// Toggle Shop Visibility
+let shopVisible = true;
+btnToggleShop.onclick = () => {
+  shopVisible = !shopVisible;
+  shopList.parentNode.style.display = shopVisible ? 'block' : 'none';
+};
 
 // ---------------------- Match ID Generator ----------------------
 function generateMatchId(length=6){
@@ -261,14 +285,15 @@ function handleMatchUpdate(data){
   if(opponentId){
     if(opponentNameLabel) opponentNameLabel.textContent=players[opponentId].name;
     state.opponentScore = players[opponentId].score||0;
-    if(opponentScoreEl) opponentScoreEl.textContent=state.opponentScore;
+    if(opponentScoreEl) opponentScoreEl.textContent = state.opponentScore;
+    if(players[opponentId].choice===null && matchStatus) matchStatus.textContent='Opponent joined! Make your choice!';
   }
 
   const playerData = players[state.playerId];
   const opponentData = opponentId?players[opponentId]:null;
 
   if(playerData && opponentData){
-    if(playerData.choice && opponentData.choice) resolveRound(playerData.choice, opponentData.choice, opponentId);
+    if(playerData.choice && opponentData.choice) resolveRound(playerData.choice, opponentData.choice, players, opponentId);
   }
 }
 
@@ -278,7 +303,7 @@ function getResult(p1,p2){
   return items[p1].beats.includes(p2)?'win':'lose';
 }
 
-async function resolveRound(playerKey, opponentKey, opponentId){
+async function resolveRound(playerKey, opponentKey, players, opponentId){
   const playerCard = playerCardInner;
   const opponentCard = opponentCardInner;
 
@@ -289,7 +314,7 @@ async function resolveRound(playerKey, opponentKey, opponentId){
 
   const result = getResult(playerKey, opponentKey);
 
-  const rarityValues = { Common: 1, Uncommon: 2, Rare: 3, Epic: 4, Legendary: 5 };
+  const rarityValues = { Common:1, Uncommon:2, Rare:3, Epic:4, Legendary:5 };
   const baseWin = 5;
   const baseLose = 2;
 
@@ -300,25 +325,25 @@ async function resolveRound(playerKey, opponentKey, opponentId){
     const coinsEarned = baseWin*playerRarity;
     state.coins += coinsEarned;
     state.playerScore++;
-    if(statusText) statusText.textContent=`You Win! +${coinsEarned} 🪙`;
+    if(statusText) statusText.textContent = `You Win! +${coinsEarned} 🪙`;
   } else if(result==='lose'){
     const coinsLost = baseLose*playerRarity;
-    state.coins = Math.max(0,state.coins-coinsLost);
+    state.coins = Math.max(0, state.coins - coinsLost);
     state.opponentScore++;
-    if(statusText) statusText.textContent=`You Lose! -${coinsLost} 🪙`;
+    if(statusText) statusText.textContent = `You Lose! -${coinsLost} 🪙`;
   } else {
-    if(statusText) statusText.textContent='Tie!';
+    if(statusText) statusText.textContent = 'Tie!';
   }
 
-  if(playerScoreEl) playerScoreEl.textContent=state.playerScore;
-  if(opponentScoreEl) opponentScoreEl.textContent=state.opponentScore;
+  playerScoreEl.textContent = state.playerScore;
+  opponentScoreEl.textContent = state.opponentScore;
   updateCoinsDisplay();
   savePlayerData();
-
   confettiBurst(result);
 
-  state.playerChoice=null;
-  state.opponentChoice=null;
+  // Reset choices
+  state.playerChoice = null;
+  state.opponentChoice = null;
   state.matchRef.child('players/' + state.playerId + '/choice').set(null);
   state.matchRef.child('players/' + opponentId + '/choice').set(null);
 
@@ -328,23 +353,22 @@ async function resolveRound(playerKey, opponentKey, opponentId){
   },2000);
 }
 
-// ---------------------- Card Flip ----------------------
+// ---------------------- Card Flip Animation ----------------------
 async function animateFlip(cardEl, icon, name){
   if(!cardEl) return;
   const iconEl = cardEl.querySelector('.card-front') || cardEl.querySelector('.icon');
   const nameEl = cardEl.querySelector('.card-back') || cardEl.querySelector('.small.muted');
-
-  await cardEl.animate([{ transform:'rotateY(0deg)' },{ transform:'rotateY(90deg)' }],{duration:200}).finished;
+  await cardEl.animate([{transform:'rotateY(0deg)'},{transform:'rotateY(90deg)'}],{duration:200}).finished;
   if(iconEl) iconEl.textContent=icon;
   if(nameEl) nameEl.textContent=name;
-  await cardEl.animate([{ transform:'rotateY(90deg)' },{ transform:'rotateY(0deg)' }],{duration:200}).finished;
+  await cardEl.animate([{transform:'rotateY(90deg)'},{transform:'rotateY(0deg)'}],{duration:200}).finished;
 }
 
 function resetBattleCards(){
-  [playerCardInner, opponentCardInner].forEach(cardEl=>{
-    if(!cardEl) return;
-    const front = cardEl.querySelector('.card-front');
-    const back = cardEl.querySelector('.card-back');
+  [playerCardInner, opponentCardInner].forEach(card=>{
+    if(!card) return;
+    const front = card.querySelector('.card-front');
+    const back = card.querySelector('.card-back');
     if(front) front.textContent='?';
     if(back) back.textContent='?';
   });
@@ -395,7 +419,7 @@ function init(){
   }
   renderInventory();
   renderChoices();
-  if(shopSection) shopSection.hidden=true; // start hidden
+  renderShop();
 }
 
 init();
