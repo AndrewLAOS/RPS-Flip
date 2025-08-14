@@ -5,118 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RPS Flip Online PvP</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    /* ---------------------- Top Buttons ---------------------- */
-    .top-buttons {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 20px;
-      background-color: #222;
-      color: #fff;
-      font-family: 'Poppins', sans-serif;
-      gap: 10px;
-    }
-    .top-buttons .btn {
-      background-color: #444;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background 0.2s;
-    }
-    .top-buttons .btn:hover {
-      background-color: #666;
-    }
-
-    /* ---------------------- Match ID Display ---------------------- */
-    #match-id-display {
-      font-weight: bold;
-      font-size: 1.1rem;
-      margin-top: 5px;
-      color: #ffd700;
-    }
-
-    /* ---------------------- Arena & Cards ---------------------- */
-    .arena {
-      display: flex;
-      justify-content: space-around;
-      margin: 20px 0;
-    }
-    .player-card {
-      text-align: center;
-    }
-    .card-inner {
-      width: 100px;
-      height: 140px;
-      perspective: 600px;
-    }
-    .card-front, .card-back {
-      width: 100px;
-      height: 140px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 3rem;
-      border-radius: 10px;
-      backface-visibility: hidden;
-      transition: transform 0.6s;
-      background-color: #333;
-      color: #fff;
-    }
-    .card-back {
-      transform: rotateY(180deg);
-      background-color: #555;
-    }
-
-    /* ---------------------- Choices ---------------------- */
-    .choices {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .choice {
-      background-color: #444;
-      border: none;
-      border-radius: 8px;
-      padding: 10px;
-      font-size: 2rem;
-      cursor: pointer;
-      transition: transform 0.2s, background 0.2s;
-    }
-    .choice:hover {
-      background-color: #666;
-      transform: scale(1.1);
-    }
-    .choice-label {
-      font-size: 0.8rem;
-      color: #fff;
-    }
-
-    /* ---------------------- Confetti ---------------------- */
-    .confetti-wrap {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      overflow: hidden;
-    }
-    .confetti-dot {
-      position: absolute;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      animation: fall 2s linear forwards;
-    }
-    @keyframes fall {
-      0% { transform: translateY(0); opacity: 1; }
-      100% { transform: translateY(300px); opacity: 0; }
-    }
-  </style>
 </head>
 <body>
   <div class="app">
@@ -130,24 +18,24 @@
       <!-- Login / Player Info -->
       <div class="panel" id="login-section">
         <h2>Sign In</h2>
-        <button id="btnGoogleLogin" class="btn">Sign in with Google</button>
-        <p id="login-status" class="small-muted"></p>
+        <button id="btnGoogleLogin">Sign in with Google</button>
+        <p id="login-status"></p>
       </div>
 
       <!-- Match Section -->
       <div class="panel" id="match-section" hidden>
         <h2>Online Matches</h2>
         <div>
-          <button id="btnCreateMatch" class="btn">Create Match</button>
-          <p id="generated-match-id" class="small-muted"></p>
+          <button id="btnCreateMatch">Create Match</button>
+          <p id="generated-match-id"></p>
         </div>
         <div>
           <input type="text" id="match-id-input" placeholder="Enter Match ID">
-          <button id="btnJoinMatch" class="btn">Join Match</button>
-          <p id="match-status" class="small-muted"></p>
+          <button id="btnJoinMatch">Join Match</button>
+          <p id="match-status"></p>
         </div>
         <div class="panel">
-          <button id="btnLeaveMatch" class="btn">Leave Match</button>
+          <button id="btnLeaveMatch">Leave Match</button>
         </div>
       </div>
 
@@ -157,11 +45,11 @@
         <div class="coins-row">
           <div class="coin-display">
             <div class="coin-icon">🪙</div>
-            <div id="player-coins" class="coin-text">0</div>
+            <div id="player-coins">0</div>
           </div>
         </div>
         <h2>Inventory</h2>
-        <div id="inventory-list" class="shop-list"></div>
+        <div id="inventory-list"></div>
       </div>
     </aside>
 
@@ -170,8 +58,8 @@
 
       <!-- Top Buttons -->
       <div class="top-buttons">
-        <button id="btnBackToBot" class="btn">Back to Bot</button>
-        <button id="btnMatchupChart" class="btn">Match-Up Chart</button>
+        <button id="btnBackToBot">Back to Bot</button>
+        <button id="btnMatchupChart">Match-Up Chart</button>
       </div>
       <div id="match-id-display"></div>
 
@@ -181,16 +69,16 @@
         <!-- Top Row -->
         <div class="top-row">
           <div class="status-panel">
-            <div id="player-name-label" class="player-name">Player</div>
-            <div id="player-score" class="player-score">0</div>
+            <div id="player-name-label">Player</div>
+            <div id="player-score">0</div>
           </div>
           <div class="vs-area">
             <div class="vs-bubble">VS</div>
             <div id="status-text">Waiting...</div>
           </div>
           <div class="status-panel">
-            <div id="opponent-name-label" class="player-name">Opponent</div>
-            <div id="opponent-score" class="player-score">0</div>
+            <div id="opponent-name-label">Opponent</div>
+            <div id="opponent-score">0</div>
           </div>
         </div>
 
@@ -214,13 +102,13 @@
         </div>
 
         <!-- Choices -->
-        <div id="choices" class="choices"></div>
+        <div id="choices"></div>
 
         <!-- Result Banner -->
-        <div id="result-banner" class="result-banner" aria-live="polite"></div>
+        <div id="result-banner" aria-live="polite"></div>
 
         <!-- Confetti -->
-        <div class="confetti-wrap" id="confetti-wrap"></div>
+        <div id="confetti-wrap"></div>
       </div>
     </main>
   </div>
@@ -232,7 +120,7 @@
   <script type="module" src="online-game.js" defer></script>
 
   <!-- Footer -->
-  <footer class="footer">
+  <footer>
     <div>&copy; 2025 RPS Flip</div>
     <div>
       <a href="privacy.html">Privacy Policy</a> | 
@@ -243,9 +131,7 @@
   <!-- Top Buttons Listeners -->
   <script>
     document.getElementById('btnBackToBot').addEventListener('click', () => {
-      document.getElementById('game-section').hidden = true;
-      document.getElementById('match-id-display').textContent = '';
-      // TODO: Show Bot battle section here
+      window.location.href = 'index.html'; // Back to bot battles
     });
 
     document.getElementById('btnMatchupChart').addEventListener('click', () => {

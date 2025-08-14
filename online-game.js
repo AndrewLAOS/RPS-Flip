@@ -44,8 +44,8 @@ let state = {
   playerScore: 0,
   opponentScore: 0,
   coins: 0,
-  inventory: {},
-  choices: new Set(itemKeys)
+  inventory: { rock: { owned: true, level: 1 }, paper: { owned: true, level: 1 }, scissors: { owned: true, level: 1 } },
+  choices: new Set(['rock', 'paper', 'scissors'])
 };
 
 // ---------------------- Firebase ----------------------
@@ -87,10 +87,10 @@ async function loadPlayerData() {
   if (snapshot.exists()) {
     const data = snapshot.val();
     state.coins = data.coins || 0;
-    state.inventory = data.inventory || {};
+    state.inventory = { ...state.inventory, ...(data.inventory || {}) };
+    Object.keys(state.inventory).forEach(key => state.choices.add(key));
   } else {
     state.coins = 0;
-    state.inventory = {};
   }
   renderInventory();
   updateCoinsDisplay();
@@ -110,7 +110,7 @@ function updateCoinsDisplay() {
 // ---------------------- Inventory Rendering ----------------------
 function renderInventory() {
   inventoryList.innerHTML = '';
-  itemKeys.forEach(key => {
+  Array.from(state.choices).forEach(key => {
     const item = items[key];
     const invItem = state.inventory[key] || { owned: false, level: 0 };
     const div = document.createElement('div');
@@ -148,8 +148,10 @@ function handleInventoryClick(key, invItem) {
       invItem.owned = true;
       invItem.level = 1;
       state.inventory[key] = invItem;
+      state.choices.add(key);
       savePlayerData();
       renderInventory();
+      renderChoices(); // add newly bought item to battle choices
       updateCoinsDisplay();
     } else alert('Not enough coins to buy.');
   }
@@ -204,7 +206,7 @@ btnJoinMatch.onclick = async () => {
 // ---------------------- Render Choices ----------------------
 function renderChoices() {
   choicesDiv.innerHTML = '';
-  state.choices.forEach(key => {
+  Array.from(state.choices).forEach(key => {
     const item = items[key];
     const btn = document.createElement('button');
     btn.className = 'choice';
@@ -324,9 +326,7 @@ function spawnConfetti() {
 
 // ---------------------- Back to Bot & Matchup Chart ----------------------
 btnBackToBot.onclick = () => {
-  gameSection.hidden = true;
-  matchSection.hidden = false;
-  statusText.textContent = '';
+  window.location.href = 'index.html';
 };
 
 btnMatchupChart.onclick = () => {
