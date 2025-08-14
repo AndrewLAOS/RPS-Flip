@@ -44,6 +44,9 @@
     color: white;
     cursor: default;
   }
+  .table-wrapper {
+    overflow-x: auto;
+  }
   table {
     width: 100%;
     max-width: 960px;
@@ -60,6 +63,7 @@
     text-align: center;
     font-weight: 700;
     user-select: none;
+    position: relative;
   }
   th {
     background: #ff8a00;
@@ -73,19 +77,16 @@
     color: white;
   }
   td.win {
-    background: #34d399; /* green */
+    background: #34d399;
     color: #0b1220;
   }
   td.lose {
-    background: #fb7185; /* red */
+    background: #fb7185;
     color: #0b1220;
   }
   td.draw {
-    background: #9aa7c7; /* muted gray */
+    background: #9aa7c7;
     color: #0b1220;
-  }
-  td.no-relation {
-    color: #64748b; /* lighter gray */
   }
   tbody tr:hover {
     background: rgba(229, 46, 113, 0.1);
@@ -95,83 +96,98 @@
     font-size: 1.1rem;
     color: #ffd27f;
   }
-  /* Responsive horizontal scroll wrapper */
-  .table-wrapper {
-    overflow-x: auto;
+  /* Tooltip */
+  td[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    background: #1b2a4a;
+    color: #ffd27f;
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 20;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
   }
 </style>
 </head>
 <body>
-  <h1>Ultimate RPS Flip — Matchup Chart</h1>
+<h1>Ultimate RPS Flip — Matchup Chart</h1>
 
-  <nav class="nav-buttons" role="navigation" aria-label="Main navigation">
-    <button onclick="location.href='index.html'" aria-label="Go to Bot Mode">Bot Mode</button>
-    <button onclick="location.href='online.html'" aria-label="Go to Online Mode">Online Mode</button>
-    <button class="active" aria-current="page" aria-label="Current Page: Matchup Chart">Matchup Chart</button>
-  </nav>
+<nav class="nav-buttons" role="navigation" aria-label="Main navigation">
+  <button onclick="location.href='index.html'" aria-label="Go to Bot Mode">Bot Mode</button>
+  <button onclick="location.href='online.html'" aria-label="Go to Online Mode">Online Mode</button>
+  <button class="active" aria-current="page" aria-label="Current Page: Matchup Chart">Matchup Chart</button>
+</nav>
 
-  <div class="table-wrapper" id="matchup-container" aria-label="Matchup Chart"></div>
+<div class="table-wrapper" id="matchup-container" aria-label="Matchup Chart"></div>
 
-  <script type="module">
-    import { items, itemKeys } from './items.js';
+<script type="module">
+import { items, itemKeys } from './items.js';
 
-    function generateMatchupMatrix() {
-      const table = document.createElement('table');
-      table.setAttribute('role', 'grid');
-      table.setAttribute('aria-describedby', 'caption');
+function generateFullMatchupMatrix() {
+  const table = document.createElement('table');
+  table.setAttribute('role', 'grid');
 
-      const caption = document.createElement('caption');
-      caption.id = 'caption';
-      caption.textContent = 'Item matchup results: Win, Lose, Draw or no relation';
-      table.appendChild(caption);
+  const caption = document.createElement('caption');
+  caption.textContent = 'Item matchup results: Win or Lose. Hover cells for power & rarity.';
+  table.appendChild(caption);
 
-      // Header row
-      const headerRow = document.createElement('tr');
-      headerRow.appendChild(document.createElement('th')); // empty top-left cell
+  // Header
+  const headerRow = document.createElement('tr');
+  headerRow.appendChild(document.createElement('th'));
+  itemKeys.forEach(key => {
+    const th = document.createElement('th');
+    th.scope = 'col';
+    th.textContent = `${items[key].icon} ${items[key].name}`;
+    headerRow.appendChild(th);
+  });
+  table.appendChild(headerRow);
 
-      itemKeys.forEach(key => {
-        const th = document.createElement('th');
-        th.scope = "col";
-        th.textContent = `${items[key].icon} ${items[key].name}`;
-        headerRow.appendChild(th);
-      });
-      table.appendChild(headerRow);
+  // Body
+  itemKeys.forEach(rowKey => {
+    const tr = document.createElement('tr');
+    const rowHeader = document.createElement('th');
+    rowHeader.scope = 'row';
+    rowHeader.textContent = `${items[rowKey].icon} ${items[rowKey].name}`;
+    tr.appendChild(rowHeader);
 
-      // Body rows
-      itemKeys.forEach(rowKey => {
-        const tr = document.createElement('tr');
-        const rowHeader = document.createElement('th');
-        rowHeader.scope = "row";
-        rowHeader.textContent = `${items[rowKey].icon} ${items[rowKey].name}`;
-        tr.appendChild(rowHeader);
+    itemKeys.forEach(colKey => {
+      const td = document.createElement('td');
 
-        itemKeys.forEach(colKey => {
-          const td = document.createElement('td');
+      if (rowKey === colKey) {
+        td.textContent = 'Draw';
+        td.classList.add('draw');
+      } else {
+        // Deterministic win/lose: compare power
+        const rowPower = items[rowKey].power || 1;
+        const colPower = items[colKey].power || 1;
 
-          if (rowKey === colKey) {
-            td.textContent = 'Draw';
-            td.classList.add('draw');
-          } else if (items[rowKey].beats.includes(colKey)) {
-            td.textContent = 'Win';
-            td.classList.add('win');
-          } else if (items[colKey].beats.includes(rowKey)) {
-            td.textContent = 'Lose';
-            td.classList.add('lose');
-          } else {
-            td.textContent = '—';
-            td.classList.add('no-relation');
-          }
-          tr.appendChild(td);
-        });
+        if (rowPower >= colPower) {
+          td.textContent = 'Win';
+          td.classList.add('win');
+        } else {
+          td.textContent = 'Lose';
+          td.classList.add('lose');
+        }
+      }
 
-        table.appendChild(tr);
-      });
+      // Add tooltip: power and rarity
+      td.setAttribute('data-tooltip', `Power: ${items[colKey].power}, Rarity: ${items[colKey].rarity}`);
+      tr.appendChild(td);
+    });
 
-      return table;
-    }
+    table.appendChild(tr);
+  });
 
-    const container = document.getElementById('matchup-container');
-    container.appendChild(generateMatchupMatrix());
-  </script>
+  return table;
+}
+
+const container = document.getElementById('matchup-container');
+container.appendChild(generateFullMatchupMatrix());
+</script>
 </body>
 </html>
