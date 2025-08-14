@@ -52,11 +52,13 @@ function generateBeats(currentItemKey, currentRarity, itemsObj) {
 
   // Manual logical overrides
   const logicalWins = {
-    scissors: ["vine", "tide"], 
+    scissors: ["vine", "clock","scissors"], 
     paper: ["rock", "spock"], 
-    rock: ["thorn"], 
+    rock: ["thorn","scissors"], 
     fire: ["scissors", "paper"],
-    thorn: ["vine", "dagger"]
+    thorn: ["vine","spock"],
+    clock:["void"]
+
   };
 
   if (logicalWins[currentItemKey]) {
