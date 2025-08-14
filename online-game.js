@@ -1,4 +1,3 @@
-// online-game.js
 import { items } from './items.js';
 import { animateBattle } from './animations.js';
 
@@ -47,6 +46,7 @@ let state = {
   matchRef: null,
   playerChoice: null,
   opponentChoice: null,
+  hasChosenThisRound: false,
   playerScore: 0,
   opponentScore: 0,
   coins: 0,
@@ -225,10 +225,9 @@ function disableChoices(disabled) {
 
 // ---------------------- Choice & Match Updates ----------------------
 function makeChoice(key) {
-  if (!state.matchRef) return;
-  if (state.roundInProgress) return;
-  if (state.playerChoice) return;
+  if (!state.matchRef || state.roundInProgress || state.playerChoice) return;
   state.playerChoice = key;
+  state.hasChosenThisRound = true;
   disableChoices(true);
   state.matchRef.child('players/' + state.playerId + '/choice').set(key);
   if (statusText) statusText.textContent = 'Choice made! Waiting for opponent...';
@@ -238,38 +237,26 @@ function handleMatchUpdate(data) {
   if (!data) return;
   const players = data.players || {};
   const opponentId = Object.keys(players).find(pid => pid !== state.playerId);
+  const playerData = players[state.playerId];
+  const opponentData = opponentId ? players[opponentId] : null;
 
+  // Opponent labels and score
   if (opponentId) {
     if (opponentNameLabel) opponentNameLabel.textContent = players[opponentId]?.name || 'Opponent';
     state.opponentScore = players[opponentId]?.score || 0;
     if (opponentScoreEl) opponentScoreEl.textContent = state.opponentScore;
-  } else {
-    if (statusText) statusText.textContent = 'Opponent left the match!';
-    disableChoices(true);
-    return;
+    if (!state.roundInProgress && state.hasChosenThisRound) {
+      if (statusText) statusText.textContent = 'Choice made! Waiting for opponent...';
+    }
   }
 
-  const playerData = players[state.playerId];
-  const opponentData = players[opponentId];
-
-  if (
-    playerData?.choice &&
-    !state.roundInProgress &&
-    state.playerChoice === playerData.choice
-  ) {
-    if (statusText) statusText.textContent = 'Choice made! Waiting for opponent...';
-  }
-
-  if (
-    playerData?.choice &&
-    opponentData?.choice &&
-    !state.roundInProgress
-  ) {
+  // Start round when both have choices and round not in progress
+  if (playerData && opponentData && playerData.choice && opponentData.choice && !state.roundInProgress) {
     state.roundInProgress = true;
     resolveRound(playerData.choice, opponentData.choice, opponentId)
-      .catch(err => console.error('Round error:', err))
       .finally(() => {
         state.roundInProgress = false;
+        state.hasChosenThisRound = false;
       });
   }
 }
@@ -377,12 +364,13 @@ function generateMatchId(length = 6) {
   for (let i = 0; i < length; i++) str += chars[Math.floor(Math.random() * chars.length)];
   return str;
 }
+
 function showMatchId(id) {
   if (generatedMatchId) generatedMatchId.textContent = id ? `Match ID: ${id}` : '';
   if (matchIdDisplay) matchIdDisplay.textContent = id ? `Match: ${id}` : '';
 }
 
-// ---------------------- Create / Join Match ----------------------
+// ---------------------- Create / Join / Leave Match ----------------------
 if (btnCreateMatch) {
   btnCreateMatch.onclick = async () => {
     if (!state.playerId) return alert('Please sign in first.');
@@ -404,7 +392,7 @@ if (btnCreateMatch) {
     matchRef.on('value', snap => handleMatchUpdate(snap.val()));
     renderChoices();
     disableChoices(false);
-    statusText.textContent = 'Make your choice!';
+    if (statusText) statusText.textContent = 'Make your choice!';
   };
 }
 
@@ -429,11 +417,10 @@ if (btnJoinMatch) {
     matchRef.on('value', snap => handleMatchUpdate(snap.val()));
     renderChoices();
     disableChoices(false);
-    statusText.textContent = 'Make your choice!';
+    if (statusText) statusText.textContent = 'Make your choice!';
   };
 }
 
-// ---------------------- Leave Match ----------------------
 if (btnLeaveMatch) {
   btnLeaveMatch.onclick = async () => {
     if (state.matchRef) {
@@ -444,6 +431,7 @@ if (btnLeaveMatch) {
     state.matchId = null;
     state.playerChoice = null;
     state.opponentChoice = null;
+    state.hasChosenThisRound = false;
     state.playerScore = 0;
     state.opponentScore = 0;
     state.roundInProgress = false;
@@ -480,20 +468,5 @@ if (btnResetInventory) {
 
 // ---------------------- Top Buttons ----------------------
 if (btnBackToBot) btnBackToBot.onclick = () => window.location.href = 'index.html';
-if (btnMatchupChart) btnMatchupChart.onclick = () => window.open('matchchart.html', '_blank');
+if (btnMatchupChart) btnMatchupChart.onclick = () => window.location.href = 'matchups.html';
 
-// ---------------------- Init ----------------------
-function init() {
-  if (state.playerId) {
-    loginSection.hidden = true;
-    matchSection.hidden = false;
-    loadPlayerData();
-  }
-  renderInventory();
-  renderChoices();
-  renderShop();
-  updateCoinsDisplay();
-  disableChoices(false);
-  if (statusText) statusText.textContent = 'Waiting...';
-}
-init();
