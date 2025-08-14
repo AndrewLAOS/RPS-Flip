@@ -5,83 +5,102 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Online RPS Flip</title>
 <style>
-  body {
-    margin: 0;
-    font-family: 'Arial', sans-serif;
-    background: linear-gradient(to right, #1e1e2e, #282a36);
-    color: #f5f5f5;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-  }
-  section { 
-    width: 90%; 
-    max-width: 600px; 
-    text-align: center; 
-    margin-top: 40px;
-  }
-  button {
-    background-color: #ff6f61;
-    border: none;
-    color: white;
-    padding: 12px 24px;
-    margin: 6px;
-    font-size: 16px;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  button:hover { background-color: #ff4b3a; }
-  input {
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    margin-right: 6px;
-    font-size: 16px;
-    width: 180px;
-  }
-  .scoreboard {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 20px;
-  }
-  .card {
-    width: 80px; height: 80px;
-    border: 2px solid #fff;
-    border-radius: 12px;
-    font-size: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 10px auto;
-    background: #2c2f42;
-  }
-  #choices {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin: 20px 0;
-  }
-  .choice {
-    margin: 8px;
-    font-size: 32px;
-    width: 80px;
-    height: 80px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    border: 2px solid #fff;
-    background: #3b3f58;
-    cursor: pointer;
-  }
-  .choice-label {
-    font-size: 12px;
-    margin-top: 4px;
-  }
-  #status-text { font-size: 18px; margin-top: 10px; }
+/* Reset & Base */
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Comfortaa', sans-serif; }
+html, body { width: 100%; height: 100%; background: #0b1220; color: #fff; display: flex; justify-content: center; align-items: center; }
+
+/* Sections */
+section { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 95%; max-width: 1400px; }
+
+/* Buttons */
+button { 
+  font-size: 2.8rem; 
+  padding: 1.5rem 3rem; 
+  margin: 1.5rem; 
+  border-radius: 25px; 
+  border: none; 
+  background: #4c5cfc; 
+  color: #fff; 
+  cursor: pointer; 
+  transition: transform 0.2s, background 0.2s; 
+}
+button:hover { background: #6570ff; transform: scale(1.2); }
+
+/* Input boxes */
+input { 
+  font-size: 2.5rem; 
+  padding: 1.2rem; 
+  border-radius: 20px; 
+  margin: 1rem 0; 
+  width: 85%; 
+  max-width: 500px; 
+  text-align: center; 
+}
+
+/* Player & Opponent Cards */
+.card { 
+  width: 350px; 
+  height: 450px; 
+  margin: 2rem; 
+  background: #1e1e2e; 
+  border-radius: 30px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-size: 8rem; 
+  position: relative; 
+  box-shadow: 0 0 20px #4c5cfc;
+}
+.card .card-front { font-size: 10rem; }
+
+/* Names & Scores */
+#player-name-label, #opponent-name-label { font-size: 3rem; margin-top: 1rem; }
+#player-score, #opponent-score { font-size: 3.5rem; margin-top: 0.5rem; }
+
+/* Choices */
+#choices { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 2rem; gap: 1.5rem; }
+.choice { 
+  width: 150px; 
+  height: 150px; 
+  font-size: 4rem; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+  border-radius: 20px; 
+  background: #282a36; 
+  color: #fff; 
+  cursor: pointer; 
+  transition: transform 0.2s, background 0.2s; 
+  box-shadow: 0 0 10px #4c5cfc;
+}
+.choice:hover { transform: scale(1.3); background: #4c5cfc; }
+.choice-label { font-size: 1.5rem; margin-top: 0.5rem; text-align: center; }
+
+/* Status text */
+#status-text { font-size: 2.5rem; margin-top: 2rem; text-align: center; }
+
+/* Match ID & Status */
+#generated-match-id, #match-status { font-size: 2.2rem; margin-top: 1rem; text-align: center; }
+#generated-match-id { color: #ffd700; font-weight: bold; text-shadow: 0 0 15px #ffd700, 0 0 25px #ffd700; }
+
+/* Scoreboard layout */
+.scoreboard { display: flex; justify-content: center; align-items: flex-start; gap: 5rem; flex-wrap: wrap; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .card { width: 280px; height: 380px; font-size: 6.5rem; }
+  .card .card-front { font-size: 8rem; }
+  .choice { width: 120px; height: 120px; font-size: 3.5rem; }
+  input { font-size: 2rem; }
+  button { font-size: 2rem; padding: 1rem 2rem; }
+  #player-name-label, #opponent-name-label { font-size: 2.5rem; }
+  #player-score, #opponent-score { font-size: 3rem; }
+  #status-text { font-size: 2rem; }
+  #generated-match-id, #match-status { font-size: 1.8rem; }
+}
 </style>
+
 </head>
 <body>
 

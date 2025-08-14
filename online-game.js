@@ -3,7 +3,7 @@ import { items, itemKeys } from './items.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
-// DOM references
+// DOM
 const loginSection = $('#login-section');
 const matchSection = $('#match-section');
 const gameSection = $('#game-section');
@@ -34,9 +34,7 @@ const backToBotButtons = [
   $('#btnBackToBotMatch'),
   $('#btnBackToBotGame')
 ];
-backToBotButtons.forEach(btn => {
-  btn.onclick = () => window.location.href = 'bot.html';
-});
+backToBotButtons.forEach(btn => btn.onclick = () => window.location.href = 'bot.html');
 
 // ---------------------- Game State ----------------------
 let state = {
@@ -51,7 +49,7 @@ let state = {
   matchRef: null,
 };
 
-// ---------------------- Firebase Setup ----------------------
+// ---------------------- Firebase ----------------------
 const firebaseConfig = {
   apiKey: "AIzaSyAqmG4OxLp7f1kktoLwicGR4O2SLwqNBk0",
   authDomain: "rps-flip.firebaseapp.com",
@@ -65,7 +63,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
-// ---------------------- Authentication ----------------------
+// ---------------------- Google Sign In ----------------------
 btnGoogleLogin.onclick = async () => {
   const provider = new firebase.auth.GoogleAuthProvider();
   try {
@@ -81,7 +79,7 @@ btnGoogleLogin.onclick = async () => {
   }
 };
 
-// ---------------------- Match Management ----------------------
+// ---------------------- Match ID Generator ----------------------
 function generateMatchId(length = 6) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let str = '';
@@ -89,6 +87,7 @@ function generateMatchId(length = 6) {
   return str;
 }
 
+// ---------------------- Create / Join Match ----------------------
 btnCreateMatch.onclick = async () => {
   const id = generateMatchId();
   state.matchId = id;
@@ -126,7 +125,7 @@ btnJoinMatch.onclick = async () => {
   renderChoices();
 };
 
-// ---------------------- Choices Rendering ----------------------
+// ---------------------- Render Choices ----------------------
 function renderChoices() {
   choicesDiv.innerHTML = '';
   state.choices.forEach(key => {
@@ -151,7 +150,7 @@ function makeChoice(key) {
   statusText.textContent = 'Choice made! Waiting for opponent...';
 }
 
-// ---------------------- Match Update ----------------------
+// ---------------------- Handle Match Updates ----------------------
 function handleMatchUpdate(data) {
   if (!data) return;
   const players = data.players || {};
@@ -161,6 +160,7 @@ function handleMatchUpdate(data) {
     opponentNameLabel.textContent = players[opponentId].name;
     state.opponentScore = players[opponentId].score || 0;
     opponentScoreEl.textContent = state.opponentScore;
+    if (players[opponentId].choice === null) matchStatus.textContent = 'Opponent joined! Make your choice!';
   }
 
   const playerData = players[state.playerId];
@@ -179,7 +179,6 @@ function getResult(p1, p2) {
 
 function resolveRound(playerKey, opponentKey) {
   const result = getResult(playerKey, opponentKey);
-
   const playerCardFront = playerCardInner.querySelector('.card-front');
   const opponentCardFront = opponentCardInner.querySelector('.card-front');
 
@@ -198,8 +197,15 @@ function resolveRound(playerKey, opponentKey) {
     statusText.textContent = 'Tie!';
   }
 
+  // Reset choices after 2 seconds
   setTimeout(() => {
-    if (state.matchRef) state.matchRef.child('players/' + state.playerId + '/choice').set(null);
+    if (state.matchRef) {
+      state.matchRef.child('players/' + state.playerId + '/choice').set(null);
+      if (Object.keys(state.matchRef._delegate._path.pieces_).length > 1) {
+        const opponentId = Object.keys(state.matchRef._delegate._path.pieces_).find(pid => pid !== state.playerId);
+        if (opponentId) state.matchRef.child('players/' + opponentId + '/choice').set(null);
+      }
+    }
     disableChoices(false);
     statusText.textContent = 'Make your choice!';
     playerCardFront.textContent = '?';
@@ -227,5 +233,5 @@ btnLeaveMatch.onclick = () => {
   opponentScoreEl.textContent = '0';
 };
 
-// ---------------------- Init ----------------------
+// ---------------------- Initialize ----------------------
 statusText.textContent = 'Sign in to start playing!';
