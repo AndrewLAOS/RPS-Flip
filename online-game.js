@@ -37,7 +37,7 @@ const btnMatchupChart = $('#btnMatchupChart');
 
 const shopList = $('#shop-list');
 const btnToggleShop = $('#btnToggleShop');
-const btnResetInventory = $('#btnResetInventory'); // from your updated HTML
+const btnResetInventory = $('#btnResetInventory');
 
 // ---------------------- Game State ----------------------
 let state = {
@@ -56,7 +56,7 @@ let state = {
     scissors: { owned: true, level: 1 }
   },
   choices: new Set(['rock','paper','scissors']),
-  roundInProgress: false // lock to prevent double-resolve
+  roundInProgress: false
 };
 
 // ---------------------- Firebase ----------------------
@@ -226,8 +226,8 @@ function disableChoices(disabled) {
 // ---------------------- Choice & Match Updates ----------------------
 function makeChoice(key) {
   if (!state.matchRef) return;
-  if (state.roundInProgress) return;      // prevent spam during animations
-  if (state.playerChoice) return;         // already picked this round
+  if (state.roundInProgress) return;
+  if (state.playerChoice) return;
   state.playerChoice = key;
   disableChoices(true);
   state.matchRef.child('players/' + state.playerId + '/choice').set(key);
@@ -239,25 +239,38 @@ function handleMatchUpdate(data) {
   const players = data.players || {};
   const opponentId = Object.keys(players).find(pid => pid !== state.playerId);
 
-  // Opponent labels and score
   if (opponentId) {
     if (opponentNameLabel) opponentNameLabel.textContent = players[opponentId]?.name || 'Opponent';
     state.opponentScore = players[opponentId]?.score || 0;
     if (opponentScoreEl) opponentScoreEl.textContent = state.opponentScore;
-    if (players[opponentId]?.choice === null && matchStatus) {
-      matchStatus.textContent = 'Opponent joined! Make your choice!';
-    }
+  } else {
+    if (statusText) statusText.textContent = 'Opponent left the match!';
+    disableChoices(true);
+    return;
   }
 
   const playerData = players[state.playerId];
-  const opponentData = opponentId ? players[opponentId] : null;
+  const opponentData = players[opponentId];
 
-  // Start round when both have choices and no round is in progress
-  if (playerData && opponentData && playerData.choice && opponentData.choice && !state.roundInProgress) {
+  if (
+    playerData?.choice &&
+    !state.roundInProgress &&
+    state.playerChoice === playerData.choice
+  ) {
+    if (statusText) statusText.textContent = 'Choice made! Waiting for opponent...';
+  }
+
+  if (
+    playerData?.choice &&
+    opponentData?.choice &&
+    !state.roundInProgress
+  ) {
     state.roundInProgress = true;
-    resolveRound(playerData.choice, opponentData.choice, opponentId).finally(() => {
-      state.roundInProgress = false;
-    });
+    resolveRound(playerData.choice, opponentData.choice, opponentId)
+      .catch(err => console.error('Round error:', err))
+      .finally(() => {
+        state.roundInProgress = false;
+      });
   }
 }
 
@@ -271,16 +284,13 @@ async function resolveRound(playerKey, opponentKey, opponentId) {
   const playerCard = playerCardInner;
   const opponentCard = opponentCardInner;
 
-  // Flip both cards to show selected icons/names
   await Promise.all([
     animateFlip(playerCard, items[playerKey].icon, items[playerKey].name),
     animateFlip(opponentCard, items[opponentKey].icon, items[opponentKey].name),
   ]);
 
-  // Cinematic battle
   await animateBattle(playerCard, playerKey, opponentCard, opponentKey);
 
-  // Result & coin math
   const result = getResult(playerKey, opponentKey);
   const rarityValues = { Common:1, Uncommon:2, Rare:3, Epic:4, Legendary:5 };
   const baseWin = 5;
@@ -307,22 +317,20 @@ async function resolveRound(playerKey, opponentKey, opponentId) {
   savePlayerData();
   confettiBurst(result);
 
-  // Clear choices in DB for next round (don’t depend on opponent write succeeding)
+  // Reset choices
   if (state.matchRef) {
     state.matchRef.child('players/' + state.playerId + '/choice').set(null);
     if (opponentId) state.matchRef.child('players/' + opponentId + '/choice').set(null);
   }
 
-  // Local round reset after animations
   state.playerChoice = null;
   state.opponentChoice = null;
 
-  // Let the flair breathe, then reset UI & re-enable
   setTimeout(() => {
     resetBattleCards();
     renderChoices();
     disableChoices(false);
-  }, 300); // small delay so it feels snappy; animations already awaited
+  }, 300);
 }
 
 // ---------------------- Card Flip Animation ----------------------
@@ -330,16 +338,10 @@ async function animateFlip(cardEl, icon, name) {
   if (!cardEl) return;
   const iconEl = cardEl.querySelector('.card-front') || cardEl.querySelector('.icon');
   const nameEl = cardEl.querySelector('.card-back') || cardEl.querySelector('.small.muted');
-  await cardEl.animate(
-    [{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(90deg)' }],
-    { duration: 200 }
-  ).finished;
+  await cardEl.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(90deg)' }], { duration: 200 }).finished;
   if (iconEl) iconEl.textContent = icon;
   if (nameEl) nameEl.textContent = name;
-  await cardEl.animate(
-    [{ transform: 'rotateY(90deg)' }, { transform: 'rotateY(0deg)' }],
-    { duration: 200 }
-  ).finished;
+  await cardEl.animate([{ transform: 'rotateY(90deg)' }, { transform: 'rotateY(0deg)' }], { duration: 200 }).finished;
 }
 
 function resetBattleCards() {
@@ -422,7 +424,6 @@ if (btnJoinMatch) {
     if (gameSection) gameSection.hidden = false;
     showMatchId(id);
 
-    // join without clobbering the match object
     await matchRef.child('players/' + state.playerId).set({ name: state.playerName, score: 0, choice: null });
 
     matchRef.on('value', snap => handleMatchUpdate(snap.val()));
@@ -436,11 +437,9 @@ if (btnJoinMatch) {
 if (btnLeaveMatch) {
   btnLeaveMatch.onclick = async () => {
     if (state.matchRef) {
-      // remove yourself from match
       await state.matchRef.child('players/' + state.playerId).remove();
       state.matchRef.off();
     }
-    // reset local match state
     state.matchRef = null;
     state.matchId = null;
     state.playerChoice = null;
