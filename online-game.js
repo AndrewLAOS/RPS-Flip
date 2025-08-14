@@ -49,15 +49,8 @@ let state = {
   opponentChoice: null,
   playerScore: 0,
   opponentScore: 0,
-
-  // Permanent coins & inventory
   coins: 0,
   inventory: { rock: { owned: true, level: 1 }, paper: { owned: true, level: 1 }, scissors: { owned: true, level: 1 } },
-
-  // Temporary match-specific coins & inventory
-  tempCoins: 0,
-  tempInventory: {},
-
   choices: new Set(['rock','paper','scissors'])
 };
 
@@ -103,8 +96,6 @@ async function loadPlayerData() {
     state.coins = data.coins || 0;
     state.inventory = { ...state.inventory, ...(data.inventory || {}) };
     Object.keys(state.inventory).forEach(key => state.choices.add(key));
-  } else {
-    state.coins = 0;
   }
   renderInventory();
   renderChoices();
@@ -119,31 +110,16 @@ function savePlayerData() {
   });
 }
 
-// ---------------------- Temporary Match State ----------------------
-function resetTempMatchState() {
-  state.tempCoins = 0;
-  state.tempInventory = {
-    rock: { owned: true, level: 1 },
-    paper: { owned: true, level: 1 },
-    scissors: { owned: true, level: 1 }
-  };
-  state.choices = new Set(['rock','paper','scissors']);
-  renderInventory();
-  renderChoices();
-  updateTempCoinsDisplay();
-}
-
-function updateTempCoinsDisplay() {
-  if (playerCoinsEl) playerCoinsEl.textContent = state.matchId ? state.tempCoins : state.coins;
+function updateCoinsDisplay() {
+  if (playerCoinsEl) playerCoinsEl.textContent = state.coins;
 }
 
 // ---------------------- Render & Inventory ----------------------
 function renderInventory() {
   if (!inventoryList) return;
   inventoryList.innerHTML = '';
-  const invSource = state.matchId ? state.tempInventory : state.inventory;
   Object.keys(items).forEach(key => {
-    const invItem = invSource[key] || { owned: key==='rock'||key==='paper'||key==='scissors', level:1 };
+    const invItem = state.inventory[key] || { owned: key==='rock'||key==='paper'||key==='scissors', level:1 };
     if (!invItem.owned) return;
     const item = items[key];
     const div = document.createElement('div');
@@ -163,10 +139,9 @@ function renderInventory() {
 function renderShop() {
   if (!shopList) return;
   shopList.innerHTML = '';
-  const invSource = state.matchId ? state.tempInventory : state.inventory;
   Object.keys(items).forEach(key => {
     const item = items[key];
-    const invItem = invSource[key] || { owned: false, level: 1 };
+    const invItem = state.inventory[key] || { owned: false, level: 1 };
     const div = document.createElement('div');
     div.className = `shop-item rarity-${item.rarity} ${invItem.owned ? 'owned' : ''}`;
     div.innerHTML = `
@@ -183,31 +158,30 @@ function renderShop() {
     const purchasedText = div.querySelector('.purchased-text');
 
     btn.onclick = () => {
-      const targetCoins = state.matchId ? 'tempCoins' : 'coins';
       if (invItem.owned) {
         const cost = 50 * (invItem.level + 1);
-        if (state[targetCoins] >= cost) {
-          state[targetCoins] -= cost;
+        if (state.coins >= cost) {
+          state.coins -= cost;
           invItem.level++;
-          invSource[key] = invItem;
-          if(!state.matchId) savePlayerData();
+          state.inventory[key] = invItem;
+          savePlayerData();
           renderShop();
           renderChoices();
-          updateTempCoinsDisplay();
+          updateCoinsDisplay();
         } else alert('Not enough coins to upgrade.');
       } else {
         const cost = item.cost || 100;
-        if (state[targetCoins] >= cost) {
-          state[targetCoins] -= cost;
+        if (state.coins >= cost) {
+          state.coins -= cost;
           invItem.owned = true;
           invItem.level = 1;
-          invSource[key] = invItem;
+          state.inventory[key] = invItem;
           state.choices.add(key);
           if (purchasedText) purchasedText.style.display = 'block';
-          if(!state.matchId) savePlayerData();
+          savePlayerData();
           renderShop();
           renderChoices();
-          updateTempCoinsDisplay();
+          updateCoinsDisplay();
         } else alert('Not enough coins to buy.');
       }
     };
@@ -240,8 +214,6 @@ if (btnCreateMatch) {
     if (gameSection) gameSection.hidden=false;
     if (matchSection) matchSection.hidden=true;
 
-    resetTempMatchState();
-
     const matchRef = db.ref('matches/' + id);
     state.matchRef = matchRef;
 
@@ -267,8 +239,6 @@ if (btnJoinMatch) {
     state.matchRef = matchRef;
     if (matchSection) matchSection.hidden=true;
     if (gameSection) gameSection.hidden=false;
-
-    resetTempMatchState();
 
     await matchRef.child('players/' + state.playerId).set({ name: state.playerName, score:0, choice:null });
     matchRef.on('value', snap=>handleMatchUpdate(snap.val()));
@@ -299,7 +269,7 @@ function disableChoices(disabled){
 
 function makeChoice(key){
   if (!state.matchRef) return;
-  if(state.playerChoice) return; // prevent double click
+  if(state.playerChoice) return;
   state.playerChoice = key;
   disableChoices(true);
   state.matchRef.child('players/' + state.playerId + '/choice').set(key);
@@ -352,12 +322,12 @@ async function resolveRound(playerKey, opponentKey, players, opponentId) {
 
   if(result==='win'){
     const coinsEarned = baseWin * playerRarity;
-    state.tempCoins += coinsEarned;
+    state.coins += coinsEarned;
     state.playerScore++;
     if(statusText) statusText.textContent = `You Win! +${coinsEarned} 🪙`;
   } else if(result==='lose'){
     const coinsLost = baseLose * playerRarity;
-    state.tempCoins = Math.max(0, state.tempCoins - coinsLost);
+    state.coins = Math.max(0, state.coins - coinsLost);
     state.opponentScore++;
     if(statusText) statusText.textContent = `You Lose! -${coinsLost} 🪙`;
   } else {
@@ -366,7 +336,7 @@ async function resolveRound(playerKey, opponentKey, players, opponentId) {
 
   playerScoreEl.textContent = state.playerScore;
   opponentScoreEl.textContent = state.opponentScore;
-  updateTempCoinsDisplay();
+  updateCoinsDisplay();
   confettiBurst(result);
 
   state.matchRef.child('players/' + state.playerId + '/choice').set(null);
@@ -376,8 +346,8 @@ async function resolveRound(playerKey, opponentKey, players, opponentId) {
     state.playerChoice = null;
     state.opponentChoice = null;
     resetBattleCards();
-    renderChoices();   // rebuild buttons for next round
-    disableChoices(false); // re-enable for next round
+    renderChoices();
+    disableChoices(false);
   },2000);
 }
 
@@ -431,7 +401,6 @@ if(btnLeaveMatch){
     state.opponentChoice=null;
     state.playerScore=0;
     state.opponentScore=0;
-    resetTempMatchState();
 
     gameSection.hidden=true;
     matchSection.hidden=false;
