@@ -357,15 +357,6 @@ async function resolveRound(playerKey, opponentKey, players, opponentId) {
   },2000);
 }
 
-const [opponent, setOpponent] = useState({ coins: 0, items: [] });
-
-useEffect(() => {
-  const unsubscribe = onOpponentUpdate((data) => {
-    setOpponent(data);
-  });
-
-  return () => unsubscribe();
-}, []);
 
 // ---------------------- Card Flip Animation ----------------------
 async function animateFlip(cardEl, icon, name){
