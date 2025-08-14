@@ -35,6 +35,9 @@
           <button id="btnJoinMatch" class="btn">Join Match</button>
           <p id="match-status" class="small-muted"></p>
         </div>
+        <div class="panel">
+          <button id="btnLeaveMatch" class="btn">Leave Match</button>
+        </div>
       </div>
 
       <!-- Coins & Inventory -->
@@ -49,17 +52,15 @@
         <h2>Inventory</h2>
         <div id="inventory-list" class="shop-list"></div>
       </div>
-
-      <div class="panel">
-        <button id="btnLeaveMatch" class="btn">Leave Match</button>
-      </div>
     </aside>
 
     <!-- Main Game Area -->
     <main class="game-area">
+
+      <!-- Battle Stage -->
       <div class="battle-stage" id="game-section" hidden>
 
-        <!-- Top Row: Player & Opponent Info -->
+        <!-- Top Row: Player & Opponent -->
         <div class="top-row">
           <div class="status-panel">
             <div id="player-name-label" class="player-name">Player</div>
@@ -99,11 +100,22 @@
         <!-- Choices -->
         <div id="choices" class="choices"></div>
 
+        <!-- Result Banner -->
+        <div id="result-banner" class="result-banner"></div>
+
         <!-- Confetti -->
         <div class="confetti-wrap" id="confetti-wrap"></div>
-
       </div>
     </main>
   </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div>&copy; 2025 RPS Flip</div>
+    <div>
+      <a href="privacy.html">Privacy Policy</a> | 
+      <a href="terms.html">Terms of Service</a>
+    </div>
+  </footer>
 </body>
 </html>
