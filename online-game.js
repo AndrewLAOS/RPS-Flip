@@ -240,24 +240,15 @@ function handleMatchUpdate(data) {
   const playerData = players[state.playerId];
   const opponentData = opponentId ? players[opponentId] : null;
 
-  // Opponent labels and score
   if (opponentId) {
     if (opponentNameLabel) opponentNameLabel.textContent = players[opponentId]?.name || 'Opponent';
     state.opponentScore = players[opponentId]?.score || 0;
     if (opponentScoreEl) opponentScoreEl.textContent = state.opponentScore;
-    if (!state.roundInProgress && state.hasChosenThisRound) {
-      if (statusText) statusText.textContent = 'Choice made! Waiting for opponent...';
-    }
   }
 
-  // Start round when both have choices and round not in progress
+  // Start round only when both have chosen
   if (playerData && opponentData && playerData.choice && opponentData.choice && !state.roundInProgress) {
-    state.roundInProgress = true;
-    resolveRound(playerData.choice, opponentData.choice, opponentId)
-      .finally(() => {
-        state.roundInProgress = false;
-        state.hasChosenThisRound = false;
-      });
+    resolveRound(playerData.choice, opponentData.choice, opponentId);
   }
 }
 
@@ -267,9 +258,13 @@ function getResult(p1, p2) {
   return items[p1].beats.includes(p2) ? 'win' : 'lose';
 }
 
+// ---------------------- Updated Resolve Round ----------------------
 async function resolveRound(playerKey, opponentKey, opponentId) {
   const playerCard = playerCardInner;
   const opponentCard = opponentCardInner;
+
+  state.roundInProgress = true;
+  disableChoices(true);
 
   await Promise.all([
     animateFlip(playerCard, items[playerKey].icon, items[playerKey].name),
@@ -304,19 +299,23 @@ async function resolveRound(playerKey, opponentKey, opponentId) {
   savePlayerData();
   confettiBurst(result);
 
-  // Reset choices
+  // Reset Firebase choices
   if (state.matchRef) {
-    state.matchRef.child('players/' + state.playerId + '/choice').set(null);
-    if (opponentId) state.matchRef.child('players/' + opponentId + '/choice').set(null);
+    await state.matchRef.child('players/' + state.playerId + '/choice').set(null);
+    if (opponentId) await state.matchRef.child('players/' + opponentId + '/choice').set(null);
   }
 
+  // Reset local state
   state.playerChoice = null;
   state.opponentChoice = null;
+  state.hasChosenThisRound = false;
 
   setTimeout(() => {
     resetBattleCards();
     renderChoices();
     disableChoices(false);
+    state.roundInProgress = false;
+    if (statusText) statusText.textContent = 'Make your choice!';
   }, 300);
 }
 
@@ -469,4 +468,3 @@ if (btnResetInventory) {
 // ---------------------- Top Buttons ----------------------
 if (btnBackToBot) btnBackToBot.onclick = () => window.location.href = 'index.html';
 if (btnMatchupChart) btnMatchupChart.onclick = () => window.location.href = 'matchups.html';
-
