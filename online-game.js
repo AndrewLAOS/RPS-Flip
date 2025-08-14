@@ -29,9 +29,10 @@ const btnLeaveMatch = $('#btnLeaveMatch');
 const playerCoinsEl = $('#player-coins');
 const inventoryList = $('#inventory-list');
 const confettiWrap = $('#confetti-wrap');
-
 const btnBackToBot = $('#btnBackToBot');
 const btnMatchupChart = $('#btnMatchupChart');
+const btnToggleShop = $('#btnToggleShop');
+const shopSection = $('#shop-section');
 
 // ---------------------- Game State ----------------------
 let state = {
@@ -43,8 +44,7 @@ let state = {
   opponentChoice: null,
   playerScore: 0,
   opponentScore: 0,
-  coins: 0,
-  streak: 0,
+  coins: 0, // start at 0
   inventory: { rock: { owned: true, level: 1 }, paper: { owned: true, level: 1 }, scissors: { owned: true, level: 1 } },
   choices: new Set(['rock','paper','scissors'])
 };
@@ -88,13 +88,12 @@ async function loadPlayerData() {
   const snapshot = await db.ref('players/' + state.playerId).get();
   if (snapshot.exists()) {
     const data = snapshot.val();
-    state.coins = data.coins || 0;
+    state.coins = data.coins ?? 0;
     state.inventory = { ...state.inventory, ...(data.inventory || {}) };
     Object.keys(state.inventory).forEach(key => state.choices.add(key));
-  } else {
-    state.coins = 0;
   }
   renderInventory();
+  renderChoices();
   updateCoinsDisplay();
 }
 
@@ -105,7 +104,7 @@ function savePlayerData() {
   });
 }
 
-// ---------------------- Render & Inventory ----------------------
+// ---------------------- Inventory & Shop ----------------------
 function updateCoinsDisplay() {
   if (playerCoinsEl) playerCoinsEl.textContent = state.coins;
 }
@@ -160,10 +159,18 @@ function handleInventoryClick(key, invItem, purchasedText=null) {
       if (purchasedText) purchasedText.style.display='block';
       savePlayerData();
       renderInventory();
-      renderChoices(); // add newly bought item to PvP
+      renderChoices();
       updateCoinsDisplay();
     } else alert('Not enough coins to buy.');
   }
+}
+
+// Toggle shop
+if(btnToggleShop){
+  btnToggleShop.onclick = ()=>{
+    if(!shopSection) return;
+    shopSection.hidden = !shopSection.hidden;
+  };
 }
 
 // ---------------------- Match ID Generator ----------------------
@@ -255,14 +262,13 @@ function handleMatchUpdate(data){
     if(opponentNameLabel) opponentNameLabel.textContent=players[opponentId].name;
     state.opponentScore = players[opponentId].score||0;
     if(opponentScoreEl) opponentScoreEl.textContent=state.opponentScore;
-    if(players[opponentId].choice===null && matchStatus) matchStatus.textContent='Opponent joined! Make your choice!';
   }
 
   const playerData = players[state.playerId];
   const opponentData = opponentId?players[opponentId]:null;
 
   if(playerData && opponentData){
-    if(playerData.choice && opponentData.choice) resolveRound(playerData.choice, opponentData.choice, players, opponentId);
+    if(playerData.choice && opponentData.choice) resolveRound(playerData.choice, opponentData.choice, opponentId);
   }
 }
 
@@ -272,11 +278,10 @@ function getResult(p1,p2){
   return items[p1].beats.includes(p2)?'win':'lose';
 }
 
-async function resolveRound(playerKey, opponentKey, players, opponentId) {
+async function resolveRound(playerKey, opponentKey, opponentId){
   const playerCard = playerCardInner;
   const opponentCard = opponentCardInner;
 
-  // Animate card flips
   await Promise.all([
     animateFlip(playerCard, items[playerKey].icon, items[playerKey].name),
     animateFlip(opponentCard, items[opponentKey].icon, items[opponentKey].name),
@@ -284,42 +289,38 @@ async function resolveRound(playerKey, opponentKey, players, opponentId) {
 
   const result = getResult(playerKey, opponentKey);
 
-  // Coin logic from index.html
-  const rarityValues = { Common:1, Uncommon:2, Rare:3, Epic:4, Legendary:5 };
-  const baseWin=5;
-  const baseLose=2;
-  const streakMultiplier = state.streak>=3 ? 2 : 1;
+  const rarityValues = { Common: 1, Uncommon: 2, Rare: 3, Epic: 4, Legendary: 5 };
+  const baseWin = 5;
+  const baseLose = 2;
 
   const playerRarity = rarityValues[items[playerKey].rarity] || 1;
   const opponentRarity = rarityValues[items[opponentKey].rarity] || 1;
 
   if(result==='win'){
-    const coinsEarned = baseWin*playerRarity*streakMultiplier;
+    const coinsEarned = baseWin*playerRarity;
     state.coins += coinsEarned;
     state.playerScore++;
-    state.streak++;
     if(statusText) statusText.textContent=`You Win! +${coinsEarned} 🪙`;
   } else if(result==='lose'){
     const coinsLost = baseLose*playerRarity;
-    state.coins = Math.max(0, state.coins - coinsLost);
+    state.coins = Math.max(0,state.coins-coinsLost);
     state.opponentScore++;
-    state.streak=0;
     if(statusText) statusText.textContent=`You Lose! -${coinsLost} 🪙`;
   } else {
     if(statusText) statusText.textContent='Tie!';
   }
 
-  playerScoreEl.textContent=state.playerScore;
-  opponentScoreEl.textContent=state.opponentScore;
+  if(playerScoreEl) playerScoreEl.textContent=state.playerScore;
+  if(opponentScoreEl) opponentScoreEl.textContent=state.opponentScore;
   updateCoinsDisplay();
   savePlayerData();
+
   confettiBurst(result);
 
-  // Reset choices
   state.playerChoice=null;
   state.opponentChoice=null;
-  state.matchRef.child('players/'+state.playerId+'/choice').set(null);
-  if(opponentId) state.matchRef.child('players/'+opponentId+'/choice').set(null);
+  state.matchRef.child('players/' + state.playerId + '/choice').set(null);
+  state.matchRef.child('players/' + opponentId + '/choice').set(null);
 
   setTimeout(()=>{
     disableChoices(false);
@@ -327,31 +328,26 @@ async function resolveRound(playerKey, opponentKey, players, opponentId) {
   },2000);
 }
 
-// ---------------------- Card Flip Animation ----------------------
+// ---------------------- Card Flip ----------------------
 async function animateFlip(cardEl, icon, name){
   if(!cardEl) return;
   const iconEl = cardEl.querySelector('.card-front') || cardEl.querySelector('.icon');
   const nameEl = cardEl.querySelector('.card-back') || cardEl.querySelector('.small.muted');
 
-  await cardEl.animate([{ transform:'rotateY(0deg)'},{ transform:'rotateY(90deg)'}], {duration:200}).finished;
+  await cardEl.animate([{ transform:'rotateY(0deg)' },{ transform:'rotateY(90deg)' }],{duration:200}).finished;
   if(iconEl) iconEl.textContent=icon;
   if(nameEl) nameEl.textContent=name;
-  await cardEl.animate([{ transform:'rotateY(90deg)'},{ transform:'rotateY(0deg)'}], {duration:200}).finished;
+  await cardEl.animate([{ transform:'rotateY(90deg)' },{ transform:'rotateY(0deg)' }],{duration:200}).finished;
 }
 
 function resetBattleCards(){
-  if(playerCardInner){
-    const front = playerCardInner.querySelector('.card-front');
-    const back = playerCardInner.querySelector('.card-back');
+  [playerCardInner, opponentCardInner].forEach(cardEl=>{
+    if(!cardEl) return;
+    const front = cardEl.querySelector('.card-front');
+    const back = cardEl.querySelector('.card-back');
     if(front) front.textContent='?';
     if(back) back.textContent='?';
-  }
-  if(opponentCardInner){
-    const front = opponentCardInner.querySelector('.card-front');
-    const back = opponentCardInner.querySelector('.card-back');
-    if(front) front.textContent='?';
-    if(back) back.textContent='?';
-  }
+  });
 }
 
 // ---------------------- Confetti ----------------------
@@ -360,7 +356,7 @@ function confettiBurst(result){
   confettiWrap.innerHTML='';
   if(result==='tie') return;
   for(let i=0;i<50;i++){
-    const dot=document.createElement('div');
+    const dot = document.createElement('div');
     dot.className='confetti-dot';
     dot.style.left=Math.random()*100+'%';
     dot.style.backgroundColor=`hsl(${Math.random()*360},100%,70%)`;
@@ -399,6 +395,7 @@ function init(){
   }
   renderInventory();
   renderChoices();
+  if(shopSection) shopSection.hidden=true; // start hidden
 }
 
 init();
