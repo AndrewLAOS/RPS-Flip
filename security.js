@@ -21,15 +21,6 @@
     document.head.appendChild(meta);
 })();
 
-// 2️⃣ Block right-click & key shortcuts
-(function() {
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('keydown', e => {
-        if (e.ctrlKey && (e.key.toLowerCase() === 'u')) e.preventDefault(); // View Source
-        if (e.keyCode === 123) e.preventDefault(); // F12
-    });
-})();
-
 // 3️⃣ Force HTTPS
 (function() {
     if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
