@@ -1,11 +1,9 @@
 // online-game.js
-// Uses Firebase compat API for direct browser usage
+import { items, itemKeys } from './items.js';
 
-// Import items (make sure items.js is included before this)
 const $ = (sel, root = document) => root.querySelector(sel);
-const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
-// ---------------------- DOM References ----------------------
+// DOM references
 const loginSection = $('#login-section');
 const matchSection = $('#match-section');
 const gameSection = $('#game-section');
@@ -30,6 +28,16 @@ const statusText = $('#status-text');
 
 const btnLeaveMatch = $('#btnLeaveMatch');
 
+// Back to Bot buttons
+const backToBotButtons = [
+  $('#btnBackToBotLogin'),
+  $('#btnBackToBotMatch'),
+  $('#btnBackToBotGame')
+];
+backToBotButtons.forEach(btn => {
+  btn.onclick = () => window.location.href = 'bot.html';
+});
+
 // ---------------------- Game State ----------------------
 let state = {
   playerId: null,
@@ -47,14 +55,12 @@ let state = {
 const firebaseConfig = {
   apiKey: "AIzaSyAqmG4OxLp7f1kktoLwicGR4O2SLwqNBk0",
   authDomain: "rps-flip.firebaseapp.com",
-  databaseURL: "https://rps-flip-default-rtdb.firebaseio.com",
   projectId: "rps-flip",
   storageBucket: "rps-flip.appspot.com",
   messagingSenderId: "1044307931173",
   appId: "1:1044307931173:web:efa8c8bcf4cd82c1e14fcc"
 };
 
-// Initialize Firebase (compat for browser)
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
@@ -99,7 +105,7 @@ btnCreateMatch.onclick = async () => {
     createdAt: Date.now()
   });
 
-  matchRef.on('value', snapshot => handleMatchUpdate(snapshot.val()));
+  matchRef.on('value', snap => handleMatchUpdate(snap.val()));
   renderChoices();
 };
 
@@ -116,7 +122,7 @@ btnJoinMatch.onclick = async () => {
   gameSection.hidden = false;
 
   await matchRef.child('players/' + state.playerId).set({ name: state.playerName, score: 0, choice: null });
-  matchRef.on('value', snapshot => handleMatchUpdate(snapshot.val()));
+  matchRef.on('value', snap => handleMatchUpdate(snap.val()));
   renderChoices();
 };
 
@@ -193,7 +199,7 @@ function resolveRound(playerKey, opponentKey) {
   }
 
   setTimeout(() => {
-    state.matchRef.child('players/' + state.playerId + '/choice').set(null);
+    if (state.matchRef) state.matchRef.child('players/' + state.playerId + '/choice').set(null);
     disableChoices(false);
     statusText.textContent = 'Make your choice!';
     playerCardFront.textContent = '?';

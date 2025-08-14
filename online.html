@@ -3,37 +3,92 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultimate RPS Online</title>
-<link href="https://fonts.googleapis.com/css2?family=Comfortaa&display=swap" rel="stylesheet">
+<title>Online RPS Flip</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Comfortaa', cursive; }
-  body { background: linear-gradient(135deg,#1e1e2e,#282a36); color: #f0f0f0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-  h1 { margin: 20px 0; font-size: 36px; text-shadow: 2px 2px 5px #000; }
-  section { margin: 10px 0; width: 95%; max-width: 700px; text-align: center; padding: 20px; background: rgba(50,50,80,0.8); border-radius: 20px; box-shadow: 0 0 20px #000; }
-  
-  button { cursor: pointer; border: none; border-radius: 14px; padding: 14px 28px; margin: 10px; font-size: 18px; background: #ff5f57; color: #fff; transition: transform 0.1s, background 0.2s; }
-  button:hover { transform: scale(1.08); background: #ff7870; }
-  input[type=text] { padding: 12px; font-size: 18px; border-radius: 14px; border: none; width: 70%; margin-bottom: 12px; text-align: center; }
-
-  #choices { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 20px; gap: 15px; }
-  .choice { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100px; height: 100px; font-size: 36px; background: #6272a4; border-radius: 16px; transition: transform 0.1s; }
-  .choice:hover { transform: scale(1.1); background: #7080c0; }
-  .choice-label { font-size: 14px; margin-top: 6px; }
-
-  .scoreboard { display: flex; justify-content: space-around; margin: 25px 0; font-size: 20px; }
-  .card { width: 100px; height: 100px; margin: 10px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: #44475a; border-radius: 16px; box-shadow: 0 0 15px #000; }
-  #status-text { margin-top: 20px; font-size: 20px; min-height: 28px; }
-
-  #btnBackToBot { background: #50fa7b; margin-top: 20px; }
+  body {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(to right, #1e1e2e, #282a36);
+    color: #f5f5f5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+  section { 
+    width: 90%; 
+    max-width: 600px; 
+    text-align: center; 
+    margin-top: 40px;
+  }
+  button {
+    background-color: #ff6f61;
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    margin: 6px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  button:hover { background-color: #ff4b3a; }
+  input {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-right: 6px;
+    font-size: 16px;
+    width: 180px;
+  }
+  .scoreboard {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+  }
+  .card {
+    width: 80px; height: 80px;
+    border: 2px solid #fff;
+    border-radius: 12px;
+    font-size: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px auto;
+    background: #2c2f42;
+  }
+  #choices {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 20px 0;
+  }
+  .choice {
+    margin: 8px;
+    font-size: 32px;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: 2px solid #fff;
+    background: #3b3f58;
+    cursor: pointer;
+  }
+  .choice-label {
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  #status-text { font-size: 18px; margin-top: 10px; }
 </style>
 </head>
 <body>
 
-<h1>Ultimate RPS Online</h1>
-
 <section id="login-section">
   <p id="login-status"></p>
   <button id="btnGoogleLogin">Sign in with Google</button>
+  <button id="btnBackToBotLogin">Back to Bot</button>
 </section>
 
 <section id="match-section" hidden>
@@ -44,7 +99,7 @@
   </div>
   <p id="generated-match-id"></p>
   <p id="match-status"></p>
-  <button id="btnBackToBot">Back to Bot</button>
+  <button id="btnBackToBotMatch">Back to Bot</button>
 </section>
 
 <section id="game-section" hidden>
@@ -64,27 +119,228 @@
   <div id="choices"></div>
   <p id="status-text">Sign in to start playing!</p>
   <button id="btnLeaveMatch">Leave Match</button>
-  <button id="btnBackToBot">Back to Bot</button>
+  <button id="btnBackToBotGame">Back to Bot</button>
 </section>
 
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
-<!-- Items -->
-<script src="items.js"></script>
-<!-- Online Game Logic -->
-<script src="online-game.js"></script>
+<script type="module">
+import { items, itemKeys } from './items.js';
 
-<script>
-  // Back to Bot buttons
-  const backButtons = document.querySelectorAll('#btnBackToBot');
-  backButtons.forEach(btn => btn.onclick = () => {
-    alert('Going back to Bot mode!'); 
-    window.location.href = 'bot.html'; // Replace with actual bot screen
+const $ = (sel, root=document) => root.querySelector(sel);
+
+// DOM
+const loginSection = $('#login-section');
+const matchSection = $('#match-section');
+const gameSection = $('#game-section');
+const btnGoogleLogin = $('#btnGoogleLogin');
+const loginStatus = $('#login-status');
+
+const btnCreateMatch = $('#btnCreateMatch');
+const btnJoinMatch = $('#btnJoinMatch');
+const matchIdInput = $('#match-id-input');
+const matchStatus = $('#match-status');
+const generatedMatchId = $('#generated-match-id');
+
+const playerCardInner = $('#player-card-inner');
+const opponentCardInner = $('#opponent-card-inner');
+const playerNameLabel = $('#player-name-label');
+const opponentNameLabel = $('#opponent-name-label');
+const playerScoreEl = $('#player-score');
+const opponentScoreEl = $('#opponent-score');
+
+const choicesDiv = $('#choices');
+const statusText = $('#status-text');
+
+const btnLeaveMatch = $('#btnLeaveMatch');
+
+// Back to Bot buttons
+const backToBotButtons = [
+  $('#btnBackToBotLogin'),
+  $('#btnBackToBotMatch'),
+  $('#btnBackToBotGame')
+];
+backToBotButtons.forEach(btn => btn.onclick = () => window.location.href='bot.html');
+
+// Game state
+let state = {
+  playerId: null,
+  playerName: '',
+  matchId: null,
+  choices: new Set(itemKeys),
+  playerChoice: null,
+  opponentChoice: null,
+  playerScore: 0,
+  opponentScore: 0,
+  matchRef: null,
+};
+
+// Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyAqmG4OxLp7f1kktoLwicGR4O2SLwqNBk0",
+  authDomain: "rps-flip.firebaseapp.com",
+  projectId: "rps-flip",
+  storageBucket: "rps-flip.appspot.com",
+  messagingSenderId: "1044307931173",
+  appId: "1:1044307931173:web:efa8c8bcf4cd82c1e14fcc"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+// Google Sign In
+btnGoogleLogin.onclick = async () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try {
+    const result = await auth.signInWithPopup(provider);
+    const user = result.user;
+    state.playerId = user.uid;
+    state.playerName = user.displayName || 'Player';
+    loginSection.hidden = true;
+    matchSection.hidden = false;
+    loginStatus.textContent = `Logged in as ${state.playerName}`;
+  } catch (err) {
+    alert('Login failed: '+err.message);
+  }
+};
+
+// Generate Match ID
+function generateMatchId(length=6) {
+  const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let str='';
+  for(let i=0;i<length;i++) str+=chars[Math.floor(Math.random()*chars.length)];
+  return str;
+}
+
+// Create/Join Match
+btnCreateMatch.onclick = async () => {
+  const id = generateMatchId();
+  state.matchId = id;
+  generatedMatchId.textContent = `Match ID: ${id}`;
+  matchStatus.textContent = 'Waiting for opponent...';
+  gameSection.hidden = false;
+  matchSection.hidden = true;
+
+  const matchRef = db.ref('matches/' + id);
+  state.matchRef = matchRef;
+
+  await matchRef.set({
+    players:{[state.playerId]:{name:state.playerName,score:0,choice:null}},
+    createdAt:Date.now()
   });
-</script>
 
+  matchRef.on('value', snap => handleMatchUpdate(snap.val()));
+  renderChoices();
+};
+
+btnJoinMatch.onclick = async () => {
+  const id = matchIdInput.value.trim().toUpperCase();
+  if(!id) return alert('Enter a valid Match ID');
+  state.matchId = id;
+  const matchRef = db.ref('matches/' + id);
+  const snapshot = await matchRef.get();
+  if(!snapshot.exists()) return alert('Match not found');
+
+  state.matchRef = matchRef;
+  matchSection.hidden = true;
+  gameSection.hidden = false;
+
+  await matchRef.child('players/' + state.playerId).set({name:state.playerName,score:0,choice:null});
+  matchRef.on('value', snap => handleMatchUpdate(snap.val()));
+  renderChoices();
+};
+
+// Choices
+function renderChoices() {
+  choicesDiv.innerHTML='';
+  state.choices.forEach(key=>{
+    const item=items[key];
+    const btn=document.createElement('button');
+    btn.className='choice';
+    btn.textContent=item.icon;
+    const label=document.createElement('div');
+    label.className='choice-label';
+    label.textContent=item.name;
+    btn.appendChild(label);
+    btn.onclick=()=>makeChoice(key);
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function makeChoice(key){
+  if(!state.matchRef) return;
+  state.playerChoice=key;
+  disableChoices(true);
+  state.matchRef.child('players/'+state.playerId+'/choice').set(key);
+  statusText.textContent='Choice made! Waiting for opponent...';
+}
+
+// Match Update
+function handleMatchUpdate(data){
+  if(!data) return;
+  const players = data.players||{};
+  let opponentId = Object.keys(players).find(pid=>pid!==state.playerId);
+
+  if(opponentId){
+    opponentNameLabel.textContent = players[opponentId].name;
+    state.opponentScore = players[opponentId].score||0;
+    opponentScoreEl.textContent = state.opponentScore;
+  }
+
+  const playerData = players[state.playerId];
+  const opponentData = opponentId?players[opponentId]:null;
+  if(playerData && opponentData){
+    if(playerData.choice && opponentData.choice) resolveRound(playerData.choice, opponentData.choice);
+  }
+}
+
+// Battle Logic
+function getResult(p1,p2){
+  if(p1===p2) return 'tie';
+  return items[p1].beats.includes(p2)?'win':'lose';
+}
+
+function resolveRound(playerKey,opponentKey){
+  const result = getResult(playerKey,opponentKey);
+  const playerCardFront = playerCardInner.querySelector('.card-front');
+  const opponentCardFront = opponentCardInner.querySelector('.card-front');
+
+  playerCardFront.textContent = items[playerKey].icon;
+  opponentCardFront.textContent = items[opponentKey].icon;
+
+  if(result==='win'){statusText.textContent='You Win!';state.playerScore++;playerScoreEl.textContent=state.playerScore;}
+  else if(result==='lose'){statusText.textContent='You Lose!';state.opponentScore++;opponentScoreEl.textContent=state.opponentScore;}
+  else{statusText.textContent='Tie!';}
+
+  setTimeout(()=>{
+    if(state.matchRef) state.matchRef.child('players/'+state.playerId+'/choice').set(null);
+    disableChoices(false);
+    statusText.textContent='Make your choice!';
+    playerCardFront.textContent='?';
+    opponentCardFront.textContent='?';
+  },2000);
+}
+
+function disableChoices(disabled){
+  Array.from(choicesDiv.children).forEach(btn=>btn.disabled=disabled);
+}
+
+// Leave Match
+btnLeaveMatch.onclick=()=>{
+  if(!state.matchRef) return;
+  state.matchRef.child('players/'+state.playerId).remove();
+  state.matchRef=null; state.matchId=null;
+  gameSection.hidden=true; matchSection.hidden=false;
+  matchStatus.textContent='';
+  playerCardInner.querySelector('.card-front').textContent='?';
+  opponentCardInner.querySelector('.card-front').textContent='?';
+  playerScoreEl.textContent='0'; opponentScoreEl.textContent='0';
+};
+
+</script>
 </body>
 </html>
