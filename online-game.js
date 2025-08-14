@@ -299,7 +299,8 @@ function disableChoices(disabled){
 
 function makeChoice(key){
   if (!state.matchRef) return;
-  state.playerChoice=key;
+  if(state.playerChoice) return; // prevent double click
+  state.playerChoice = key;
   disableChoices(true);
   state.matchRef.child('players/' + state.playerId + '/choice').set(key);
   if (statusText) statusText.textContent='Choice made! Waiting for opponent...';
@@ -366,17 +367,17 @@ async function resolveRound(playerKey, opponentKey, players, opponentId) {
   playerScoreEl.textContent = state.playerScore;
   opponentScoreEl.textContent = state.opponentScore;
   updateTempCoinsDisplay();
-
   confettiBurst(result);
 
-  state.playerChoice = null;
-  state.opponentChoice = null;
   state.matchRef.child('players/' + state.playerId + '/choice').set(null);
   state.matchRef.child('players/' + opponentId + '/choice').set(null);
 
   setTimeout(()=>{
-    disableChoices(false);
+    state.playerChoice = null;
+    state.opponentChoice = null;
     resetBattleCards();
+    renderChoices();   // rebuild buttons for next round
+    disableChoices(false); // re-enable for next round
   },2000);
 }
 
