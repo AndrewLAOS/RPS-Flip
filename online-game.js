@@ -30,6 +30,9 @@ const playerCoinsEl = $('#player-coins');
 const inventoryList = $('#inventory-list');
 const confettiWrap = $('#confetti-wrap');
 
+const shopListDiv = $('#shop-list');
+const btnShuffleShop = $('#btnShuffleShop');
+
 const btnBackToBot = $('#btnBackToBot');
 const btnMatchupChart = $('#btnMatchupChart');
 
@@ -44,9 +47,18 @@ let state = {
   playerScore: 0,
   opponentScore: 0,
   coins: 0,
-  inventory: { rock: { owned: true, level: 1 }, paper: { owned: true, level: 1 }, scissors: { owned: true, level: 1 } },
-  choices: new Set(['rock', 'paper', 'scissors'])
+  inventory: {
+    rock: { owned: true, level: 1 },
+    paper: { owned: true, level: 1 },
+    scissors: { owned: true, level: 1 }
+  },
+  choices: new Set(['rock','paper','scissors'])
 };
+
+// ---------------------- Shop State ----------------------
+let shopItems = [];
+const SHOP_SIZE = 5;
+const SHUFFLE_COST = 10;
 
 // ---------------------- Firebase ----------------------
 const firebaseConfig = {
@@ -76,6 +88,7 @@ btnGoogleLogin.onclick = async () => {
     matchSection.hidden = false;
     loginStatus.textContent = `Logged in as ${state.playerName}`;
     await loadPlayerData();
+    shuffleShop();
   } catch (err) {
     alert('Login failed: ' + err.message);
   }
@@ -93,6 +106,7 @@ async function loadPlayerData() {
     state.coins = 0;
   }
   renderInventory();
+  renderShop();
   updateCoinsDisplay();
 }
 
@@ -107,55 +121,97 @@ function updateCoinsDisplay() {
   playerCoinsEl.textContent = state.coins;
 }
 
-// ---------------------- Inventory Rendering ----------------------
+// ---------------------- Inventory ----------------------
 function renderInventory() {
   inventoryList.innerHTML = '';
-  Array.from(state.choices).forEach(key => {
-    const item = items[key];
+  Object.keys(items).forEach(key => {
     const invItem = state.inventory[key] || { owned: false, level: 0 };
+    if (!invItem.owned) return;
+
+    const item = items[key];
     const div = document.createElement('div');
-    div.className = `inventory-item rarity-${item.rarity} ${invItem.owned ? 'owned' : ''}`;
+    div.className = `inventory-item rarity-${item.rarity}`;
     div.innerHTML = `
       <div class="icon">${item.icon}</div>
       <div class="info">
         <div class="name">${item.name}</div>
         <div class="level">Lvl ${invItem.level}</div>
       </div>
-      <button>${invItem.owned ? 'Upgrade' : 'Buy'}</button>
+      <button>Upgrade</button>
     `;
     const btn = div.querySelector('button');
-    btn.onclick = () => handleInventoryClick(key, invItem);
+    btn.onclick = () => upgradeItem(key, invItem);
     inventoryList.appendChild(div);
   });
 }
 
-function handleInventoryClick(key, invItem) {
-  const item = items[key];
-  if (invItem.owned) {
-    const cost = 50 * (invItem.level + 1);
-    if (state.coins >= cost) {
-      state.coins -= cost;
-      invItem.level++;
-      state.inventory[key] = invItem;
-      savePlayerData();
-      renderInventory();
-      updateCoinsDisplay();
-    } else alert('Not enough coins to upgrade.');
-  } else {
-    const cost = item.cost || 100;
-    if (state.coins >= cost) {
-      state.coins -= cost;
-      invItem.owned = true;
-      invItem.level = 1;
-      state.inventory[key] = invItem;
-      state.choices.add(key);
-      savePlayerData();
-      renderInventory();
-      renderChoices(); // add newly bought item to battle choices
-      updateCoinsDisplay();
-    } else alert('Not enough coins to buy.');
-  }
+function upgradeItem(key, invItem) {
+  const cost = 50 * (invItem.level + 1);
+  if (state.coins >= cost) {
+    state.coins -= cost;
+    invItem.level++;
+    state.inventory[key] = invItem;
+    savePlayerData();
+    renderInventory();
+    renderChoices();
+    renderShop();
+    updateCoinsDisplay();
+  } else alert('Not enough coins to upgrade.');
 }
+
+// ---------------------- Shop ----------------------
+function shuffleShop() {
+  shopItems = [];
+  const availableKeys = itemKeys.filter(k => !state.inventory[k]);
+  while (shopItems.length < SHOP_SIZE && availableKeys.length > 0) {
+    const idx = Math.floor(Math.random() * availableKeys.length);
+    shopItems.push(availableKeys.splice(idx,1)[0]);
+  }
+  renderShop();
+}
+
+function renderShop() {
+  shopListDiv.innerHTML = '';
+  shopItems.forEach(key => {
+    const item = items[key];
+    const div = document.createElement('div');
+    div.className = `shop-item rarity-${item.rarity}`;
+    div.innerHTML = `
+      <div class="icon">${item.icon}</div>
+      <div class="info">
+        <div class="name">${item.name}</div>
+        <div class="cost">${item.cost || 100} Coins</div>
+      </div>
+      <button>Buy</button>
+    `;
+    const btn = div.querySelector('button');
+    btn.onclick = () => buyItem(key);
+    shopListDiv.appendChild(div);
+  });
+}
+
+function buyItem(key) {
+  const item = items[key];
+  const cost = item.cost || 100;
+  if (state.coins >= cost) {
+    state.coins -= cost;
+    state.inventory[key] = { owned: true, level: 1 };
+    state.choices.add(key); // now available for PvP
+    savePlayerData();
+    renderInventory();
+    renderChoices();
+    shuffleShop();
+    updateCoinsDisplay();
+  } else alert('Not enough coins to buy this item.');
+}
+
+btnShuffleShop.onclick = () => {
+  if (state.coins >= SHUFFLE_COST) {
+    state.coins -= SHUFFLE_COST;
+    shuffleShop();
+    updateCoinsDisplay();
+  } else alert('Not enough coins to shuffle shop.');
+};
 
 // ---------------------- Match ID Generator ----------------------
 function generateMatchId(length = 6) {
@@ -210,11 +266,7 @@ function renderChoices() {
     const item = items[key];
     const btn = document.createElement('button');
     btn.className = 'choice';
-    btn.textContent = item.icon;
-    const label = document.createElement('div');
-    label.className = 'choice-label';
-    label.textContent = item.name;
-    btn.appendChild(label);
+    btn.innerHTML = `<div class="icon">${item.icon}</div><div class="choice-label">${item.name}</div>`;
     btn.onclick = () => makeChoice(key);
     choicesDiv.appendChild(btn);
   });
@@ -324,11 +376,6 @@ function spawnConfetti() {
   }
 }
 
-// ---------------------- Back to Bot & Matchup Chart ----------------------
-btnBackToBot.onclick = () => {
-  window.location.href = 'index.html';
-};
-
-btnMatchupChart.onclick = () => {
-  window.open('matchchart.html', '_blank');
-};
+// ---------------------- Navigation ----------------------
+btnBackToBot.onclick = () => window.location.href = 'index.html';
+btnMatchupChart.onclick = () => window.open('matchchart.html', '_blank');
