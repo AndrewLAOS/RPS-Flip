@@ -4,22 +4,6 @@
  * Version: 1.0.0
  */
 
-// 1️⃣ Inject Content Security Policy
-(function() {
-    const meta = document.createElement('meta');
-    meta.httpEquiv = 'Content-Security-Policy';
-    meta.content = `
-        default-src 'self';
-        script-src 'self' https://cdnjs.cloudflare.com;
-        style-src 'self' https://fonts.googleapis.com 'unsafe-inline';
-        font-src 'self' https://fonts.gstatic.com;
-        img-src 'self' data:;
-        connect-src 'self';
-        frame-ancestors 'none';
-        upgrade-insecure-requests;
-    `.replace(/\s+/g, ' ').trim();
-    document.head.appendChild(meta);
-})();
 
 // 3️⃣ Force HTTPS
 (function() {
