@@ -1,9 +1,9 @@
 // online-game.js
 import { items, itemKeys } from './items.js';
 
-const $ = (sel, root = document) => root.querySelector(sel);
+const $ = (selector, root = document) => root.querySelector(selector);
 
-// ---------------------- DOM ----------------------
+// ---------------------- DOM Elements ----------------------
 const loginSection = $('#login-section');
 const matchSection = $('#match-section');
 const gameSection = $('#game-section');
@@ -25,25 +25,27 @@ const opponentScoreEl = $('#opponent-score');
 
 const choicesDiv = $('#choices');
 const statusText = $('#status-text');
-
 const btnLeaveMatch = $('#btnLeaveMatch');
 const playerCoinsEl = $('#player-coins');
 const inventoryList = $('#inventory-list');
 const confettiWrap = $('#confetti-wrap');
+
+const btnBackToBot = $('#btnBackToBot');
+const btnMatchupChart = $('#btnMatchupChart');
 
 // ---------------------- Game State ----------------------
 let state = {
   playerId: null,
   playerName: '',
   matchId: null,
-  choices: new Set(itemKeys),
+  matchRef: null,
   playerChoice: null,
   opponentChoice: null,
   playerScore: 0,
   opponentScore: 0,
-  matchRef: null,
   coins: 0,
-  inventory: {}, // key: {level, owned}
+  inventory: {},
+  choices: new Set(itemKeys)
 };
 
 // ---------------------- Firebase ----------------------
@@ -73,13 +75,13 @@ btnGoogleLogin.onclick = async () => {
     loginSection.hidden = true;
     matchSection.hidden = false;
     loginStatus.textContent = `Logged in as ${state.playerName}`;
-    loadPlayerData();
+    await loadPlayerData();
   } catch (err) {
     alert('Login failed: ' + err.message);
   }
 };
 
-// ---------------------- Load Player Data ----------------------
+// ---------------------- Load & Save Player Data ----------------------
 async function loadPlayerData() {
   const snapshot = await db.ref('players/' + state.playerId).get();
   if (snapshot.exists()) {
@@ -94,7 +96,6 @@ async function loadPlayerData() {
   updateCoinsDisplay();
 }
 
-// ---------------------- Save Player Data ----------------------
 function savePlayerData() {
   db.ref('players/' + state.playerId).set({
     coins: state.coins,
@@ -102,54 +103,56 @@ function savePlayerData() {
   });
 }
 
-// ---------------------- Coins & Inventory ----------------------
 function updateCoinsDisplay() {
   playerCoinsEl.textContent = state.coins;
 }
 
+// ---------------------- Inventory Rendering ----------------------
 function renderInventory() {
   inventoryList.innerHTML = '';
   itemKeys.forEach(key => {
     const item = items[key];
     const invItem = state.inventory[key] || { owned: false, level: 0 };
     const div = document.createElement('div');
-    div.className = `shop-item ${invItem.owned ? 'owned' : ''} rarity-${item.rarity}`;
+    div.className = `inventory-item rarity-${item.rarity} ${invItem.owned ? 'owned' : ''}`;
     div.innerHTML = `
       <div class="icon">${item.icon}</div>
       <div class="info">
         <div class="name">${item.name}</div>
-        <div class="rarity">${item.rarity}</div>
-        <div class="level">Level: ${invItem.level}</div>
+        <div class="level">Lvl ${invItem.level}</div>
       </div>
       <button>${invItem.owned ? 'Upgrade' : 'Buy'}</button>
     `;
     const btn = div.querySelector('button');
-    btn.onclick = () => {
-      if (invItem.owned) {
-        const cost = 50 * (invItem.level + 1);
-        if (state.coins >= cost) {
-          state.coins -= cost;
-          invItem.level++;
-          state.inventory[key] = invItem;
-          savePlayerData();
-          renderInventory();
-          updateCoinsDisplay();
-        } else alert('Not enough coins to upgrade.');
-      } else {
-        const cost = item.cost || 100;
-        if (state.coins >= cost) {
-          state.coins -= cost;
-          invItem.owned = true;
-          invItem.level = 1;
-          state.inventory[key] = invItem;
-          savePlayerData();
-          renderInventory();
-          updateCoinsDisplay();
-        } else alert('Not enough coins to buy.');
-      }
-    };
+    btn.onclick = () => handleInventoryClick(key, invItem);
     inventoryList.appendChild(div);
   });
+}
+
+function handleInventoryClick(key, invItem) {
+  const item = items[key];
+  if (invItem.owned) {
+    const cost = 50 * (invItem.level + 1);
+    if (state.coins >= cost) {
+      state.coins -= cost;
+      invItem.level++;
+      state.inventory[key] = invItem;
+      savePlayerData();
+      renderInventory();
+      updateCoinsDisplay();
+    } else alert('Not enough coins to upgrade.');
+  } else {
+    const cost = item.cost || 100;
+    if (state.coins >= cost) {
+      state.coins -= cost;
+      invItem.owned = true;
+      invItem.level = 1;
+      state.inventory[key] = invItem;
+      savePlayerData();
+      renderInventory();
+      updateCoinsDisplay();
+    } else alert('Not enough coins to buy.');
+  }
 }
 
 // ---------------------- Match ID Generator ----------------------
@@ -215,6 +218,11 @@ function renderChoices() {
   });
 }
 
+function disableChoices(disabled) {
+  Array.from(choicesDiv.children).forEach(btn => btn.disabled = disabled);
+}
+
+// ---------------------- Make Choice ----------------------
 function makeChoice(key) {
   if (!state.matchRef) return;
   state.playerChoice = key;
@@ -287,11 +295,6 @@ function resolveRound(playerKey, opponentKey) {
   }, 2000);
 }
 
-// ---------------------- Disable Choices ----------------------
-function disableChoices(disabled) {
-  Array.from(choicesDiv.children).forEach(btn => btn.disabled = disabled);
-}
-
 // ---------------------- Leave Match ----------------------
 btnLeaveMatch.onclick = () => {
   if (!state.matchRef) return;
@@ -312,12 +315,20 @@ function spawnConfetti() {
   for (let i = 0; i < 30; i++) {
     const dot = document.createElement('div');
     dot.className = 'confetti-dot';
-    dot.style.left = Math.random() * 100 + '%';
+    dot.style.left = Math.random() * 100 + 'vw';
     dot.style.backgroundColor = `hsl(${Math.random() * 360}, 80%, 60%)`;
     confettiWrap.appendChild(dot);
-    setTimeout(() => dot.remove(), 3000);
+    setTimeout(() => confettiWrap.removeChild(dot), 3000);
   }
 }
 
-// ---------------------- Initialize ----------------------
-statusText.textContent = 'Sign in to start playing!';
+// ---------------------- Back to Bot & Matchup Chart ----------------------
+btnBackToBot.onclick = () => {
+  gameSection.hidden = true;
+  matchSection.hidden = false;
+  statusText.textContent = '';
+};
+
+btnMatchupChart.onclick = () => {
+  window.open('matchchart.html', '_blank');
+};

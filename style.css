@@ -557,3 +557,91 @@ input[type="range"]::-webkit-slider-thumb {
 
 #inventory-list::-webkit-scrollbar { width: 8px; }
 #inventory-list::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 4px; }
+/* ---------- Match ID Display ---------- */
+#match-id-display {
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--accent-color);
+  margin: 10px 0;
+  text-align: center;
+}
+
+/* ---------- Result Banner ---------- */
+.result-banner {
+  margin-top: 20px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  min-height: 36px;
+  text-align: center;
+}
+
+/* ---------- Top Buttons (Back to Bot & Matchup Chart) ---------- */
+.top-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.top-buttons .btn {
+  background-color: var(--accent-color);
+  color: var(--bg-primary);
+  font-size: 1rem;
+  padding: 8px 16px;
+}
+
+/* ---------- Status Labels (Player / Opponent) ---------- */
+.player-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.player-score {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+/* ---------- Battle VS Area ---------- */
+.vs-area #status-text {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+/* ---------- Inventory Items ---------- */
+.inventory-item {
+  background-color: var(--bg-secondary);
+  padding: 6px 10px;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.inventory-item:hover {
+  background-color: var(--panel-bg);
+}
+
+/* ---------- Buttons Hover / Active Refinements ---------- */
+button:hover {
+  background-color: var(--accent-color-dark);
+  transform: scale(1.02);
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+/* ---------- Mobile Match Section ---------- */
+@media (max-width: 500px) {
+  #match-id-input { width: 100%; margin-bottom: 8px; }
+  .top-buttons { flex-direction: column; gap: 8px; }
+  .arena { flex-direction: column; gap: 20px; }
+  .card-inner { width: 90px; height: 120px; }
+}
