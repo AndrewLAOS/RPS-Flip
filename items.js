@@ -65,7 +65,7 @@ const baseItems = {
   void: {key:"void", name:"Void", icon:icons.void, rarity:"Legendary", cost:125},
 };
 
-// Deterministic beats generator
+// Randomized beats generator
 function generateBeats(itemKey, rarity, itemsObj) {
   const rarities = ["Common","Uncommon","Rare","Epic","Legendary"];
   const currentIndex = rarities.indexOf(rarity);
@@ -75,28 +75,25 @@ function generateBeats(itemKey, rarity, itemsObj) {
     if (key === itemKey) continue;
     const targetIndex = rarities.indexOf(itemsObj[key].rarity);
 
-    // Special rule for Void: only beaten by Clock
+    // Void can only be beaten by Clock
     if (itemsObj[key].key === "void") {
       if (itemKey === "clock") beats.push("void");
       continue;
     }
 
-    // Higher rarities beat lower rarities 80%
-    if (targetIndex < currentIndex) beats.push(key);
+    // Higher rarities beat lower rarities ~80% of the time
+    if (targetIndex < currentIndex && Math.random() < 0.8) beats.push(key);
 
-    // Logical 20% lower-rarity wins
-    else if (targetIndex > currentIndex) {
-      const keysOfHigher = Object.keys(itemsObj).filter(k => rarities.indexOf(itemsObj[k].rarity) > currentIndex);
-      if (keysOfHigher.indexOf(key) % 5 === 0) beats.push(key);
-    }
+    // Lower rarities beat higher rarities ~20% of the time (randomly)
+    if (targetIndex > currentIndex && Math.random() < 0.2) beats.push(key);
   }
 
-  // Classic Rock-Paper-Scissors overrides
+  // Classic RPS overrides
   if (itemKey === "rock") beats.push("scissors");
   if (itemKey === "paper") beats.push("rock");
   if (itemKey === "scissors") beats.push("paper");
 
-  // Logical common-item wins
+  // Logical wins for flavor
   const logicalWins = {
     scissors: ["vine","tide"],
     thorn: ["vine","dagger"],
