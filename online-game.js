@@ -1,8 +1,8 @@
 // online-game.js
-import { items, itemKeys } from './items.js';
+import { items } from './items.js';
 import { animateBattle } from './animations.js';
 
-const $ = (selector, root = document) => root.querySelector(selector);
+const $ = (sel, root = document) => root.querySelector(sel);
 
 // ---------------------- DOM Elements ----------------------
 const loginSection = $('#login-section');
@@ -16,6 +16,7 @@ const btnJoinMatch = $('#btnJoinMatch');
 const matchIdInput = $('#match-id-input');
 const matchStatus = $('#match-status');
 const generatedMatchId = $('#generated-match-id');
+const matchIdDisplay = $('#match-id-display');
 
 const playerCardInner = $('#player-card-inner');
 const opponentCardInner = $('#opponent-card-inner');
@@ -36,6 +37,7 @@ const btnMatchupChart = $('#btnMatchupChart');
 
 const shopList = $('#shop-list');
 const btnToggleShop = $('#btnToggleShop');
+const btnResetInventory = $('#btnResetInventory'); // from your updated HTML
 
 // ---------------------- Game State ----------------------
 let state = {
@@ -53,7 +55,8 @@ let state = {
     paper: { owned: true, level: 1 },
     scissors: { owned: true, level: 1 }
   },
-  choices: new Set(['rock','paper','scissors'])
+  choices: new Set(['rock','paper','scissors']),
+  roundInProgress: false // lock to prevent double-resolve
 };
 
 // ---------------------- Firebase ----------------------
@@ -92,12 +95,13 @@ if (btnGoogleLogin) {
 
 // ---------------------- Load & Save Player Data ----------------------
 async function loadPlayerData() {
+  if (!state.playerId) return;
   const snapshot = await db.ref('players/' + state.playerId).get();
   if (snapshot.exists()) {
     const data = snapshot.val();
-    state.coins = data.coins || 0;
+    state.coins = data.coins ?? 0;
     state.inventory = { ...state.inventory, ...(data.inventory || {}) };
-    Object.keys(state.inventory).forEach(key => state.choices.add(key));
+    Object.keys(state.inventory).forEach(key => { if (state.inventory[key]?.owned) state.choices.add(key); });
   } else {
     state.coins = 0;
   }
@@ -115,12 +119,16 @@ function savePlayerData() {
   });
 }
 
-// ---------------------- Render & Inventory ----------------------
+// ---------------------- UI Renders ----------------------
+function updateCoinsDisplay() {
+  if (playerCoinsEl) playerCoinsEl.textContent = state.coins;
+}
+
 function renderInventory() {
   if (!inventoryList) return;
   inventoryList.innerHTML = '';
   Object.keys(items).forEach(key => {
-    const invItem = state.inventory[key] || { owned: key==='rock'||key==='paper'||key==='scissors', level:1 };
+    const invItem = state.inventory[key] || { owned: (key==='rock'||key==='paper'||key==='scissors'), level: 1 };
     if (!invItem.owned) return;
     const item = items[key];
     const div = document.createElement('div');
@@ -141,7 +149,7 @@ function renderShop() {
   shopList.innerHTML = '';
   Object.keys(items).forEach(key => {
     const item = items[key];
-    const invItem = state.inventory[key] || { owned: false, level:1 };
+    const invItem = state.inventory[key] || { owned: false, level: 1 };
     const div = document.createElement('div');
     div.className = `shop-item rarity-${item.rarity} ${invItem.owned ? 'owned' : ''}`;
     div.innerHTML = `
@@ -156,6 +164,7 @@ function renderShop() {
     `;
     const btn = div.querySelector('button');
     const purchasedText = div.querySelector('.purchased-text');
+
     btn.onclick = () => {
       if (invItem.owned) {
         const cost = 50 * (invItem.level + 1);
@@ -176,7 +185,7 @@ function renderShop() {
           invItem.level = 1;
           state.inventory[key] = invItem;
           state.choices.add(key);
-          if(purchasedText) purchasedText.style.display='block';
+          if (purchasedText) purchasedText.style.display = 'block';
           savePlayerData();
           renderShop();
           renderChoices();
@@ -188,10 +197,10 @@ function renderShop() {
   });
 }
 
-// Toggle Shop Visibility
 if (btnToggleShop) {
   btnToggleShop.onclick = () => {
-    if(shopList) shopList.parentNode.hidden = !shopList.parentNode.hidden;
+    const panel = document.getElementById('shop-panel');
+    if (panel) panel.hidden = !panel.hidden;
   };
 }
 
@@ -211,154 +220,176 @@ function renderChoices() {
 
 function disableChoices(disabled) {
   if (!choicesDiv) return;
-  Array.from(choicesDiv.children).forEach(btn => btn.disabled = disabled);
+  Array.from(choicesDiv.children).forEach(btn => { btn.disabled = disabled; });
 }
 
-// ---------------------- PvP Choice ----------------------
+// ---------------------- Choice & Match Updates ----------------------
 function makeChoice(key) {
-  if (!state.matchRef || state.playerChoice) return;
+  if (!state.matchRef) return;
+  if (state.roundInProgress) return;      // prevent spam during animations
+  if (state.playerChoice) return;         // already picked this round
   state.playerChoice = key;
   disableChoices(true);
   state.matchRef.child('players/' + state.playerId + '/choice').set(key);
   if (statusText) statusText.textContent = 'Choice made! Waiting for opponent...';
 }
 
-// ---------------------- Match Updates ----------------------
 function handleMatchUpdate(data) {
-  if(!data) return;
-  const players = data.players||{};
-  const opponentId = Object.keys(players).find(pid=>pid!==state.playerId);
+  if (!data) return;
+  const players = data.players || {};
+  const opponentId = Object.keys(players).find(pid => pid !== state.playerId);
 
-  if(opponentId){
-    if(opponentNameLabel) opponentNameLabel.textContent = players[opponentId].name;
-    state.opponentScore = players[opponentId].score||0;
-    if(opponentScoreEl) opponentScoreEl.textContent = state.opponentScore;
-    if(players[opponentId].choice===null && matchStatus) matchStatus.textContent='Opponent joined! Make your choice!';
+  // Opponent labels and score
+  if (opponentId) {
+    if (opponentNameLabel) opponentNameLabel.textContent = players[opponentId]?.name || 'Opponent';
+    state.opponentScore = players[opponentId]?.score || 0;
+    if (opponentScoreEl) opponentScoreEl.textContent = state.opponentScore;
+    if (players[opponentId]?.choice === null && matchStatus) {
+      matchStatus.textContent = 'Opponent joined! Make your choice!';
+    }
   }
 
   const playerData = players[state.playerId];
   const opponentData = opponentId ? players[opponentId] : null;
 
-  if(playerData && opponentData){
-    if(playerData.choice && opponentData.choice) resolveRound(playerData.choice, opponentData.choice, players, opponentId);
+  // Start round when both have choices and no round is in progress
+  if (playerData && opponentData && playerData.choice && opponentData.choice && !state.roundInProgress) {
+    state.roundInProgress = true;
+    resolveRound(playerData.choice, opponentData.choice, opponentId).finally(() => {
+      state.roundInProgress = false;
+    });
   }
 }
 
-// ---------------------- PvP Battle Logic ----------------------
-function getResult(p1,p2){
-  if(p1===p2) return 'tie';
+// ---------------------- Battle Logic ----------------------
+function getResult(p1, p2) {
+  if (p1 === p2) return 'tie';
   return items[p1].beats.includes(p2) ? 'win' : 'lose';
 }
 
-async function resolveRound(playerKey, opponentKey, players, opponentId) {
+async function resolveRound(playerKey, opponentKey, opponentId) {
   const playerCard = playerCardInner;
   const opponentCard = opponentCardInner;
 
+  // Flip both cards to show selected icons/names
   await Promise.all([
     animateFlip(playerCard, items[playerKey].icon, items[playerKey].name),
     animateFlip(opponentCard, items[opponentKey].icon, items[opponentKey].name),
   ]);
 
+  // Cinematic battle
   await animateBattle(playerCard, playerKey, opponentCard, opponentKey);
 
+  // Result & coin math
   const result = getResult(playerKey, opponentKey);
   const rarityValues = { Common:1, Uncommon:2, Rare:3, Epic:4, Legendary:5 };
   const baseWin = 5;
   const baseLose = 2;
   const playerRarity = rarityValues[items[playerKey].rarity] || 1;
 
-  if(result==='win'){
+  if (result === 'win') {
     const coinsEarned = baseWin * playerRarity;
     state.coins += coinsEarned;
     state.playerScore++;
-    if(statusText) statusText.textContent = `You Win! +${coinsEarned} 🪙`;
-  } else if(result==='lose'){
+    if (statusText) statusText.textContent = `You Win! +${coinsEarned} 🪙`;
+  } else if (result === 'lose') {
     const coinsLost = baseLose * playerRarity;
     state.coins = Math.max(0, state.coins - coinsLost);
     state.opponentScore++;
-    if(statusText) statusText.textContent = `You Lose! -${coinsLost} 🪙`;
+    if (statusText) statusText.textContent = `You Lose! -${coinsLost} 🪙`;
   } else {
-    if(statusText) statusText.textContent = 'Tie!';
+    if (statusText) statusText.textContent = 'Tie!';
   }
 
-  playerScoreEl.textContent = state.playerScore;
-  opponentScoreEl.textContent = state.opponentScore;
+  if (playerScoreEl) playerScoreEl.textContent = state.playerScore;
+  if (opponentScoreEl) opponentScoreEl.textContent = state.opponentScore;
   updateCoinsDisplay();
-
+  savePlayerData();
   confettiBurst(result);
 
-  // Reset choices and enable buttons
-  state.playerChoice = null;
-  state.opponentChoice = null;
-  if(state.matchRef){
+  // Clear choices in DB for next round (don’t depend on opponent write succeeding)
+  if (state.matchRef) {
     state.matchRef.child('players/' + state.playerId + '/choice').set(null);
-    if(opponentId) state.matchRef.child('players/' + opponentId + '/choice').set(null);
+    if (opponentId) state.matchRef.child('players/' + opponentId + '/choice').set(null);
   }
 
-  resetBattleCards();
-  renderChoices();
-  disableChoices(false);
+  // Local round reset after animations
+  state.playerChoice = null;
+  state.opponentChoice = null;
+
+  // Let the flair breathe, then reset UI & re-enable
+  setTimeout(() => {
+    resetBattleCards();
+    renderChoices();
+    disableChoices(false);
+  }, 300); // small delay so it feels snappy; animations already awaited
 }
 
 // ---------------------- Card Flip Animation ----------------------
-async function animateFlip(cardEl, icon, name){
-  if(!cardEl) return;
+async function animateFlip(cardEl, icon, name) {
+  if (!cardEl) return;
   const iconEl = cardEl.querySelector('.card-front') || cardEl.querySelector('.icon');
   const nameEl = cardEl.querySelector('.card-back') || cardEl.querySelector('.small.muted');
-  await cardEl.animate([{transform:'rotateY(0deg)'},{transform:'rotateY(90deg)'}],{duration:200}).finished;
-  if(iconEl) iconEl.textContent=icon;
-  if(nameEl) nameEl.textContent=name;
-  await cardEl.animate([{transform:'rotateY(90deg)'},{transform:'rotateY(0deg)'}],{duration:200}).finished;
+  await cardEl.animate(
+    [{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(90deg)' }],
+    { duration: 200 }
+  ).finished;
+  if (iconEl) iconEl.textContent = icon;
+  if (nameEl) nameEl.textContent = name;
+  await cardEl.animate(
+    [{ transform: 'rotateY(90deg)' }, { transform: 'rotateY(0deg)' }],
+    { duration: 200 }
+  ).finished;
 }
 
-function resetBattleCards(){
-  [playerCardInner, opponentCardInner].forEach(card=>{
-    if(!card) return;
+function resetBattleCards() {
+  [playerCardInner, opponentCardInner].forEach(card => {
+    if (!card) return;
     const front = card.querySelector('.card-front');
     const back = card.querySelector('.card-back');
-    if(front) front.textContent='?';
-    if(back) back.textContent='?';
+    if (front) front.textContent = '?';
+    if (back) back.textContent = '?';
   });
 }
 
 // ---------------------- Confetti ----------------------
-function confettiBurst(result){
-  if(!confettiWrap) return;
-  confettiWrap.innerHTML='';
-  if(result==='tie') return;
-  for(let i=0;i<50;i++){
+function confettiBurst(result) {
+  if (!confettiWrap) return;
+  confettiWrap.innerHTML = '';
+  if (result === 'tie') return;
+  for (let i = 0; i < 50; i++) {
     const dot = document.createElement('div');
-    dot.className='confetti-dot';
-    dot.style.left=Math.random()*100+'%';
-    dot.style.backgroundColor=`hsl(${Math.random()*360},100%,70%)`;
-    dot.style.animationDelay=(Math.random()*2)+'s';
+    dot.className = 'confetti-dot';
+    dot.style.left = Math.random() * 100 + '%';
+    dot.style.backgroundColor = `hsl(${Math.random()*360},100%,70%)`;
+    dot.style.animationDelay = (Math.random() * 2) + 's';
     confettiWrap.appendChild(dot);
   }
-  setTimeout(()=>confettiWrap.innerHTML='',3000);
+  setTimeout(() => confettiWrap.innerHTML = '', 3000);
 }
 
-// ---------------------- Coins Display ----------------------
-function updateCoinsDisplay(){
-  if(playerCoinsEl) playerCoinsEl.textContent=state.coins;
-}
-
-// ---------------------- Match ID Generator ----------------------
-function generateMatchId(length=6){
+// ---------------------- Match ID Helpers ----------------------
+function generateMatchId(length = 6) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let str='';
-  for(let i=0;i<length;i++) str+=chars[Math.floor(Math.random()*chars.length)];
+  let str = '';
+  for (let i = 0; i < length; i++) str += chars[Math.floor(Math.random() * chars.length)];
   return str;
+}
+function showMatchId(id) {
+  if (generatedMatchId) generatedMatchId.textContent = id ? `Match ID: ${id}` : '';
+  if (matchIdDisplay) matchIdDisplay.textContent = id ? `Match: ${id}` : '';
 }
 
 // ---------------------- Create / Join Match ----------------------
 if (btnCreateMatch) {
   btnCreateMatch.onclick = async () => {
+    if (!state.playerId) return alert('Please sign in first.');
     const id = generateMatchId();
     state.matchId = id;
-    if (generatedMatchId) generatedMatchId.textContent=`Match ID: ${id}`;
-    if (matchStatus) matchStatus.textContent='Waiting for opponent...';
-    if (gameSection) gameSection.hidden=false;
-    if (matchSection) matchSection.hidden=true;
+    showMatchId(id);
+    if (matchStatus) matchStatus.textContent = 'Waiting for opponent...';
+    if (gameSection) gameSection.hidden = false;
+    if (matchSection) matchSection.hidden = true;
 
     const matchRef = db.ref('matches/' + id);
     state.matchRef = matchRef;
@@ -368,55 +399,70 @@ if (btnCreateMatch) {
       createdAt: Date.now()
     });
 
-    matchRef.on('value', snap=>handleMatchUpdate(snap.val()));
+    matchRef.on('value', snap => handleMatchUpdate(snap.val()));
     renderChoices();
+    disableChoices(false);
+    statusText.textContent = 'Make your choice!';
   };
 }
 
 if (btnJoinMatch) {
   btnJoinMatch.onclick = async () => {
-    const id = matchIdInput.value.trim().toUpperCase();
+    if (!state.playerId) return alert('Please sign in first.');
+    const id = (matchIdInput.value || '').trim().toUpperCase();
     if (!id) return alert('Enter a valid Match ID');
-    state.matchId = id;
+
     const matchRef = db.ref('matches/' + id);
     const snapshot = await matchRef.get();
     if (!snapshot.exists()) return alert('Match not found');
 
+    state.matchId = id;
     state.matchRef = matchRef;
-    if (matchSection) matchSection.hidden=true;
-    if (gameSection) gameSection.hidden=false;
+    if (matchSection) matchSection.hidden = true;
+    if (gameSection) gameSection.hidden = false;
+    showMatchId(id);
 
-    const data = snapshot.val();
-    data.players[state.playerId] = { name: state.playerName, score: 0, choice: null };
-    await matchRef.set(data);
+    // join without clobbering the match object
+    await matchRef.child('players/' + state.playerId).set({ name: state.playerName, score: 0, choice: null });
 
-    matchRef.on('value', snap=>handleMatchUpdate(snap.val()));
+    matchRef.on('value', snap => handleMatchUpdate(snap.val()));
     renderChoices();
+    disableChoices(false);
+    statusText.textContent = 'Make your choice!';
   };
 }
 
 // ---------------------- Leave Match ----------------------
-if(btnLeaveMatch){
-  btnLeaveMatch.onclick = async ()=>{
-    if(state.matchRef){
-      const matchRef = state.matchRef;
-      const snapshot = await matchRef.get();
-      const data = snapshot.val() || {};
-      if(data.players) delete data.players[state.playerId];
-      await matchRef.set(data);
+if (btnLeaveMatch) {
+  btnLeaveMatch.onclick = async () => {
+    if (state.matchRef) {
+      // remove yourself from match
+      await state.matchRef.child('players/' + state.playerId).remove();
       state.matchRef.off();
-      state.matchRef = null;
-      state.matchId = null;
-      if(gameSection) gameSection.hidden=true;
-      if(matchSection) matchSection.hidden=false;
     }
+    // reset local match state
+    state.matchRef = null;
+    state.matchId = null;
+    state.playerChoice = null;
+    state.opponentChoice = null;
+    state.playerScore = 0;
+    state.opponentScore = 0;
+    state.roundInProgress = false;
+
+    showMatchId('');
+    resetBattleCards();
+    renderChoices();
+    disableChoices(false);
+
+    if (gameSection) gameSection.hidden = true;
+    if (matchSection) matchSection.hidden = false;
+    if (generatedMatchId) generatedMatchId.textContent = '';
+    if (statusText) statusText.textContent = '';
   };
 }
 
-
 // ---------------------- Reset Inventory & Coins ----------------------
-const btnResetInventory = document.getElementById('btnResetInventory');
-if(btnResetInventory){
+if (btnResetInventory) {
   btnResetInventory.onclick = () => {
     state.coins = 0;
     state.inventory = {
@@ -433,4 +479,22 @@ if(btnResetInventory){
   };
 }
 
+// ---------------------- Top Buttons ----------------------
+if (btnBackToBot) btnBackToBot.onclick = () => window.location.href = 'index.html';
+if (btnMatchupChart) btnMatchupChart.onclick = () => window.open('matchchart.html', '_blank');
 
+// ---------------------- Init ----------------------
+function init() {
+  if (state.playerId) {
+    loginSection.hidden = true;
+    matchSection.hidden = false;
+    loadPlayerData();
+  }
+  renderInventory();
+  renderChoices();
+  renderShop();
+  updateCoinsDisplay();
+  disableChoices(false);
+  if (statusText) statusText.textContent = 'Waiting...';
+}
+init();
