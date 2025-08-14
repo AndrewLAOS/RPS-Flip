@@ -3,9 +3,9 @@
  */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
 
-/*
- * CSS Custom Properties for easy theming
- */
+/* -------------------------
+   CSS Variables & Theme
+------------------------- */
 :root {
   --bg-primary: #1e1e2e;
   --bg-secondary: #282a36;
@@ -26,19 +26,17 @@
   --spacing: 24px;
 
   /* Rarity Colors */
-  --rarity-common: #b0b0b0; /* Grey */
-  --rarity-uncommon: #50fa7b; /* Green */
-  --rarity-rare: #8be9fd; /* Blue */
-  --rarity-epic: #bd93f9; /* Purple */
-  --rarity-legendary: #ffb86c; /* Orange */
+  --rarity-common: #b0b0b0;
+  --rarity-uncommon: #50fa7b;
+  --rarity-rare: #8be9fd;
+  --rarity-epic: #bd93f9;
+  --rarity-legendary: #ffb86c;
 }
 
-/*
- * Base styles
- */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+/* -------------------------
+   Reset & Base Styles
+------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
 
 html, body {
   margin: 0;
@@ -50,15 +48,8 @@ html, body {
   line-height: 1.6;
 }
 
-a {
-  color: var(--accent-color);
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-a:hover {
-  color: var(--accent-color-dark);
-}
+a { color: var(--accent-color); text-decoration: none; transition: color 0.2s; }
+a:hover { color: var(--accent-color-dark); }
 
 button {
   cursor: pointer;
@@ -73,19 +64,9 @@ button {
   white-space: nowrap;
 }
 
-button:hover {
-  background-color: var(--accent-color-dark);
-}
-
-button:active {
-  transform: scale(0.98);
-}
-
-button:disabled {
-  background-color: var(--border-color);
-  color: var(--text-muted);
-  cursor: not-allowed;
-}
+button:hover { background-color: var(--accent-color-dark); }
+button:active { transform: scale(0.98); }
+button:disabled { background-color: var(--border-color); color: var(--text-muted); cursor: not-allowed; }
 
 input[type="range"] {
   -webkit-appearance: none;
@@ -97,10 +78,8 @@ input[type="range"] {
   opacity: 0.7;
   transition: opacity 0.2s;
 }
-
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  appearance: none;
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -108,84 +87,34 @@ input[type="range"]::-webkit-slider-thumb {
   cursor: pointer;
 }
 
-.small {
-  font-size: 1.2em;
-}
+.small { font-size: 1.2em; }
+.small-muted { font-size: 1.1em; color: var(--text-muted); }
+.muted { color: var(--text-muted); }
+.mono { font-family: var(--font-mono); }
 
-.small-muted {
-  font-size: 1.1em;
-  color: var(--text-muted);
-}
+/* -------------------------
+   Layout
+------------------------- */
+.app { display: flex; min-height: 100vh; gap: var(--spacing); padding: var(--spacing); }
+.sidebar { width: 350px; display: flex; flex-direction: column; gap: var(--spacing); }
+.game-area { flex: 1; display: flex; flex-direction: column; gap: var(--spacing); }
 
-.muted {
-  color: var(--text-muted);
-}
-
-.mono {
-  font-family: var(--font-mono);
-}
-
-/*
- * Layout
- */
-.app {
-  display: flex;
-  min-height: 100vh;
-  gap: var(--spacing);
-  padding: var(--spacing);
-}
-
-.sidebar {
-  width: 350px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing);
-}
-
+/* -------------------------
+   Navigation
+------------------------- */
 .main-nav {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
+  top: 0; left: 0; width: 100%;
   padding: 12px;
-  background: rgba(var(--bg-primary), 0.8);
+  background: rgba(30,30,46,0.8);
   backdrop-filter: blur(5px);
   z-index: 100;
 }
+.main-nav ul { display: flex; list-style: none; padding: 0; margin: 0; gap: var(--spacing); }
 
-.main-nav ul {
-  display: flex;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  gap: var(--spacing);
-}
-
-.game-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing);
-}
-
-/*
- * Sidebar Components
- */
-.brand {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing);
-  padding-bottom: var(--spacing);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.logo {
-  font-size: 3.5em;
-  font-weight: 700;
-  color: var(--accent-color);
-  font-family: var(--font-mono);
-}
-
+/* -------------------------
+   Panels & Sidebar
+------------------------- */
 .panel {
   background-color: var(--panel-bg);
   padding: var(--spacing);
@@ -193,390 +122,117 @@ input[type="range"]::-webkit-slider-thumb {
   box-shadow: 0 4px 10px var(--shadow-color);
 }
 
-.coins-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing);
-}
+.brand { display: flex; align-items: center; gap: var(--spacing); padding-bottom: var(--spacing); border-bottom: 1px solid var(--border-color); }
+.logo { font-size: 3.5em; font-weight: 700; color: var(--accent-color); font-family: var(--font-mono); }
 
-.coin-display {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
+.coins-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing); }
+.coin-display { display: flex; align-items: center; gap: 16px; }
+.coin-icon { font-size: 2em; }
+.coin-text { font-family: var(--font-mono); font-size: 2em; font-weight: 700; }
 
-.coin-icon {
-  font-size: 2em;
-}
+/* -------------------------
+   Shop
+------------------------- */
+.shop-list { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; height: 300px; overflow-y: auto; }
+.shop-list::-webkit-scrollbar { width: 10px; }
+.shop-list::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 5px; }
+.shop-item { display: flex; align-items: center; gap: 20px; padding: 12px; background-color: var(--bg-primary); border-radius: var(--border-radius); transition: background-color 0.2s; border: 3px solid transparent; }
+.shop-item:hover { background-color: #383a47; }
+.shop-item .icon { font-size: 2.5em; }
+.shop-item .info { flex: 1; }
+.shop-item button { padding: 10px 20px; }
+.shop-item.owned { opacity: 0.6; }
 
-.coin-text {
-  font-family: var(--font-mono);
-  font-size: 2em;
-  font-weight: 700;
-}
+/* Rarity */
+.shop-item.rarity-Common { border-color: var(--rarity-common); }
+.shop-item.rarity-Uncommon { border-color: var(--rarity-uncommon); }
+.shop-item.rarity-Rare { border-color: var(--rarity-rare); }
+.shop-item.rarity-Epic { border-color: var(--rarity-epic); }
+.shop-item.rarity-Legendary { border-color: var(--rarity-legendary); }
 
-.kv {
-  text-align: right;
-  font-size: 1.2em;
-}
+/* -------------------------
+   Game Area
+------------------------- */
+.top-row { display: flex; justify-content: space-around; gap: var(--spacing); }
+.status-panel { flex: 1; background-color: var(--panel-bg); padding: var(--spacing); border-radius: var(--border-radius); text-align: center; box-shadow: 0 4px 10px var(--shadow-color); }
+.status-panel .value { font-size: 3.5em; font-weight: 700; }
 
-.value-pill {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  padding: 6px 12px;
-  border-radius: var(--border-radius);
-  font-weight: 700;
-  font-size: 1.2em;
-}
+.battle-stage { flex: 1; background-color: var(--panel-bg); border-radius: var(--border-radius); padding: var(--spacing); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden; }
 
-.range-wrap {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+.arena { display: flex; justify-content: space-around; width: 100%; max-width: 900px; gap: 60px; }
+.card { width: 280px; height: 350px; background-color: var(--bg-primary); border-radius: var(--border-radius); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--spacing); text-align: center; position: relative; box-shadow: 0 6px 15px var(--shadow-color); transform-style: preserve-3d; transition: transform 0.4s; }
+.card .label { position: absolute; top: 16px; left: 16px; font-weight: 700; font-size: 1.4em; }
+.card .icon { font-size: 7em; transition: transform 0.4s; }
 
-.control {
-  margin-top: var(--spacing);
-}
+.vs-area { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+.vs-bubble { background-color: var(--accent-color); color: var(--bg-primary); border-radius: 50%; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.6em; }
 
-.shop-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 16px;
-  height: 300px;
-  overflow-y: auto;
-}
+.choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: var(--spacing); }
+.choice { width: 80px; height: 80px; font-size: 2rem; display: flex; justify-content: center; align-items: center; flex-direction: column; border-radius: 12px; background: #34495e; transition: 0.3s; position: relative; cursor: pointer; }
+.choice-label { font-size: 0.8rem; margin-top: 5px; color: #fff; }
+.choice:hover { transform: scale(1.1); background: #1abc9c; }
 
-.shop-list::-webkit-scrollbar {
-  width: 10px;
-}
+.result-banner { margin-top: var(--spacing); font-size: 3em; font-weight: 700; text-align: center; min-height: 4em; }
 
-.shop-list::-webkit-scrollbar-thumb {
-  background-color: var(--border-color);
-  border-radius: 5px;
-}
+/* -------------------------
+   Cards for Online PvP
+------------------------- */
+#player-card-inner, #opponent-card-inner { width: 140px; height: 180px; perspective: 1000px; }
+.card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s; cursor: pointer; }
+.card-inner.flipped { transform: rotateY(180deg); }
+.card-front, .card-back { position: absolute; width: 100%; height: 100%; border-radius: var(--border-radius); backface-visibility: hidden; display: flex; justify-content: center; align-items: center; font-size: 3rem; }
+.card-front { background-color: #2c3e50; color: #fff; }
+.card-back { background-color: #2980b9; color: #fff; transform: rotateY(180deg); }
+.player-name { margin-top: 8px; font-weight: bold; font-size: 1.1rem; }
+.player-score { font-size: 1rem; color: #ffd700; margin-top: 4px; }
 
-.shop-item {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 12px;
-  background-color: var(--bg-primary);
-  border-radius: var(--border-radius);
-  transition: background-color 0.2s;
-  border: 3px solid transparent;
-}
+/* -------------------------
+   Match & Auth
+------------------------- */
+#match-section { text-align: center; margin-top: 40px; }
+#generated-match-id { font-size: 1.5rem; font-weight: bold; color: var(--accent-color); margin: 10px 0; }
+#match-status { margin-top: 10px; font-size: 1.2rem; color: var(--text-muted); }
 
-.shop-item:hover {
-  background-color: #383a47;
-}
+#sign-in-btn { background-color: #4b6cb7; color: #fff; padding: 12px 28px; border-radius: var(--border-radius); font-weight: 700; transition: 0.3s; }
+#sign-in-btn:hover { background-color: #182848; transform: translateY(-2px); }
+#sign-in-btn:disabled { background-color: #555; cursor: not-allowed; }
 
-.shop-item .icon {
-  font-size: 2.5em;
-  line-height: 1;
-}
+/* -------------------------
+   Status & Loader
+------------------------- */
+#status-text { margin-top: 20px; font-size: 1.2rem; min-height: 24px; text-align: center; }
+.win-text { color: var(--win-color); font-weight: bold; }
+.lose-text { color: var(--lose-color); font-weight: bold; }
+.tie-text { color: var(--tie-color); font-weight: bold; }
 
-.shop-item .info {
-  flex: 1;
-}
+#loading-spinner { border: 6px solid #f3f3f3; border-top: 6px solid var(--accent-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; display: none; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-.shop-item button {
-  padding: 10px 20px;
-}
+/* -------------------------
+   Confetti
+------------------------- */
+.confetti-wrap { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.confetti-dot { position: absolute; width: 12px; height: 12px; background: var(--accent-color); border-radius: 50%; animation: fall 3s ease-in forwards; opacity: 0; }
+@keyframes fall { 0% { transform: translateY(-100px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
 
-.shop-item.owned {
-  opacity: 0.6;
-}
+/* -------------------------
+   Footer
+------------------------- */
+.footer { display: flex; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: var(--spacing); font-size: 0.8em; color: var(--text-muted); }
 
-/* Rarity-specific styles for the shop items */
-.shop-item.rarity-Common {
-  border-color: var(--rarity-common);
-}
-.shop-item.rarity-Common .rarity {
-  color: var(--rarity-common);
-}
-
-.shop-item.rarity-Uncommon {
-  border-color: var(--rarity-uncommon);
-}
-.shop-item.rarity-Uncommon .rarity {
-  color: var(--rarity-uncommon);
-}
-
-.shop-item.rarity-Rare {
-  border-color: var(--rarity-rare);
-}
-.shop-item.rarity-Rare .rarity {
-  color: var(--rarity-rare);
-}
-
-.shop-item.rarity-Epic {
-  border-color: var(--rarity-epic);
-}
-.shop-item.rarity-Epic .rarity {
-  color: var(--rarity-epic);
-}
-
-.shop-item.rarity-Legendary {
-  border-color: var(--rarity-legendary);
-}
-.shop-item.rarity-Legendary .rarity {
-  color: var(--rarity-legendary);
-}
-
-.footer {
-  display: flex;
-  justify-content: space-between;
-  border-top: 1px solid var(--border-color);
-  padding-top: var(--spacing);
-  font-size: 0.8em;
-  color: var(--text-muted);
-}
-
-/*
- * Game Area Components
- */
-.top-row {
-  display: flex;
-  justify-content: space-around;
-  gap: var(--spacing);
-}
-
-.status-panel {
-  flex: 1;
-  background-color: var(--panel-bg);
-  padding: var(--spacing);
-  border-radius: var(--border-radius);
-  text-align: center;
-  box-shadow: 0 4px 10px var(--shadow-color);
-}
-
-.status-panel .value {
-  font-size: 3.5em;
-  font-weight: 700;
-}
-
-.battle-stage {
-  flex: 1;
-  background-color: var(--panel-bg);
-  border-radius: var(--border-radius);
-  padding: var(--spacing);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.arena {
-  display: flex;
-  justify-content: space-around;
-  width: 100%;
-  max-width: 900px;
-  gap: 60px;
-}
-
-.card {
-  width: 280px;
-  height: 350px;
-  background-color: var(--bg-primary);
-  border-radius: var(--border-radius);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing);
-  text-align: center;
-  position: relative;
-  box-shadow: 0 6px 15px var(--shadow-color);
-  transform-style: preserve-3d;
-  transition: transform 0.4s;
-}
-
-.card .label {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  font-weight: 700;
-  font-size: 1.4em;
-}
-
-.card .icon {
-  font-size: 7em;
-  transition: transform 0.4s;
-}
-
-.vs-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-}
-
-.vs-bubble {
-  background-color: var(--accent-color);
-  color: var(--bg-primary);
-  border-radius: 50%;
-  width: 70px;
-  height: 70px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1.6em;
-}
-
-.choices {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px;
-  margin-top: var(--spacing);
-}
-
-.choice-btn {
-  padding: 20px 40px;
-  font-size: 1.6em;
-}
-
-.result-banner {
-  margin-top: var(--spacing);
-  font-size: 3em;
-  font-weight: 700;
-  text-align: center;
-  min-height: 4em;
-}
-
-/*
- * Confetti animation
- */
-.confetti-wrap {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 9999;
-}
-
-.confetti-dot {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  background: var(--accent-color);
-  border-radius: 50%;
-  animation: fall 3s ease-in forwards;
-  opacity: 0;
-}
-
-@keyframes fall {
-  0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-}
-
-/*
- * Match / Multiplayer Inputs
- */
-#btnCreateMatch, #btnJoinMatch, #btnLeaveMatch {
-  margin: 10px;
-  font-size: 1.1rem;
-}
-
-#match-id-input {
-  padding: 10px;
-  font-size: 1rem;
-  border-radius: 8px;
-  border: 2px solid var(--border-color);
-  text-align: center;
-  width: 180px;
-}
-
-/* Coins & Inventory */
-#player-coins {
-  font-weight: bold;
-  font-size: 1.5rem;
-  color: var(--accent-color);
-}
-
-#inventory-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  max-height: 220px;
-  overflow-y: auto;
-  padding: 5px;
-}
-
-#inventory-list::-webkit-scrollbar {
-  width: 8px;
-}
-
-#inventory-list::-webkit-scrollbar-thumb {
-  background-color: var(--border-color);
-  border-radius: 4px;
-}
-
-/*
- * Media queries for responsiveness
- */
+/* -------------------------
+   Responsive
+------------------------- */
 @media (max-width: 768px) {
-  .app {
-    flex-direction: column;
-    padding: 10px;
-  }
-  .sidebar {
-    width: 100%;
-  }
-  .arena {
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing);
-  }
-  .card {
-    width: 90%;
-    height: auto;
-    padding: var(--spacing);
-  }
-  .vs-area {
-    transform: rotate(90deg);
-  }
+  .app { flex-direction: column; padding: 10px; }
+  .sidebar { width: 100%; }
+  .arena { flex-direction: column; align-items: center; gap: var(--spacing); }
+  .card { width: 90%; height: auto; padding: var(--spacing); }
 }
 
 @media (max-width: 600px) {
-  .player-area {
-    gap: 30px;
-  }
-  .card-inner {
-    width: 100px;
-    height: 140px;
-  }
-  .choice {
-    width: 60px;
-    height: 60px;
-    font-size: 1.5rem;
-  }
-  #match-section {
-    text-align: center;
-    margin-top: 40px;
-  }
-  #generated-match-id {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--accent-color);
-    margin: 10px 0;
-  }
-  #match-status {
-    margin-top: 10px;
-    font-size: 1.2rem;
-    color: var(--text-muted);
-  }
-  #player-card-inner, #opponent-card-inner {
-    width: 100px;
-    height: 140px;
-  }
+  .player-area { gap: 30px; }
+  .card-inner { width: 100px; height: 140px; }
+  .choice { width: 60px; height: 60px; font-size: 1.5rem; }
+  #player-card-inner, #opponent-card-inner { width: 100px; height: 140px; }
 }

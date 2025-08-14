@@ -50,11 +50,12 @@ let state = {
 const firebaseConfig = {
   apiKey: "AIzaSyAqmG4OxLp7f1kktoLwicGR4O2SLwqNBk0",
   authDomain: "rps-flip.firebaseapp.com",
+  databaseURL: "https://rps-flip-default-rtdb.firebaseio.com",
   projectId: "rps-flip",
-  storageBucket: "rps-flip.appspot.com",
+  storageBucket: "rps-flip.firebasestorage.app",
   messagingSenderId: "1044307931173",
   appId: "1:1044307931173:web:efa8c8bcf4cd82c1e14fcc",
-  databaseURL: "https://rps-flip-default-rtdb.firebaseio.com"
+  measurementId: "G-57Z3NG9FJN"
 };
 
 firebase.initializeApp(firebaseConfig);
