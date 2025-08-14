@@ -1,152 +1,109 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="security.js"></script>
-<meta charset="utf-8" />
-<title>Ultimate Rock, Paper, Scissors Flip — Online PvP</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<link rel="stylesheet" href="style.css" />
-<script async src="https://rum.cronitor.io/script.js"></script>
-<script>
-  window.cronitor = window.cronitor || function() { (window.cronitor.q = window.cronitor.q || []).push(arguments); };
-  cronitor('config', { clientKey: 'd086b8ed0db3d70befbdfbceb369a4a5' });
-</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPS Flip Online PvP</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="online-game.js" defer></script>
 </head>
 <body>
+  <div class="app">
 
-<nav class="main-nav" role="navigation" aria-label="Main navigation">
-  <ul>
-    <li><a href="index.html">Home</a></li>
-    <li><a href="matchchart.html">Matchup Chart</a></li>
-    <li><a href="online.html" aria-current="page">Online PvP</a></li>
-  </ul>
-</nav>
-
-<div class="app" role="application" aria-label="Ultimate RPS Flip Online Game">
-
-  <!-- Sidebar: Shop & Coins -->
-  <aside class="sidebar" aria-label="Game controls and shop">
-    <div class="brand">
-      <div class="logo">RΨS</div>
-      <div>
-        <h1>Ultimate RPS Flip</h1>
-        <p class="small">Online PvP Edition — curated items & animations</p>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">RPS Flip</div>
       </div>
-    </div>
 
-    <div class="panel coins-panel" role="status" aria-live="polite">
-      <div class="coins-row">
-        <div class="coin-display">
-          <div class="coin-icon">🪙</div>
-          <div>
-            <div class="small muted">Your Balance</div>
-            <div class="coin-text" id="coins-display">0</div>
+      <!-- Login / Player Info -->
+      <div class="panel" id="login-section">
+        <h2>Sign In</h2>
+        <button id="btnGoogleLogin" class="btn">Sign in with Google</button>
+        <p id="login-status" class="small-muted"></p>
+      </div>
+
+      <!-- Match Section -->
+      <div class="panel" id="match-section" hidden>
+        <h2>Online Matches</h2>
+        <div>
+          <button id="btnCreateMatch" class="btn">Create Match</button>
+          <p id="generated-match-id" class="small-muted"></p>
+        </div>
+        <div>
+          <input type="text" id="match-id-input" placeholder="Enter Match ID">
+          <button id="btnJoinMatch" class="btn">Join Match</button>
+          <p id="match-status" class="small-muted"></p>
+        </div>
+      </div>
+
+      <!-- Coins & Inventory -->
+      <div class="panel">
+        <h2>Coins</h2>
+        <div class="coins-row">
+          <div class="coin-display">
+            <div class="coin-icon">🪙</div>
+            <div id="player-coins" class="coin-text">0</div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div class="small muted">Shop</div>
-        <div class="small muted">Items available</div>
+        <h2>Inventory</h2>
+        <div id="inventory-list" class="shop-list"></div>
       </div>
 
-      <div class="shop-list" id="shop-items" aria-live="polite" aria-atomic="true">
-        <!-- populated by JS -->
+      <div class="panel">
+        <button id="btnLeaveMatch" class="btn">Leave Match</button>
       </div>
+    </aside>
 
-      <div style="display:flex;gap:8px;margin-top:8px;align-items:center;justify-content:space-between">
-        <div class="small-muted">Tip: buy uncommon items to diversify strategy</div>
-        <button id="reset-btn" title="Reset shop">Reset</button>
-      </div>
-    </div>
+    <!-- Main Game Area -->
+    <main class="game-area">
+      <div class="battle-stage" id="game-section" hidden>
 
-    <div class="footer" style="padding-top:8px">
-      <div>© 2025</div>
-      <div class="links"><a href="#" id="help-link">Help</a></div>
-    </div>
-  </aside>
-
-  <!-- Main Game Area -->
-  <main class="game-area" aria-live="polite">
-    <!-- Login & Match Setup -->
-    <section id="login-section">
-      <button id="btnGoogleLogin">Sign in with Google</button>
-      <div id="login-status" class="small-muted">Not logged in</div>
-    </section>
-
-    <section id="match-section" hidden>
-      <div>
-        <button id="btnCreateMatch">Create Match</button>
-        <button id="btnJoinMatch">Join Match</button>
-        <input type="text" id="match-id-input" placeholder="Enter Match ID">
-        <div id="generated-match-id"></div>
-        <div id="match-status"></div>
-      </div>
-    </section>
-
-    <section id="game-section" hidden>
-      <div class="top-row">
-        <div class="status-panel">
-          <div class="label small-muted">Round</div>
-          <div class="value big mono" id="round-counter">0</div>
-        </div>
-        <div class="status-panel">
-          <div class="label small-muted">Streak</div>
-          <div class="value big mono" id="streak-counter">0</div>
-        </div>
-      </div>
-
-      <div class="battle-stage" id="battle-stage" role="region" aria-label="Battle stage">
-        <div class="arena" role="group" aria-label="Arena">
-          <div class="card" id="player-card" aria-live="polite">
-            <div class="label mono" id="player-name-label">You</div>
-            <div class="card-front icon" id="player-card-inner">?</div>
-            <div class="small muted" id="player-item-name">No item</div>
+        <!-- Top Row: Player & Opponent Info -->
+        <div class="top-row">
+          <div class="status-panel">
+            <div id="player-name-label" class="player-name">Player</div>
+            <div id="player-score" class="player-score">0</div>
           </div>
-
           <div class="vs-area">
-            <div class="vs-bubble" aria-hidden="true"><div class="mini">VS</div></div>
-            <div class="small muted">First to win gets bonus</div>
+            <div class="vs-bubble">VS</div>
+            <div id="status-text">Waiting...</div>
           </div>
-
-          <div class="card" id="bot-card" aria-live="polite">
-            <div class="label mono" id="opponent-name-label">Opponent</div>
-            <div class="card-front icon" id="opponent-card-inner">?</div>
-            <div class="small muted" id="bot-item-name">No item</div>
+          <div class="status-panel">
+            <div id="opponent-name-label" class="player-name">Opponent</div>
+            <div id="opponent-score" class="player-score">0</div>
           </div>
         </div>
 
-        <div class="choices" id="battle-choices" role="group" aria-label="Choose your item"></div>
+        <!-- Arena -->
+        <div class="arena">
+          <!-- Player Card -->
+          <div class="player-card">
+            <div id="player-card-inner" class="card-inner">
+              <div class="card-front">?</div>
+              <div class="card-back">?</div>
+            </div>
+            <div class="player-name">You</div>
+          </div>
 
-        <div class="result-banner" id="battle-status" role="status" aria-live="polite"></div>
+          <!-- Opponent Card -->
+          <div class="player-card">
+            <div id="opponent-card-inner" class="card-inner">
+              <div class="card-front">?</div>
+              <div class="card-back">?</div>
+            </div>
+            <div class="player-name">Opponent</div>
+          </div>
+        </div>
+
+        <!-- Choices -->
+        <div id="choices" class="choices"></div>
+
+        <!-- Confetti -->
         <div class="confetti-wrap" id="confetti-wrap"></div>
+
       </div>
-
-      <button id="btnLeaveMatch">Leave Match</button>
-      <div id="status-text" class="small-muted">Waiting for match...</div>
-    </section>
-  </main>
-
-</div>
-
-<footer style="
-  background-color: #111;
-  color: white;
-  text-align: center;
-  padding: 20px;
-  font-size: 1.2em;
-  margin-top: 40px;
-">
-  <p>
-    <a href="privacy.html" style="color: #4dd0e1; text-decoration: none;">Privacy Policy</a>
-    &nbsp;|&nbsp;
-    <a href="terms.html" style="color: #4dd0e1; text-decoration: none;">Terms of Service</a>
-  </p>
-  <p style="font-size: 0.9em; color: #aaa;">&copy; 2025 My Game. All rights reserved.</p>
-</footer>
-
-<script type="module" src="online-game.js"></script>
+    </main>
+  </div>
 </body>
 </html>
