@@ -49,8 +49,15 @@ let state = {
   opponentChoice: null,
   playerScore: 0,
   opponentScore: 0,
-  coins: 0, // Start with 0 coins
+
+  // Permanent coins & inventory
+  coins: 0,
   inventory: { rock: { owned: true, level: 1 }, paper: { owned: true, level: 1 }, scissors: { owned: true, level: 1 } },
+
+  // Temporary match-specific coins & inventory
+  tempCoins: 0,
+  tempInventory: {},
+
   choices: new Set(['rock','paper','scissors'])
 };
 
@@ -112,16 +119,31 @@ function savePlayerData() {
   });
 }
 
-// ---------------------- Render & Inventory ----------------------
-function updateCoinsDisplay() {
-  if (playerCoinsEl) playerCoinsEl.textContent = state.coins;
+// ---------------------- Temporary Match State ----------------------
+function resetTempMatchState() {
+  state.tempCoins = 0;
+  state.tempInventory = {
+    rock: { owned: true, level: 1 },
+    paper: { owned: true, level: 1 },
+    scissors: { owned: true, level: 1 }
+  };
+  state.choices = new Set(['rock','paper','scissors']);
+  renderInventory();
+  renderChoices();
+  updateTempCoinsDisplay();
 }
 
+function updateTempCoinsDisplay() {
+  if (playerCoinsEl) playerCoinsEl.textContent = state.matchId ? state.tempCoins : state.coins;
+}
+
+// ---------------------- Render & Inventory ----------------------
 function renderInventory() {
   if (!inventoryList) return;
   inventoryList.innerHTML = '';
+  const invSource = state.matchId ? state.tempInventory : state.inventory;
   Object.keys(items).forEach(key => {
-    const invItem = state.inventory[key] || { owned: key==='rock'||key==='paper'||key==='scissors', level:1 };
+    const invItem = invSource[key] || { owned: key==='rock'||key==='paper'||key==='scissors', level:1 };
     if (!invItem.owned) return;
     const item = items[key];
     const div = document.createElement('div');
@@ -141,9 +163,10 @@ function renderInventory() {
 function renderShop() {
   if (!shopList) return;
   shopList.innerHTML = '';
+  const invSource = state.matchId ? state.tempInventory : state.inventory;
   Object.keys(items).forEach(key => {
     const item = items[key];
-    const invItem = state.inventory[key] || { owned: false, level: 1 };
+    const invItem = invSource[key] || { owned: false, level: 1 };
     const div = document.createElement('div');
     div.className = `shop-item rarity-${item.rarity} ${invItem.owned ? 'owned' : ''}`;
     div.innerHTML = `
@@ -160,30 +183,31 @@ function renderShop() {
     const purchasedText = div.querySelector('.purchased-text');
 
     btn.onclick = () => {
+      const targetCoins = state.matchId ? 'tempCoins' : 'coins';
       if (invItem.owned) {
         const cost = 50 * (invItem.level + 1);
-        if (state.coins >= cost) {
-          state.coins -= cost;
+        if (state[targetCoins] >= cost) {
+          state[targetCoins] -= cost;
           invItem.level++;
-          state.inventory[key] = invItem;
-          updateCoinsDisplay();
-          savePlayerData();
+          invSource[key] = invItem;
+          if(!state.matchId) savePlayerData();
           renderShop();
           renderChoices();
+          updateTempCoinsDisplay();
         } else alert('Not enough coins to upgrade.');
       } else {
         const cost = item.cost || 100;
-        if (state.coins >= cost) {
-          state.coins -= cost;
+        if (state[targetCoins] >= cost) {
+          state[targetCoins] -= cost;
           invItem.owned = true;
           invItem.level = 1;
-          state.inventory[key] = invItem;
+          invSource[key] = invItem;
           state.choices.add(key);
           if (purchasedText) purchasedText.style.display = 'block';
-          updateCoinsDisplay();
-          savePlayerData();
+          if(!state.matchId) savePlayerData();
           renderShop();
           renderChoices();
+          updateTempCoinsDisplay();
         } else alert('Not enough coins to buy.');
       }
     };
@@ -216,6 +240,8 @@ if (btnCreateMatch) {
     if (gameSection) gameSection.hidden=false;
     if (matchSection) matchSection.hidden=true;
 
+    resetTempMatchState();
+
     const matchRef = db.ref('matches/' + id);
     state.matchRef = matchRef;
 
@@ -241,6 +267,8 @@ if (btnJoinMatch) {
     state.matchRef = matchRef;
     if (matchSection) matchSection.hidden=true;
     if (gameSection) gameSection.hidden=false;
+
+    resetTempMatchState();
 
     await matchRef.child('players/' + state.playerId).set({ name: state.playerName, score:0, choice:null });
     matchRef.on('value', snap=>handleMatchUpdate(snap.val()));
@@ -308,31 +336,27 @@ async function resolveRound(playerKey, opponentKey, players, opponentId) {
   const playerCard = playerCardInner;
   const opponentCard = opponentCardInner;
 
-  // 1. Flip cards
   await Promise.all([
     animateFlip(playerCard, items[playerKey].icon, items[playerKey].name),
     animateFlip(opponentCard, items[opponentKey].icon, items[opponentKey].name),
   ]);
 
-  // 2. Run cinematic battle animation on top
   await animateBattle(playerCard, playerKey, opponentCard, opponentKey);
 
-  // 3. Calculate result & coins
   const result = getResult(playerKey, opponentKey);
   const rarityValues = { Common:1, Uncommon:2, Rare:3, Epic:4, Legendary:5 };
   const baseWin = 5;
   const baseLose = 2;
   const playerRarity = rarityValues[items[playerKey].rarity] || 1;
-  const opponentRarity = rarityValues[items[opponentKey].rarity] || 1;
 
   if(result==='win'){
-    const coinsEarned = baseWin*playerRarity;
-    state.coins += coinsEarned;
+    const coinsEarned = baseWin * playerRarity;
+    state.tempCoins += coinsEarned;
     state.playerScore++;
     if(statusText) statusText.textContent = `You Win! +${coinsEarned} 🪙`;
   } else if(result==='lose'){
-    const coinsLost = baseLose*playerRarity;
-    state.coins = Math.max(0, state.coins - coinsLost);
+    const coinsLost = baseLose * playerRarity;
+    state.tempCoins = Math.max(0, state.tempCoins - coinsLost);
     state.opponentScore++;
     if(statusText) statusText.textContent = `You Lose! -${coinsLost} 🪙`;
   } else {
@@ -341,11 +365,10 @@ async function resolveRound(playerKey, opponentKey, players, opponentId) {
 
   playerScoreEl.textContent = state.playerScore;
   opponentScoreEl.textContent = state.opponentScore;
-  updateCoinsDisplay();
-  savePlayerData();
+  updateTempCoinsDisplay();
+
   confettiBurst(result);
 
-  // Reset choices
   state.playerChoice = null;
   state.opponentChoice = null;
   state.matchRef.child('players/' + state.playerId + '/choice').set(null);
@@ -356,7 +379,6 @@ async function resolveRound(playerKey, opponentKey, players, opponentId) {
     resetBattleCards();
   },2000);
 }
-
 
 // ---------------------- Card Flip Animation ----------------------
 async function animateFlip(cardEl, icon, name){
@@ -402,9 +424,16 @@ if(btnLeaveMatch){
     state.matchRef.child('players/'+state.playerId).remove();
     state.matchRef.off();
     state.matchRef=null;
+
+    state.matchId=null;
+    state.playerChoice=null;
+    state.opponentChoice=null;
+    state.playerScore=0;
+    state.opponentScore=0;
+    resetTempMatchState();
+
     gameSection.hidden=true;
     matchSection.hidden=false;
-    state.matchId=null;
     generatedMatchId.textContent='';
     statusText.textContent='';
     resetBattleCards();

@@ -117,4 +117,7 @@ for (let key in baseItems) {
   items[key].beats = generateBeats(key, baseItems[key].rarity, baseItems);
 }
 
+let tempInventory = { ...baseItems };
+let tempCoins = baseCoins;
+
 export const itemKeys = Object.keys(items);
