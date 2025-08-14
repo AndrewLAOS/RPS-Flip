@@ -186,6 +186,16 @@ function animateBattle(playerCard, playerKey, botCard, botKey) {
         resolve();
       }
     }
+function createCanvas() {
+    const container = document.querySelector('#battle-animation-container');
+    if (!container) {
+        console.error('Battle container not found!');
+        return; // prevent the rest of the animation
+    }
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    // ...
+}
 
     requestAnimationFrame(draw);
   });
