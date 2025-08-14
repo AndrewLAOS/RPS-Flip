@@ -36,20 +36,13 @@
     user-select: none;
     font-size: 1rem;
   }
-  .nav-buttons button:hover {
-    background: #e67600;
-  }
-  .nav-buttons button.active {
-    background: #e52e71;
-    color: white;
-    cursor: default;
-  }
-  .table-wrapper {
-    overflow-x: auto;
-  }
+  .nav-buttons button:hover { background: #e67600; }
+  .nav-buttons button.active { background: #e52e71; color: white; cursor: default; }
+
+  .table-wrapper { overflow-x: auto; }
   table {
     width: 100%;
-    max-width: 960px;
+    max-width: 1000px;
     border-collapse: collapse;
     margin: 0 auto;
     background: #1b2a4a;
@@ -72,31 +65,13 @@
     top: 0;
     z-index: 10;
   }
-  th:first-child {
-    background: #e52e71;
-    color: white;
-  }
-  td.win {
-    background: #34d399;
-    color: #0b1220;
-  }
-  td.lose {
-    background: #fb7185;
-    color: #0b1220;
-  }
-  td.draw {
-    background: #9aa7c7;
-    color: #0b1220;
-  }
-  tbody tr:hover {
-    background: rgba(229, 46, 113, 0.1);
-  }
-  caption {
-    margin-bottom: 10px;
-    font-size: 1.1rem;
-    color: #ffd27f;
-  }
-  /* Tooltip */
+  th:first-child { background: #e52e71; color: white; }
+  td.win { background: #34d399; color: #0b1220; }
+  td.lose { background: #fb7185; color: #0b1220; }
+  td.draw { background: #9aa7c7; color: #0b1220; }
+  tbody tr:hover { background: rgba(229, 46, 113, 0.1); }
+  caption { margin-bottom: 10px; font-size: 1.1rem; color: #ffd27f; }
+
   td[data-tooltip]:hover::after {
     content: attr(data-tooltip);
     position: absolute;
@@ -128,17 +103,16 @@
 <script type="module">
 import { items, itemKeys } from './items.js';
 
-function generateFullMatchupMatrix() {
+function generateMatchupMatrix() {
   const table = document.createElement('table');
-  table.setAttribute('role', 'grid');
 
   const caption = document.createElement('caption');
-  caption.textContent = 'Item matchup results: Win or Lose. Hover cells for power & rarity.';
+  caption.textContent = 'Win / Lose / Draw based on curated beats arrays. Hover cells for cost & rarity.';
   table.appendChild(caption);
 
   // Header
   const headerRow = document.createElement('tr');
-  headerRow.appendChild(document.createElement('th'));
+  headerRow.appendChild(document.createElement('th')); // empty top-left
   itemKeys.forEach(key => {
     const th = document.createElement('th');
     th.scope = 'col';
@@ -161,22 +135,15 @@ function generateFullMatchupMatrix() {
       if (rowKey === colKey) {
         td.textContent = 'Draw';
         td.classList.add('draw');
+      } else if (items[rowKey].beats.includes(colKey) || items[rowKey].beats.includes("all")) {
+        td.textContent = 'Win';
+        td.classList.add('win');
       } else {
-        // Deterministic win/lose: compare power
-        const rowPower = items[rowKey].power || 1;
-        const colPower = items[colKey].power || 1;
-
-        if (rowPower >= colPower) {
-          td.textContent = 'Win';
-          td.classList.add('win');
-        } else {
-          td.textContent = 'Lose';
-          td.classList.add('lose');
-        }
+        td.textContent = 'Lose';
+        td.classList.add('lose');
       }
 
-      // Add tooltip: power and rarity
-      td.setAttribute('data-tooltip', `Power: ${items[colKey].power}, Rarity: ${items[colKey].rarity}`);
+      td.setAttribute('data-tooltip', `Cost: ${items[colKey].cost}, Rarity: ${items[colKey].rarity}`);
       tr.appendChild(td);
     });
 
@@ -186,8 +153,7 @@ function generateFullMatchupMatrix() {
   return table;
 }
 
-const container = document.getElementById('matchup-container');
-container.appendChild(generateFullMatchupMatrix());
+document.getElementById('matchup-container').appendChild(generateMatchupMatrix());
 </script>
 </body>
 </html>
