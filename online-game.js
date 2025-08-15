@@ -259,29 +259,24 @@ function getResult(p1, p2) {
 }
 
 // ---------------------- Updated Resolve Round with Animation Fix ----------------------
+// ---------------------- Updated Resolve Round ----------------------
 async function resolveRound(playerKey, opponentKey, opponentId) {
-  const playerCard = playerCardInner;
-  const opponentCard = opponentCardInner;
-
+  // Use the #battle-animation-container for animations; cards just for icon reference
   state.roundInProgress = true;
   disableChoices(true);
 
-  // --- Ensure battle container is visible for correct canvas size ---
-  const battleContainer = document.getElementById('battle-animation-container');
-  if (battleContainer) battleContainer.style.display = 'block';
-
+  // Animate card flips
   await Promise.all([
-    animateFlip(playerCard, items[playerKey].icon, items[playerKey].name),
-    animateFlip(opponentCard, items[opponentKey].icon, items[opponentKey].name),
+    animateFlip(playerCardInner, items[playerKey].icon, items[playerKey].name),
+    animateFlip(opponentCardInner, items[opponentKey].icon, items[opponentKey].name),
   ]);
 
-  // Small delay to ensure canvas measures correctly
-  await new Promise(r => setTimeout(r, 50));
-
-  await animateBattle(playerCard, playerKey, opponentCard, opponentKey);
-
-  // Hide container after animation
-  if (battleContainer) battleContainer.style.display = 'none';
+  // Animate battle in container
+  try {
+    await animateBattle(playerCardInner, playerKey, opponentCardInner, opponentKey);
+  } catch (err) {
+    console.error('Animation failed:', err);
+  }
 
   const result = getResult(playerKey, opponentKey);
   const rarityValues = { Common:1, Uncommon:2, Rare:3, Epic:4, Legendary:5 };
