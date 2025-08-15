@@ -258,7 +258,7 @@ function getResult(p1, p2) {
   return items[p1].beats.includes(p2) ? 'win' : 'lose';
 }
 
-// ---------------------- Updated Resolve Round ----------------------
+// ---------------------- Updated Resolve Round with Animation Fix ----------------------
 async function resolveRound(playerKey, opponentKey, opponentId) {
   const playerCard = playerCardInner;
   const opponentCard = opponentCardInner;
@@ -266,12 +266,22 @@ async function resolveRound(playerKey, opponentKey, opponentId) {
   state.roundInProgress = true;
   disableChoices(true);
 
+  // --- Ensure battle container is visible for correct canvas size ---
+  const battleContainer = document.getElementById('battle-animation-container');
+  if (battleContainer) battleContainer.style.display = 'block';
+
   await Promise.all([
     animateFlip(playerCard, items[playerKey].icon, items[playerKey].name),
     animateFlip(opponentCard, items[opponentKey].icon, items[opponentKey].name),
   ]);
 
+  // Small delay to ensure canvas measures correctly
+  await new Promise(r => setTimeout(r, 50));
+
   await animateBattle(playerCard, playerKey, opponentCard, opponentKey);
+
+  // Hide container after animation
+  if (battleContainer) battleContainer.style.display = 'none';
 
   const result = getResult(playerKey, opponentKey);
   const rarityValues = { Common:1, Uncommon:2, Rare:3, Epic:4, Legendary:5 };
